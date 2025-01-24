@@ -19,6 +19,7 @@ export default {
     },
     extend: {
       colors: {
+        border: "hsl(var(--border))",
         editor: {
           bg: "#f8f9fa",
           border: "#e9ecef",

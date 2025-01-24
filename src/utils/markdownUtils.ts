@@ -1,7 +1,7 @@
 import { marked } from 'marked';
 
 export const convertMarkdownToHtml = (markdown: string): string => {
-  return marked(markdown);
+  return marked.parse(markdown, { async: false }) as string;
 };
 
 export const getSavedMarkdown = (): string => {
