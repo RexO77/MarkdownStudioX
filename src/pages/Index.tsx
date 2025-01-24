@@ -16,7 +16,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Toolbar content={content} />
+      <Toolbar content={content} onFormat={setContent} />
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-0">
         <Editor
           value={content}

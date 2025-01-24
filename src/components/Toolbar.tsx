@@ -1,9 +1,9 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import ExportMenu from './ExportMenu';
-import { Save } from 'lucide-react';
+import { Button } from './ui/button';
 import { saveMarkdown } from '@/utils/markdownUtils';
-import { toast } from 'sonner';
+import ExportMenu from './ExportMenu';
+import { toast } from './ui/use-toast';
+import { formatMarkdownWithAI } from '@/utils/aiUtils';
 
 interface ToolbarProps {
   content: string;
@@ -12,15 +12,42 @@ interface ToolbarProps {
 const Toolbar = ({ content }: ToolbarProps) => {
   const handleSave = () => {
     saveMarkdown(content);
-    toast.success('Document saved successfully');
+    toast({
+      title: "Saved",
+      description: "Your markdown has been saved locally.",
+    });
+  };
+
+  const handleFormat = async () => {
+    try {
+      const formattedContent = await formatMarkdownWithAI(content);
+      if (formattedContent) {
+        // We need to update the parent's content state
+        // This will be handled through a new prop
+        toast({
+          title: "Formatted",
+          description: "Your markdown has been formatted using AI.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to format markdown. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <div className="flex items-center gap-2 p-2 border-b border-editor-border bg-white">
-      <Button variant="outline" onClick={handleSave}>
-        <Save className="mr-2 h-4 w-4" />
-        Save
-      </Button>
+    <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex gap-2">
+        <Button onClick={handleSave} variant="outline">
+          Save
+        </Button>
+        <Button onClick={handleFormat} variant="outline">
+          Format with AI
+        </Button>
+      </div>
       <ExportMenu content={content} />
     </div>
   );
