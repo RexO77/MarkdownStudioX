@@ -7,9 +7,10 @@ import { formatMarkdownWithAI } from '@/utils/aiUtils';
 
 interface ToolbarProps {
   content: string;
+  onFormat: (content: string) => void;
 }
 
-const Toolbar = ({ content }: ToolbarProps) => {
+const Toolbar = ({ content, onFormat }: ToolbarProps) => {
   const handleSave = () => {
     saveMarkdown(content);
     toast({
@@ -22,8 +23,7 @@ const Toolbar = ({ content }: ToolbarProps) => {
     try {
       const formattedContent = await formatMarkdownWithAI(content);
       if (formattedContent) {
-        // We need to update the parent's content state
-        // This will be handled through a new prop
+        onFormat(formattedContent);
         toast({
           title: "Formatted",
           description: "Your markdown has been formatted using AI.",

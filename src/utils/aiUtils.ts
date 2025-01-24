@@ -1,13 +1,13 @@
 export const formatMarkdownWithAI = async (content: string): Promise<string> => {
   try {
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
+        model: 'mixtral-8x7b-32768',
         messages: [
           {
             role: 'system',
@@ -19,7 +19,7 @@ export const formatMarkdownWithAI = async (content: string): Promise<string> => 
           }
         ],
         temperature: 0.2,
-        max_tokens: 1000,
+        max_tokens: 32000,
       }),
     });
 
