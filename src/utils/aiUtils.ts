@@ -1,9 +1,20 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export const formatMarkdownWithAI = async (content: string): Promise<string> => {
   try {
+    // Get the GROQ API key from Supabase
+    const { data: { secret: GROQ_API_KEY }, error } = await supabase.functions.invoke('get-secret', {
+      body: { name: 'GROQ_API_KEY' }
+    });
+
+    if (error || !GROQ_API_KEY) {
+      throw new Error('Failed to get GROQ API key');
+    }
+
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
