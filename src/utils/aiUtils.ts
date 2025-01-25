@@ -18,19 +18,20 @@ export const formatMarkdownWithAI = async (content: string): Promise<string> => 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'mixtral-8x7b-32768',
+        model: 'llama2-70b-4096',
         messages: [
           {
             role: 'system',
-            content: 'You are a Markdown formatting expert. Format the given Markdown text to improve its hierarchy, readability, and structure while preserving all content. Add appropriate headers, lists, and emphasis where needed.'
+            content: 'You are a Markdown formatting expert. Format the given Markdown text to improve its hierarchy, readability, and structure while preserving all content. Add appropriate headers, lists, and emphasis where needed. Process the entire document no matter how long it is. Ensure proper nesting of sections and consistent formatting throughout.'
           },
           {
             role: 'user',
             content: content
           }
         ],
-        temperature: 0.2,
-        max_tokens: 32000,
+        temperature: 0.1,
+        max_tokens: 100000,
+        stream: true
       }),
     });
 
@@ -45,3 +46,26 @@ export const formatMarkdownWithAI = async (content: string): Promise<string> => 
     throw error;
   }
 };
+
+// Chrome Extension Message Handler
+export const setupChromeExtension = () => {
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.action === 'formatMarkdown') {
+        formatMarkdownWithAI(request.content)
+          .then(formattedContent => {
+            sendResponse({ success: true, content: formattedContent });
+          })
+          .catch(error => {
+            sendResponse({ success: false, error: error.message });
+          });
+        return true; // Required for async response
+      }
+    });
+  }
+};
+
+// Initialize Chrome extension functionality if in extension context
+if (typeof chrome !== 'undefined' && chrome.runtime) {
+  setupChromeExtension();
+}

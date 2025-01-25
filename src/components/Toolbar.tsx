@@ -21,6 +21,11 @@ const Toolbar = ({ content, onFormat }: ToolbarProps) => {
 
   const handleFormat = async () => {
     try {
+      toast({
+        title: "Processing",
+        description: "Formatting your markdown with AI. This may take a moment for larger documents...",
+      });
+
       const formattedContent = await formatMarkdownWithAI(content);
       if (formattedContent) {
         onFormat(formattedContent);
@@ -35,6 +40,7 @@ const Toolbar = ({ content, onFormat }: ToolbarProps) => {
         description: "Failed to format markdown. Please try again.",
         variant: "destructive",
       });
+      console.error('Formatting error:', error);
     }
   };
 
