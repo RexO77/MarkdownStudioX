@@ -31,16 +31,22 @@ const ExportMenu = ({ content }: ExportMenuProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" className="bg-white dark:bg-gray-800">
           <Download className="mr-2 h-4 w-4" />
           Export
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuItem onClick={() => handleExport('pdf')}>
+      <DropdownMenuContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">
+        <DropdownMenuItem 
+          onClick={() => handleExport('pdf')}
+          className="hover:bg-gray-100 dark:hover:bg-gray-700"
+        >
           Export as PDF
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleExport('word')}>
+        <DropdownMenuItem 
+          onClick={() => handleExport('word')}
+          className="hover:bg-gray-100 dark:hover:bg-gray-700"
+        >
           Export as Word
         </DropdownMenuItem>
       </DropdownMenuContent>
