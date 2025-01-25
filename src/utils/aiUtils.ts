@@ -8,6 +8,7 @@ export const formatMarkdownWithAI = async (content: string): Promise<string> => 
     });
 
     if (error || !GROQ_API_KEY) {
+      console.error('Failed to get GROQ API key:', error);
       throw new Error('Failed to get GROQ API key');
     }
 
@@ -18,13 +19,13 @@ export const formatMarkdownWithAI = async (content: string): Promise<string> => 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama2-70b',
+        model: 'llama-3.3-70b-versatile',
         messages: [
           {
             role: 'system',
             content: `You are a Markdown formatting expert that makes content engaging and intuitive. 
             Format the given Markdown text following these guidelines:
-            1. Add relevant emojis to headers and key points
+            1. Add relevant emojis to headers and key points (use emojis extensively but appropriately)
             2. Correct any spelling or grammar mistakes
             3. Format code blocks with proper syntax highlighting
             4. Structure the content similar to popular GitHub README.md files
@@ -33,23 +34,27 @@ export const formatMarkdownWithAI = async (content: string): Promise<string> => 
             7. Ensure proper spacing and readability
             8. Convert plain URLs to proper markdown links
             9. Add descriptive emojis to lists and important sections
-            10. Keep the content professional but engaging`
+            10. Keep the content professional but engaging
+            11. Add table of contents for longer documents
+            12. Use badges where appropriate (e.g., version, status)`
           },
           {
             role: 'user',
             content: content
           }
         ],
-        temperature: 0.3,
-        max_tokens: 32000,
-        stream: false
+        temperature: 1,
+        max_completion_tokens: 32768,
+        top_p: 1,
+        stream: false,
+        stop: null
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
       console.error('GROQ API Error:', errorData);
-      throw new Error('Failed to format markdown');
+      throw new Error(`Failed to format markdown: ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
