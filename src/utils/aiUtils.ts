@@ -18,7 +18,7 @@ export const formatMarkdownWithAI = async (content: string): Promise<string> => 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama2-70b-4096',
+        model: 'llama2-70b',
         messages: [
           {
             role: 'system',
@@ -36,6 +36,8 @@ export const formatMarkdownWithAI = async (content: string): Promise<string> => 
     });
 
     if (!response.ok) {
+      const errorData = await response.json();
+      console.error('GROQ API Error:', errorData);
       throw new Error('Failed to format markdown');
     }
 
