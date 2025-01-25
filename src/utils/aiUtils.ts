@@ -18,20 +18,31 @@ export const formatMarkdownWithAI = async (content: string): Promise<string> => 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'mistral-7b-instruct',
+        model: 'llama2-70b',
         messages: [
           {
             role: 'system',
-            content: 'You are a Markdown formatting expert. Format the given Markdown text to improve its hierarchy, readability, and structure while preserving all content. Format it similar to GitHub README.md style with proper headers, lists, code blocks, and emphasis. Add appropriate syntax highlighting for code blocks. Process the entire document no matter how long it is. Ensure proper nesting of sections and consistent formatting throughout.'
+            content: `You are a Markdown formatting expert that makes content engaging and intuitive. 
+            Format the given Markdown text following these guidelines:
+            1. Add relevant emojis to headers and key points
+            2. Correct any spelling or grammar mistakes
+            3. Format code blocks with proper syntax highlighting
+            4. Structure the content similar to popular GitHub README.md files
+            5. Use clear hierarchical organization with proper heading levels
+            6. Add emphasis (bold/italic) for important points
+            7. Ensure proper spacing and readability
+            8. Convert plain URLs to proper markdown links
+            9. Add descriptive emojis to lists and important sections
+            10. Keep the content professional but engaging`
           },
           {
             role: 'user',
             content: content
           }
         ],
-        temperature: 0.1,
-        max_tokens: 100000,
-        stream: true
+        temperature: 0.3,
+        max_tokens: 32000,
+        stream: false
       }),
     });
 
