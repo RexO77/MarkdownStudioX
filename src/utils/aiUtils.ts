@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { Groq } from "groq-sdk";
 
 export const formatMarkdownWithAI = async (content: string): Promise<string> => {
   try {
@@ -11,38 +12,33 @@ export const formatMarkdownWithAI = async (content: string): Promise<string> => 
       throw new Error('Failed to get GROQ API key');
     }
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama2-70b',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a Markdown formatting expert. Format the given Markdown text to improve its hierarchy, readability, and structure while preserving all content. Add appropriate headers, lists, and emphasis where needed. Process the entire document no matter how long it is. Ensure proper nesting of sections and consistent formatting throughout.'
-          },
-          {
-            role: 'user',
-            content: content
-          }
-        ],
-        temperature: 0.1,
-        max_tokens: 100000,
-        stream: true
-      }),
+    const groq = new Groq({ apiKey: GROQ_API_KEY });
+    let formattedContent = '';
+
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a Markdown formatting expert. Format the given Markdown text to improve its hierarchy, readability, and structure while preserving all content. Add appropriate headers, lists, and emphasis where needed. Process the entire document no matter how long it is. Ensure proper nesting of sections and consistent formatting throughout.'
+        },
+        {
+          role: 'user',
+          content: content
+        }
+      ],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.1,
+      max_tokens: 32768,
+      stream: true,
+      stop: null
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('GROQ API Error:', errorData);
-      throw new Error('Failed to format markdown');
+    for await (const chunk of chatCompletion) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      formattedContent += content;
     }
 
-    const data = await response.json();
-    return data.choices[0].message.content;
+    return formattedContent;
   } catch (error) {
     console.error('Error formatting markdown:', error);
     throw error;
