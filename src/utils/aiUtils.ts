@@ -48,9 +48,13 @@ export const formatMarkdownWithAI = async (content: string): Promise<string> => 
 };
 
 // Chrome Extension Message Handler
-export const setupChromeExtension = () => {
+export const setupChromeExtension = (): void => {
   if (typeof chrome !== 'undefined' && chrome.runtime) {
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((
+      request: { action: string; content: string },
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: { success: boolean; content?: string; error?: string }) => void
+    ) => {
       if (request.action === 'formatMarkdown') {
         formatMarkdownWithAI(request.content)
           .then(formattedContent => {
