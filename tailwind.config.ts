@@ -32,6 +32,22 @@ export default {
           border: "#e9ecef",
         },
       },
+      keyframes: {
+        'rainbow-border': {
+          '0%, 100%': { 
+            'background-position': '0% 50%',
+            'transform': 'scale(1.02)'
+          },
+          '50%': { 
+            'background-position': '100% 50%',
+            'transform': 'scale(1)'
+          },
+        },
+      },
+      animation: {
+        'rainbow-border': 'rainbow-border 3s ease-in-out infinite',
+        'rainbow-border-fast': 'rainbow-border 2s ease-in-out infinite',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

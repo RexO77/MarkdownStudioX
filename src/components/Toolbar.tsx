@@ -50,7 +50,13 @@ const Toolbar = ({ content, onFormat }: ToolbarProps) => {
         <Button onClick={handleSave} variant="outline">
           Save
         </Button>
-        <Button onClick={handleFormat} variant="outline">
+        <Button 
+          onClick={handleFormat} 
+          className="relative bg-white hover:bg-gray-50 text-gray-900 border border-gray-200
+            before:absolute before:inset-0 before:rounded-md before:animate-rainbow-border before:border-2 before:border-transparent
+            before:bg-gradient-to-r before:from-[#8B5CF6] before:via-[#D946EF] before:to-[#0EA5E9]
+            before:bg-clip-border before:-z-10 before:hover:animate-rainbow-border-fast"
+        >
           Format with AI
         </Button>
       </div>

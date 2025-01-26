@@ -8,14 +8,49 @@ export const exportToPdf = async (content: string) => {
   const html = convertMarkdownToHtml(content);
   const element = document.createElement('div');
   element.innerHTML = html;
-  element.style.padding = '20px';
+  element.style.width = '800px'; // Fixed width for better formatting
+  element.style.padding = '40px';
+  element.style.backgroundColor = 'white';
   document.body.appendChild(element);
 
   try {
-    const canvas = await html2canvas(element);
-    const pdf = new jsPDF();
+    const canvas = await html2canvas(element, {
+      scale: 2, // Higher quality
+      useCORS: true,
+      logging: false,
+      windowWidth: 800,
+      height: element.scrollHeight
+    });
+
     const imgData = canvas.toDataURL('image/png');
-    pdf.addImage(imgData, 'PNG', 10, 10, 190, 0);
+    const pdf = new jsPDF({
+      unit: 'px',
+      format: 'a4',
+      orientation: 'portrait'
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+    const imgX = (pdfWidth - imgWidth * ratio) / 2;
+    
+    let heightLeft = imgHeight;
+    let position = 0;
+    
+    // First page
+    pdf.addImage(imgData, 'PNG', imgX, position, imgWidth * ratio, imgHeight * ratio);
+    heightLeft -= pdfHeight;
+    
+    // Additional pages if needed
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', imgX, position, imgWidth * ratio, imgHeight * ratio);
+      heightLeft -= pdfHeight;
+    }
+
     pdf.save('document.pdf');
   } finally {
     document.body.removeChild(element);
@@ -26,11 +61,15 @@ export const exportToWord = async (content: string) => {
   const doc = new Document({
     sections: [{
       properties: {},
-      children: [
+      children: content.split('\n').map(line => 
         new Paragraph({
-          text: content,
-        }),
-      ],
+          text: line,
+          spacing: {
+            before: 200,
+            after: 200,
+          },
+        })
+      ),
     }],
   });
 
