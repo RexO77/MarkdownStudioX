@@ -41,7 +41,7 @@ const Toolbar = ({ content, onFormat }: ToolbarProps) => {
           variant="outline"
           size="default"
           className="flex items-center gap-2"
-          onClick={() => window.open('https://github.com/lovable-labs/markdown-editor', '_blank')}
+          onClick={() => window.open('https://github.com/RexO77/mdconvetext', '_blank')}
         >
           <Github className="h-4 w-4" />
           <Star className="h-4 w-4" />
