@@ -31,6 +31,16 @@ export default {
           bg: "#ffffff",
           border: "#e9ecef",
         },
+        magical: {
+          100: 'oklch(0.86 0.08 280)',
+          200: 'oklch(0.82 0.06 280)',
+          300: 'oklch(0.71 0.12 280)',
+          400: 'oklch(0.61 0.18 280)',
+          500: 'oklch(0.5 0.21 280)',
+          600: 'oklch(0.42 0.18 280)',
+          800: 'oklch(0.25 0.15 280)',
+          900: 'oklch(0.13 0.06 280)',
+        }
       },
       keyframes: {
         'rainbow-border': {
@@ -43,10 +53,21 @@ export default {
             'transform': 'scale(1)'
           },
         },
+        'magical-glow': {
+          '0%, 100%': { 
+            'box-shadow': '0 0 1em 0.5em oklch(0.71 0.12 280)',
+            'opacity': '0.6'
+          },
+          '50%': { 
+            'box-shadow': '0 0 1.5em 0.75em oklch(0.71 0.12 280)',
+            'opacity': '0.8'
+          },
+        }
       },
       animation: {
         'rainbow-border': 'rainbow-border 3s ease-in-out infinite',
         'rainbow-border-fast': 'rainbow-border 2s ease-in-out infinite',
+        'magical-glow': 'magical-glow 3s ease-in-out infinite',
       },
     },
   },

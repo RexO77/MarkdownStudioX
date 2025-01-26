@@ -1,21 +1,23 @@
 import { jsPDF } from 'jspdf';
 import { saveAs } from 'file-saver';
 import html2canvas from 'html2canvas';
-import { Document, Packer, Paragraph } from 'docx';
+import { Document, Packer, Paragraph, TextRun, spacing } from 'docx';
 import { convertMarkdownToHtml } from './markdownUtils';
 
 export const exportToPdf = async (content: string) => {
   const html = convertMarkdownToHtml(content);
   const element = document.createElement('div');
   element.innerHTML = html;
-  element.style.width = '800px'; // Fixed width for better formatting
+  element.style.width = '800px';
   element.style.padding = '40px';
   element.style.backgroundColor = 'white';
+  element.style.lineHeight = '1.6';
+  element.style.wordBreak = 'break-word';
   document.body.appendChild(element);
 
   try {
     const canvas = await html2canvas(element, {
-      scale: 2, // Higher quality
+      scale: 2,
       useCORS: true,
       logging: false,
       windowWidth: 800,
@@ -63,10 +65,16 @@ export const exportToWord = async (content: string) => {
       properties: {},
       children: content.split('\n').map(line => 
         new Paragraph({
-          text: line,
+          children: [
+            new TextRun({
+              text: line,
+              size: 24,
+            })
+          ],
           spacing: {
-            before: 200,
-            after: 200,
+            before: 240,
+            after: 240,
+            line: 360,
           },
         })
       ),
