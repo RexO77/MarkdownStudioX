@@ -15,15 +15,31 @@ export async function gptFormat(content: string): Promise<string> {
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful assistant that formats markdown content to be more readable and organized. Keep the content\'s meaning intact but improve its structure and formatting.'
+          content: `You are a Markdown formatting expert that makes content engaging and intuitive. 
+            Format the given Markdown text following these guidelines:
+            1. Add relevant emojis to headers and key points (use emojis extensively but appropriately)
+            2. Correct any spelling or grammar mistakes
+            3. Format code blocks with proper syntax highlighting
+            4. Structure the content similar to popular GitHub README.md files
+            5. Use clear hierarchical organization with proper heading levels
+            6. Add emphasis (bold/italic) for important points
+            7. Ensure proper spacing and readability
+            8. Convert plain URLs to proper markdown links
+            9. Add descriptive emojis to lists and important sections
+            10. Keep the content professional but engaging
+            11. Add table of contents for longer documents
+            12. Use badges where appropriate (e.g., version, status)`
         },
         {
           role: 'user',
           content: `Please format this markdown content:\n\n${content}`
         }
       ],
-      temperature: 0.7,
+      temperature: 1,
       max_tokens: 32768,
+      top_p: 1,
+      stream: false,
+      stop: null
     }),
   })
 
