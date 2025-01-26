@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import ExportMenu from './ExportMenu';
 import { toast } from 'sonner';
 import { saveMarkdown } from '@/utils/markdownUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ToolbarProps {
   content: string;
@@ -17,22 +18,16 @@ const Toolbar = ({ content, onFormat }: ToolbarProps) => {
 
   const handleFormat = async () => {
     try {
-      const response = await fetch('/api/format', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content }),
+      const { data, error } = await supabase.functions.invoke('format', {
+        body: { content }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to format content');
-      }
+      if (error) throw error;
 
-      const { formattedContent } = await response.json();
-      onFormat(formattedContent);
+      onFormat(data.formattedContent);
       toast.success('Content formatted successfully!');
     } catch (error) {
+      console.error('Format error:', error);
       toast.error('Failed to format content');
     }
   };
