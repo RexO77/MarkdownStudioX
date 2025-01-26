@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { saveAs } from 'file-saver';
 import html2canvas from 'html2canvas';
-import { Document, Packer, Paragraph, TextRun, spacing } from 'docx';
+import { Document, Packer, Paragraph, TextRun, Spacing } from 'docx';
 import { convertMarkdownToHtml } from './markdownUtils';
 
 export const exportToPdf = async (content: string) => {
