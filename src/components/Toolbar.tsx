@@ -4,7 +4,7 @@ import ExportMenu from './ExportMenu';
 import { toast } from 'sonner';
 import { saveMarkdown } from '@/utils/markdownUtils';
 import { supabase } from '@/integrations/supabase/client';
-import { Star, Github } from 'lucide-react';
+import { Star, Github, Sparkles } from 'lucide-react';
 
 interface ToolbarProps {
   content: string;
@@ -57,21 +57,16 @@ const Toolbar = ({ content, onFormat }: ToolbarProps) => {
         >
           Save
         </Button>
-        <button
+        <Button
           onClick={handleFormat}
-          className="relative z-10 px-4 py-2 h-10 bg-magical-900 border-3 border-magical-400 
-            rounded-xl text-magical-300 transition-all duration-250 text-base font-medium
-            hover:text-magical-200 hover:bg-magical-800 hover:scale-105 focus:outline-none 
-            focus:ring-2 focus:ring-magical-400 focus:ring-offset-2 group"
+          variant="default"
+          size="default"
+          className="bg-magical-900 hover:bg-magical-800 text-magical-300 hover:text-magical-200 border-magical-400 
+            text-base font-medium transition-colors duration-200 flex items-center gap-2"
         >
-          <span className="relative z-10 filter drop-shadow">
-            Format with AI ✨
-          </span>
-          <div 
-            className="absolute inset-0 rounded-xl opacity-60 transition-opacity
-              duration-250 group-hover:opacity-80 animate-magical-glow"
-          />
-        </button>
+          Format with AI
+          <Sparkles className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
