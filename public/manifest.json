@@ -1,24 +1,30 @@
 {
   "manifest_version": 3,
-  "name": "Markdown Formatter",
-  "version": "1.0",
-  "description": "Format markdown documents with AI assistance",
+  "name": "Markdown Formatter Pro",
+  "version": "1.0.0",
+  "description": "Format markdown documents with AI assistance and emoji support",
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "clipboardWrite"
   ],
   "action": {
     "default_popup": "index.html",
     "default_icon": {
-      "16": "favicon.ico",
-      "48": "favicon.ico",
-      "128": "favicon.ico"
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
     }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["src/main.tsx"]
+      "js": ["src/content.ts"]
     }
   ],
   "host_permissions": [
