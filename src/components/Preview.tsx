@@ -33,7 +33,7 @@ const Preview = ({ content, className, onChange }: PreviewProps) => {
 
   return (
     <div className={cn("w-full h-full flex flex-col", className)}>
-      <div className="flex justify-between items-center p-2 border-b border-editor-border dark:border-gray-700">
+      <div className="sticky top-0 z-10 flex justify-between items-center p-2 border-b border-editor-border dark:border-gray-700 bg-background">
         <Button
           variant="ghost"
           size="sm"
@@ -60,17 +60,17 @@ const Preview = ({ content, className, onChange }: PreviewProps) => {
           <textarea
             value={editableContent}
             onChange={handleContentChange}
-            className="w-full h-full p-8 bg-background text-foreground resize-none focus:outline-none
+            className="w-full h-full p-4 md:p-8 bg-background text-foreground resize-none focus:outline-none
               dark:bg-gray-900 dark:text-gray-100 font-mono text-sm leading-relaxed"
             placeholder="Enter your Markdown here..."
           />
         ) : (
           <div 
-            className="prose prose-slate dark:prose-invert max-w-none p-8 bg-background
+            className="prose prose-slate dark:prose-invert max-w-none p-4 md:p-8 bg-background
               prose-headings:border-b prose-headings:border-gray-200 dark:prose-headings:border-gray-700
-              prose-h1:text-4xl prose-h1:font-bold prose-h1:mb-6 prose-h1:pb-4
-              prose-h2:text-2xl prose-h2:font-semibold prose-h2:mt-8 prose-h2:mb-4 prose-h2:pb-3
-              prose-h3:text-xl prose-h3:font-medium prose-h3:mt-6 prose-h3:mb-3 prose-h3:pb-2
+              prose-h1:text-3xl md:prose-h1:text-4xl prose-h1:font-bold prose-h1:mb-6 prose-h1:pb-4
+              prose-h2:text-xl md:prose-h2:text-2xl prose-h2:font-semibold prose-h2:mt-8 prose-h2:mb-4 prose-h2:pb-3
+              prose-h3:text-lg md:prose-h3:text-xl prose-h3:font-medium prose-h3:mt-6 prose-h3:mb-3 prose-h3:pb-2
               prose-p:my-4 prose-p:leading-7 prose-p:text-gray-700 dark:prose-p:text-gray-300
               prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
               prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 
