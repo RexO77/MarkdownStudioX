@@ -13,7 +13,9 @@ const Editor = ({ value, onChange, className }: EditorProps) => {
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full h-full p-4 bg-editor-bg text-editor-text border-editor-border resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full h-full p-8 bg-background text-foreground border-editor-border
+          dark:bg-gray-900 dark:text-gray-100 resize-none focus:outline-none
+          font-mono text-sm leading-relaxed transition-colors duration-200"
         placeholder="Enter your Markdown here..."
       />
     </div>

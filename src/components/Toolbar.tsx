@@ -34,14 +34,15 @@ const Toolbar = ({ content, onFormat }: ToolbarProps) => {
   };
 
   return (
-    <div className="flex justify-between items-center p-4 border-b border-editor-border bg-white dark:bg-gray-800">
+    <div className="flex justify-between items-center p-4 border-b border-editor-border 
+      bg-background dark:bg-gray-900 transition-colors duration-200">
       <div className="flex gap-2">
         <ExportMenu content={content} />
         <Button
           variant="outline"
           size="default"
-          className="flex items-center gap-2 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md 
-            hover:border-magical-300 dark:hover:border-magical-400"
+          className="flex items-center gap-2 transition-all duration-300 ease-in-out 
+            hover:scale-105 hover:bg-accent dark:hover:bg-gray-800"
           onClick={() => window.open('https://github.com/RexO77/MarkdowntoTextconverter', '_blank')}
         >
           <Github className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
@@ -54,8 +55,8 @@ const Toolbar = ({ content, onFormat }: ToolbarProps) => {
           onClick={handleSave} 
           variant="outline"
           size="default"
-          className="text-base transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md 
-            hover:border-magical-300 dark:hover:border-magical-400"
+          className="text-base transition-all duration-300 ease-in-out 
+            hover:scale-105 hover:bg-accent dark:hover:bg-gray-800"
         >
           Save
         </Button>
@@ -63,14 +64,12 @@ const Toolbar = ({ content, onFormat }: ToolbarProps) => {
           onClick={handleFormat}
           variant="default"
           size="default"
-          className="bg-magical-900 hover:bg-magical-800 text-magical-300 hover:text-magical-200 border-magical-400 
-            text-base font-medium transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg 
-            flex items-center gap-2 relative overflow-hidden group"
+          className="bg-magical-500 hover:bg-magical-600 text-white dark:bg-magical-600 
+            dark:hover:bg-magical-700 text-base font-medium transition-all duration-300 
+            ease-in-out hover:scale-105 flex items-center gap-2"
         >
-          <span className="relative z-10">Format with AI</span>
-          <Sparkles className="h-4 w-4 relative z-10 transition-transform duration-300 group-hover:rotate-12" />
-          <div className="absolute inset-0 bg-gradient-to-r from-magical-800 to-magical-900 opacity-0 
-            group-hover:opacity-100 transition-opacity duration-300 ease-in-out" />
+          <span>Format with AI</span>
+          <Sparkles className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
         </Button>
       </div>
     </div>
