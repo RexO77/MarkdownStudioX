@@ -63,10 +63,10 @@ const Toolbar = ({ content, onFormat }: ToolbarProps) => {
         </Button>
         <Button
           onClick={handleFormat}
-          variant="default"
+          variant="outline"
           size="default"
-          className="flex items-center gap-2 text-base bg-primary hover:bg-primary/90 
-            transition-all duration-300 ease-in-out hover:scale-105"
+          className="flex items-center gap-2 text-base border-2 border-primary bg-primary text-primary-foreground 
+            hover:bg-primary/90 transition-all duration-300 ease-in-out hover:scale-105"
         >
           Format with AI
           <Sparkles className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
