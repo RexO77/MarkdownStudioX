@@ -61,30 +61,16 @@ const Toolbar = ({ content, onFormat }: ToolbarProps) => {
         >
           Save
         </Button>
-        <button
+        <Button
           onClick={handleFormat}
-          className="relative inline-flex h-10 items-center justify-center gap-2 
-            rounded-md border border-transparent px-6 font-medium 
-            text-white shadow-2xl shadow-purple-500/20 transition-all duration-300 
-            hover:scale-105 hover:border-slate-800 hover:bg-slate-800/5 
-            hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-800 
-            focus:ring-offset-2 dark:border-slate-200 dark:shadow-purple-500/30 
-            dark:hover:border-slate-200 dark:hover:bg-slate-200/5 dark:hover:text-slate-200 
-            dark:focus:ring-slate-200 overflow-hidden 
-            before:absolute before:inset-0 
-            before:-z-10 before:translate-y-[150%] before:animate-[shimmer_2s_infinite] 
-            before:bg-gradient-to-t before:from-purple-500/0 
-            before:via-purple-500/50 before:to-purple-500/0
-            after:absolute after:inset-0 
-            after:-z-10 after:animate-[shimmer_2s_infinite] 
-            after:bg-gradient-to-t after:from-purple-500/0 
-            after:via-purple-500/50 after:to-purple-500/0"
+          variant="default"
+          size="default"
+          className="flex items-center gap-2 text-base bg-primary hover:bg-primary/90 
+            transition-all duration-300 ease-in-out hover:scale-105"
         >
-          <span className="flex items-center gap-2">
-            Format with AI
-            <Sparkles className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
-          </span>
-        </button>
+          Format with AI
+          <Sparkles className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
+        </Button>
       </div>
     </div>
   );
