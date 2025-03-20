@@ -1,15 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import Editor from '@/components/Editor';
 import Preview from '@/components/Preview';
 import Toolbar from '@/components/Toolbar';
 import { ThemeProvider } from 'next-themes';
 import { Button } from '@/components/ui/button';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, Edit } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
   const [content, setContent] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
+  const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit');
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -19,8 +20,8 @@ const Index = () => {
     }
   }, []);
 
-  const togglePreview = () => {
-    setShowPreview(!showPreview);
+  const toggleMobileView = () => {
+    setMobileView(mobileView === 'edit' ? 'preview' : 'edit');
   };
 
   return (
@@ -33,43 +34,39 @@ const Index = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={togglePreview}
+                onClick={toggleMobileView}
                 className="flex items-center gap-2 hover:bg-accent transition-all duration-300"
               >
-                {showPreview ? (
+                {mobileView === 'edit' ? (
                   <>
-                    <EyeOff className="h-4 w-4" />
-                    Hide Preview
+                    <Eye className="h-4 w-4" />
+                    Preview
                   </>
                 ) : (
                   <>
-                    <Eye className="h-4 w-4" />
-                    Show Preview
+                    <Edit className="h-4 w-4" />
+                    Edit
                   </>
                 )}
               </Button>
             </div>
           )}
         </div>
-        <div className={`flex-1 grid ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2'} gap-0`}>
-          <div className={`${isMobile && showPreview ? 'hidden' : 'block'}`}>
-            <Editor
-              value={content}
-              onChange={setContent}
-              className="border-r border-editor-border dark:border-gray-700"
-            />
-          </div>
-          <div 
-            className={`
-              ${isMobile ? (showPreview ? 'block' : 'hidden') : 'hidden lg:block'}
-              h-[calc(100vh-8rem)] overflow-auto
-            `}
-          >
-            <Preview 
-              content={content} 
-              onChange={setContent}
-            />
-          </div>
+        <div className={`flex-1 ${isMobile ? 'block' : 'grid grid-cols-2'}`}>
+          {(!isMobile || mobileView === 'edit') && (
+            <div className={`${isMobile ? 'h-[calc(100vh-8rem)]' : ''}`}>
+              <Editor
+                value={content}
+                onChange={setContent}
+                className={isMobile ? '' : 'border-r border-editor-border dark:border-gray-700'}
+              />
+            </div>
+          )}
+          {(!isMobile || mobileView === 'preview') && (
+            <div className={`${isMobile ? 'h-[calc(100vh-8rem)]' : ''}`}>
+              <Preview content={content} />
+            </div>
+          )}
         </div>
       </div>
     </ThemeProvider>

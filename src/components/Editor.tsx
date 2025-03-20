@@ -30,8 +30,8 @@ const Editor = ({ value, onChange, className }: EditorProps) => {
       <div 
         className="w-full h-full p-4 md:p-8 overflow-auto bg-background dark:bg-gray-900
           prose prose-slate dark:prose-invert max-w-none
-          prose-h1:text-4xl prose-h1:font-bold prose-h1:mb-6
-          prose-h2:text-3xl prose-h2:font-bold prose-h2:mb-5
+          prose-h1:text-4xl prose-h1:font-bold prose-h1:mb-6 prose-h1:border-b prose-h1:pb-2
+          prose-h2:text-3xl prose-h2:font-bold prose-h2:mb-5 prose-h2:border-b prose-h2:pb-2
           prose-h3:text-2xl prose-h3:font-bold prose-h3:mb-4
           prose-h4:text-xl prose-h4:font-bold prose-h4:mb-3
           prose-h5:text-lg prose-h5:font-bold prose-h5:mb-2
@@ -39,6 +39,7 @@ const Editor = ({ value, onChange, className }: EditorProps) => {
           prose-p:text-base prose-p:mb-4 prose-p:leading-7
           prose-ul:list-disc prose-ul:ml-6 prose-ul:mb-4
           prose-ol:list-decimal prose-ol:ml-6 prose-ol:mb-4
+          prose-li:my-1
           prose-blockquote:border-l-4 prose-blockquote:border-gray-300 
           prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:mb-4
           prose-pre:bg-gray-100 prose-pre:p-4 prose-pre:rounded prose-pre:mb-4 
