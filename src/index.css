@@ -113,11 +113,22 @@
     background-color: hsl(var(--muted-foreground) / 0.5);
   }
 
-  /* Smooth transitions */
+  /* Smooth transitions - excluding theme colors for instant switching */
   * {
-    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-property: transform, opacity, box-shadow;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 200ms;
+  }
+
+  /* Only apply color transitions to interactive elements that need smooth hover effects */
+  button, 
+  a, 
+  [role="button"],
+  input:focus,
+  textarea:focus {
+    transition-property: transform, opacity, box-shadow, background-color, border-color;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
   }
 }
 
