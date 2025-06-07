@@ -1,3 +1,4 @@
+
 import { marked } from 'marked';
 
 export const convertMarkdownToHtml = (markdown: string): string => {
@@ -5,7 +6,6 @@ export const convertMarkdownToHtml = (markdown: string): string => {
   marked.setOptions({
     gfm: true, // GitHub Flavored Markdown
     breaks: true, // Convert newlines to <br>
-    smartypants: true, // Use "smart" typographic punctuation for things like quotes and dashes
     headerIds: true,
   });
   
