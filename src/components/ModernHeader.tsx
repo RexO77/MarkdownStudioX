@@ -1,0 +1,90 @@
+
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import ExportMenu from './ExportMenu';
+import { toast } from 'sonner';
+import { saveMarkdown } from '@/utils/markdownUtils';
+import { supabase } from '@/integrations/supabase/client';
+import { Star, Github, Sparkles, Save, FileText } from 'lucide-react';
+
+interface ModernHeaderProps {
+  content: string;
+  onFormat: (formattedContent: string) => void;
+}
+
+const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
+  const handleSave = () => {
+    saveMarkdown(content);
+    toast.success('Content saved successfully!');
+  };
+
+  const handleFormat = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('format', {
+        body: { content }
+      });
+
+      if (error) throw error;
+
+      onFormat(data.formattedContent);
+      toast.success('Content formatted successfully!');
+    } catch (error) {
+      console.error('Format error:', error);
+      toast.error('Failed to format content');
+    }
+  };
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-16 items-center justify-between px-4 md:px-6">
+        {/* Logo/Brand */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80">
+            <FileText className="h-4 w-4 text-primary-foreground" />
+          </div>
+          <div className="hidden sm:block">
+            <h1 className="text-lg font-semibold text-foreground">Markdown Studio</h1>
+            <p className="text-xs text-muted-foreground">Convert & Format with AI</p>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <ExportMenu content={content} />
+          
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden sm:flex items-center gap-2"
+            onClick={() => window.open('https://github.com/RexO77/MarkdowntoTextconverter', '_blank')}
+          >
+            <Github className="h-4 w-4" />
+            <Star className="h-4 w-4" />
+            <span className="hidden md:inline">Star</span>
+          </Button>
+          
+          <Button 
+            onClick={handleSave} 
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Save className="h-4 w-4" />
+            <span className="hidden sm:inline">Save</span>
+          </Button>
+          
+          <Button
+            onClick={handleFormat}
+            size="sm"
+            className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span className="hidden sm:inline">Format AI</span>
+          </Button>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+export default ModernHeader;

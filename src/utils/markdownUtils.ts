@@ -6,7 +6,6 @@ export const convertMarkdownToHtml = (markdown: string): string => {
   marked.setOptions({
     gfm: true, // GitHub Flavored Markdown
     breaks: true, // Convert newlines to <br>
-    headerIds: true,
   });
   
   return marked.parse(markdown, { async: false }) as string;
