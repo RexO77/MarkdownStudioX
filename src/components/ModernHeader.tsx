@@ -69,6 +69,13 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
   };
 
   const handleFormat = async () => {
+    if (!content.trim()) {
+      toast.error('No content to format', {
+        description: 'Please add some content first'
+      });
+      return;
+    }
+
     setIsFormatting(true);
     try {
       const { data, error } = await supabase.functions.invoke('format', {
@@ -89,10 +96,16 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
         return;
       }
 
-      onFormat(data.formattedContent);
-      toast.success('Content formatted successfully!', {
-        description: 'AI enhanced your markdown'
-      });
+      if (data?.formattedContent) {
+        onFormat(data.formattedContent);
+        toast.success('Content formatted successfully!', {
+          description: 'AI enhanced your markdown'
+        });
+      } else {
+        toast.error('No formatted content received', {
+          description: 'Please try again'
+        });
+      }
     } catch (error) {
       console.error('Format error:', error);
       toast.error('AI formatting failed', {
@@ -124,6 +137,7 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
         }
       }
 
+      console.log('Loading versions for document:', documentToShow.id);
       await fetchVersions(documentToShow.id);
       setShowVersions(true);
     } catch (error) {

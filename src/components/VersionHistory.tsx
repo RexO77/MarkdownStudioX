@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DocumentVersion } from '@/hooks/useDocuments';
-import { Clock, RotateCcw, X } from 'lucide-react';
+import { Clock, RotateCcw, X, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface VersionHistoryProps {
@@ -15,6 +15,12 @@ interface VersionHistoryProps {
 
 const VersionHistory = ({ versions, onRestore, isOpen, onClose }: VersionHistoryProps) => {
   if (!isOpen) return null;
+
+  const handleRestore = (version: DocumentVersion) => {
+    if (window.confirm(`Are you sure you want to restore to version ${version.version_number}? This will create a new version with the restored content.`)) {
+      onRestore(version);
+    }
+  };
 
   return (
     <>
@@ -48,64 +54,64 @@ const VersionHistory = ({ versions, onRestore, isOpen, onClose }: VersionHistory
           {/* Versions List */}
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-3">
-              {versions.map((version, index) => (
-                <div
-                  key={version.id}
-                  className={cn(
-                    "p-3 rounded-lg border transition-all duration-200 hover:shadow-md transform hover:scale-[1.02]",
-                    index === 0 
-                      ? "border-primary bg-primary/5 shadow-sm" 
-                      : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium">
-                          Version {version.version_number}
-                        </span>
-                        {index === 0 && (
-                          <span className="text-xs px-2 py-1 bg-primary text-primary-foreground rounded animate-pulse">
-                            Current
+              {versions.length > 0 ? (
+                versions.map((version, index) => (
+                  <div
+                    key={version.id}
+                    className={cn(
+                      "p-3 rounded-lg border transition-all duration-200 hover:shadow-md transform hover:scale-[1.02]",
+                      index === 0 
+                        ? "border-primary bg-primary/5 shadow-sm" 
+                        : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-medium">
+                            Version {version.version_number}
                           </span>
+                          {index === 0 && (
+                            <span className="text-xs px-2 py-1 bg-primary text-primary-foreground rounded animate-pulse">
+                              Current
+                            </span>
+                          )}
+                        </div>
+                        
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {new Date(version.created_at).toLocaleString()}
+                        </p>
+                        
+                        {version.change_summary && (
+                          <p className="text-sm text-foreground mb-2 bg-muted/50 p-2 rounded text-xs">
+                            {version.change_summary}
+                          </p>
                         )}
+                        
+                        <p className="text-xs text-muted-foreground truncate">
+                          {version.title}
+                        </p>
                       </div>
                       
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {new Date(version.created_at).toLocaleString()}
-                      </p>
-                      
-                      {version.change_summary && (
-                        <p className="text-sm text-foreground mb-2 bg-muted/50 p-2 rounded text-xs">
-                          {version.change_summary}
-                        </p>
+                      {index !== 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRestore(version)}
+                          className="flex-shrink-0 hover:bg-primary hover:text-primary-foreground transition-all duration-200 hover:scale-105"
+                        >
+                          <RotateCcw className="h-3 w-3 mr-1" />
+                          Restore
+                        </Button>
                       )}
-                      
-                      <p className="text-xs text-muted-foreground truncate">
-                        {version.title}
-                      </p>
                     </div>
-                    
-                    {index !== 0 && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onRestore(version)}
-                        className="flex-shrink-0 hover:bg-primary hover:text-primary-foreground transition-all duration-200 hover:scale-105"
-                      >
-                        <RotateCcw className="h-3 w-3 mr-1" />
-                        Restore
-                      </Button>
-                    )}
                   </div>
-                </div>
-              ))}
-              
-              {versions.length === 0 && (
+                ))
+              ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="h-8 w-8 mx-auto mb-2 opacity-50 animate-pulse" />
+                  <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p className="font-medium">No version history</p>
-                  <p className="text-sm">Versions will appear as you save</p>
+                  <p className="text-sm">Save your document to create versions</p>
                 </div>
               )}
             </div>

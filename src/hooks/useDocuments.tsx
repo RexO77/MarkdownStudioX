@@ -154,7 +154,12 @@ export const useDocuments = () => {
         p_change_summary: changeSummary
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error in create_document_version RPC:', error);
+        throw error;
+      }
+      
+      // Refresh versions after creating new one
       await fetchVersions(documentId);
     } catch (error) {
       console.error('Error creating version:', error);
@@ -163,9 +168,14 @@ export const useDocuments = () => {
   };
 
   const fetchVersions = async (documentId: string) => {
-    if (!user) return;
+    if (!user || !documentId) {
+      console.log('Cannot fetch versions: no user or documentId');
+      return;
+    }
 
     try {
+      console.log('Fetching versions for document:', documentId);
+      
       const { data, error } = await supabase
         .from('document_versions')
         .select('*')
@@ -173,7 +183,12 @@ export const useDocuments = () => {
         .eq('user_id', user.id)
         .order('version_number', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching versions:', error);
+        throw error;
+      }
+      
+      console.log('Fetched versions:', data);
       setVersions(data || []);
     } catch (error) {
       console.error('Error fetching versions:', error);
@@ -182,7 +197,10 @@ export const useDocuments = () => {
   };
 
   const restoreVersion = async (version: DocumentVersion) => {
-    if (!currentDocument) return;
+    if (!currentDocument) {
+      toast.error('No current document to restore to');
+      return;
+    }
 
     try {
       await updateDocument(currentDocument.id, version.title, version.content, true);
@@ -196,6 +214,11 @@ export const useDocuments = () => {
   useEffect(() => {
     if (user) {
       fetchDocuments();
+    } else {
+      // Clear state when user logs out
+      setDocuments([]);
+      setCurrentDocument(null);
+      setVersions([]);
     }
   }, [user]);
 
