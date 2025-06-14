@@ -28,11 +28,11 @@ export const useDocuments = () => {
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const generateTitleFromContent = (content: string): string => {
     const firstLine = content.split('\n')[0].trim();
     if (firstLine && firstLine.length > 0) {
-      // Remove markdown syntax for title
       const cleanTitle = firstLine.replace(/^#+\s*/, '').replace(/\*\*|\*|`/g, '');
       return cleanTitle.length > 50 ? cleanTitle.substring(0, 50) + '...' : cleanTitle;
     }
@@ -43,7 +43,18 @@ export const useDocuments = () => {
     if (!user || currentDocument) return null;
 
     const title = generateTitleFromContent(content);
-    return await createDocument(title, content);
+    setSaving(true);
+    try {
+      const result = await createDocument(title, content);
+      toast.success('Document created automatically!');
+      return result;
+    } catch (error) {
+      console.error('Auto-create failed:', error);
+      toast.error('Failed to create document');
+      return null;
+    } finally {
+      setSaving(false);
+    }
   };
 
   const fetchDocuments = async () => {
@@ -71,6 +82,7 @@ export const useDocuments = () => {
   const createDocument = async (title: string = 'Untitled Document', content: string = '') => {
     if (!user) return null;
 
+    setSaving(true);
     try {
       const { data, error } = await supabase
         .from('documents')
@@ -90,18 +102,20 @@ export const useDocuments = () => {
       // Create initial version
       await createVersion(data.id, content, title, 'Initial version');
       
-      toast.success('Document created successfully');
       return data;
     } catch (error) {
       console.error('Error creating document:', error);
       toast.error('Failed to create document');
       return null;
+    } finally {
+      setSaving(false);
     }
   };
 
   const updateDocument = async (id: string, title: string, content: string, createNewVersion: boolean = false) => {
     if (!user) return;
 
+    setSaving(true);
     try {
       const { error } = await supabase
         .from('documents')
@@ -113,17 +127,19 @@ export const useDocuments = () => {
 
       if (createNewVersion) {
         await createVersion(id, content, title, 'Manual save');
+        toast.success('Document saved with new version!');
       }
 
       await fetchDocuments();
       
-      // Update current document if it's the one being edited
       if (currentDocument?.id === id) {
         setCurrentDocument(prev => prev ? { ...prev, title, content } : null);
       }
     } catch (error) {
       console.error('Error updating document:', error);
       toast.error('Failed to update document');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -188,6 +204,7 @@ export const useDocuments = () => {
     currentDocument,
     versions,
     loading,
+    saving,
     setCurrentDocument,
     createDocument,
     updateDocument,
