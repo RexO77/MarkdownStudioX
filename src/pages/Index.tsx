@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import UnifiedEditor from '@/components/UnifiedEditor';
+import { EnhancedEditor } from '@/components/editor/EnhancedEditor';
 import ModernHeader from '@/components/ModernHeader';
 import { AdaptiveLayout } from '@/components/layout/AdaptiveLayout';
 import { StatusBar } from '@/components/ui/status-bar';
@@ -72,7 +72,6 @@ const IndexContent = () => {
   };
 
   const handleFormat = (format: string) => {
-    // This will be implemented with the editor enhancements
     console.log('Format:', format);
     setFloatingToolbar({ visible: false, position: { x: 0, y: 0 } });
   };
@@ -114,10 +113,11 @@ const IndexContent = () => {
           <ModernHeader content={content} onFormat={setContent} />
           
           <div className="flex-1 overflow-hidden">
-            <UnifiedEditor
+            <EnhancedEditor
               value={content}
               onChange={handleContentChange}
               className="h-full transition-all duration-200"
+              placeholder="Start writing your markdown... Try pasting URLs, code, or other content for smart formatting!"
             />
           </div>
           
