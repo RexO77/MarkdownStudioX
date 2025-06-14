@@ -84,3 +84,53 @@ export const exportToWord = async (content: string) => {
   const blob = await Packer.toBlob(doc);
   saveAs(blob, 'document.docx');
 };
+
+export const exportToText = async (content: string) => {
+  // Convert markdown to plain text by removing markdown syntax
+  let plainText = content
+    // Remove headers
+    .replace(/^#{1,6}\s+/gm, '')
+    // Remove bold/italic
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    // Remove links but keep text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    // Remove code blocks
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`([^`]+)`/g, '$1')
+    // Remove blockquotes
+    .replace(/^>\s+/gm, '')
+    // Remove list markers
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    // Clean up extra whitespace
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8' });
+  saveAs(blob, 'document.txt');
+};
+
+export const exportLatestVersion = async (content: string, title: string) => {
+  // Create a structured latest version export with metadata
+  const timestamp = new Date().toISOString();
+  const formattedContent = `# ${title}
+
+**Document Information:**
+- Exported: ${new Date(timestamp).toLocaleString()}
+- Version: Latest
+- Format: Markdown
+
+---
+
+${content}
+
+---
+
+*This document was exported from Markdown Studio - Latest Version*`;
+
+  const blob = new Blob([formattedContent], { type: 'text/markdown;charset=utf-8' });
+  saveAs(blob, `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_latest.md`);
+};
