@@ -51,7 +51,7 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
     <div className={cn("flex flex-col h-full bg-background", className)}>
       {/* Mobile Controls */}
       {isMobile && (
-        <div className="flex justify-between items-center p-3 border-b bg-card/50 backdrop-blur-sm">
+        <div className="flex-shrink-0 flex justify-between items-center p-3 border-b bg-card/50 backdrop-blur-sm z-10">
           <div className="flex gap-2">
             <Button
               variant={activeView === 'edit' ? 'default' : 'outline'}
@@ -85,7 +85,7 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
 
       {/* Desktop Controls */}
       {!isMobile && (
-        <div className="flex justify-end items-center p-3 border-b bg-card/50 backdrop-blur-sm">
+        <div className="flex-shrink-0 flex justify-end items-center p-3 border-b bg-card/50 backdrop-blur-sm z-10">
           <div className="flex gap-2">
             <Button
               variant="ghost"
@@ -108,12 +108,12 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
         </div>
       )}
 
-      {/* Editor Content */}
-      <div className="flex-1 flex overflow-hidden">
+      {/* Editor Content - Fixed height calculation */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Editor Panel */}
         {(activeView === 'edit' || activeView === 'split') && (
           <div className={cn(
-            "flex flex-col",
+            "flex flex-col min-h-0",
             isMobile ? "w-full" : showPreview ? "w-1/2 border-r" : "w-full"
           )}>
             <textarea
@@ -121,7 +121,7 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
               onChange={(e) => onChange(e.target.value)}
               className="flex-1 p-6 bg-background text-foreground resize-none focus:outline-none
                 font-mono text-sm leading-relaxed transition-colors duration-200
-                placeholder:text-muted-foreground"
+                placeholder:text-muted-foreground min-h-0"
               placeholder="# Start writing your Markdown here...
 
 Try some examples:
@@ -146,10 +146,10 @@ console.log('Hello, World!');
         {/* Preview Panel */}
         {(activeView === 'preview' || (activeView === 'split' && showPreview)) && (
           <div className={cn(
-            "flex flex-col overflow-hidden",
+            "flex flex-col overflow-hidden min-h-0",
             isMobile ? "w-full" : "w-1/2"
           )}>
-            <div className="flex-1 overflow-auto bg-card/30">
+            <div className="flex-1 overflow-auto bg-card/30 min-h-0">
               <div 
                 className="prose prose-slate dark:prose-invert max-w-none p-6
                   prose-h1:text-3xl prose-h1:font-bold prose-h1:mb-4 prose-h1:text-foreground
