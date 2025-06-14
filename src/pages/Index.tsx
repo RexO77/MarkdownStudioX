@@ -4,6 +4,7 @@ import UnifiedEditor from '@/components/UnifiedEditor';
 import ModernHeader from '@/components/ModernHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocuments } from '@/hooks/useDocuments';
+import { SignInExperienceDialog } from '@/components/SignInExperienceDialog';
 
 const IndexContent = () => {
   const { user, loading } = useAuth();
@@ -24,7 +25,7 @@ const IndexContent = () => {
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
-    
+
     if (user && currentDocument) {
       // Auto-save for authenticated users
       updateDocument(currentDocument.id, currentDocument.title, newContent, false);
@@ -45,14 +46,15 @@ const IndexContent = () => {
     );
   }
 
-  if (!user) {
-    // Redirect to auth for unauthenticated users
-    window.location.href = '/auth';
-    return null;
-  }
+  // Don't redirect guests, just show the dialog instead
+  // if (!user) {
+  //   window.location.href = '/auth';
+  //   return null;
+  // }
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
+      {!user && <SignInExperienceDialog />}
       <ModernHeader content={content} onFormat={setContent} />
       <div className="flex-1 overflow-hidden">
         <UnifiedEditor
