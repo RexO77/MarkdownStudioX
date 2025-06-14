@@ -24,7 +24,9 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
 
   const handleSave = async () => {
     if (!user) {
-      toast.error('Please sign in to save documents');
+      // For guest users, save to localStorage
+      localStorage.setItem('markdown-content', content);
+      toast.success('Content saved locally!');
       return;
     }
 
@@ -53,6 +55,10 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
   };
 
   const handleShowVersions = () => {
+    if (!user) {
+      toast.error('Please sign in to access version history');
+      return;
+    }
     if (!currentDocument) {
       toast.error('Please select a document first');
       return;
@@ -60,6 +66,7 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
     setShowVersions(true);
   };
 
+  // Guest user header - simplified but with all essential tools
   if (!user) {
     return (
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -73,11 +80,46 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
               <p className="text-xs text-muted-foreground">Convert & Format with AI</p>
             </div>
           </div>
+          
+          {/* Guest actions - all essential tools available */}
           <div className="flex items-center gap-2">
+            <ExportMenu content={content} />
+            
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden sm:flex items-center gap-2"
+              onClick={() => window.open('https://github.com/RexO77/MarkdowntoTextconverter', '_blank')}
+            >
+              <Github className="h-4 w-4" />
+              <Star className="h-4 w-4" />
+              <span className="hidden md:inline">Star</span>
+            </Button>
+            
+            <Button 
+              onClick={handleSave} 
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              <span className="hidden sm:inline">Save</span>
+            </Button>
+            
+            <Button
+              onClick={handleFormat}
+              size="sm"
+              className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">Format AI</span>
+            </Button>
+
             <Button
               variant="outline"
               size="sm"
               onClick={() => window.location.href = '/auth'}
+              className="ml-2"
             >
               Sign In
             </Button>
@@ -87,6 +129,7 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
     );
   }
 
+  // Authenticated user header - full functionality
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
