@@ -7,7 +7,7 @@ import VersionHistory from './VersionHistory';
 import { toast } from 'sonner';
 import { saveMarkdown } from '@/utils/markdownUtils';
 import { supabase } from '@/integrations/supabase/client';
-import { Star, Github, Sparkles, Save, FileText, Menu, Clock, LogOut } from 'lucide-react';
+import { Star, Github, Sparkles, Save, FileText, Menu, Clock, LogOut, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocuments } from '@/hooks/useDocuments';
 
@@ -66,7 +66,7 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
     setShowVersions(true);
   };
 
-  // Guest user header - simplified but with all essential tools
+  // Guest user header - simplified without Format AI
   if (!user) {
     return (
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -81,7 +81,7 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
             </div>
           </div>
           
-          {/* Guest actions - all essential tools available */}
+          {/* Guest actions - no Format AI button */}
           <div className="flex items-center gap-2">
             <ExportMenu content={content} />
             
@@ -104,15 +104,6 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
             >
               <Save className="h-4 w-4" />
               <span className="hidden sm:inline">Save</span>
-            </Button>
-            
-            <Button
-              onClick={handleFormat}
-              size="sm"
-              className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">Format AI</span>
             </Button>
 
             <Button
