@@ -1,4 +1,3 @@
-
 import { marked } from 'marked';
 
 // Custom renderer for GitHub-style markdown
@@ -113,7 +112,6 @@ export const convertMarkdownToHtml = (markdown: string): string => {
     gfm: true, // GitHub Flavored Markdown
     breaks: true, // Convert newlines to <br>
     pedantic: false,
-    smartypants: false,
     renderer: renderer
   });
 
