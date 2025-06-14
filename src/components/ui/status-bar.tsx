@@ -74,7 +74,7 @@ export function StatusBar({
           {mode === 'default' ? 'Default' : 
            mode === 'zen' ? 'Zen Mode' : 
            mode === 'distraction-free' ? 'Focus' : 
-           'Presentation'}
+           mode === 'presentation' ? 'Presentation' : 'Default'}
         </Badge>
 
         {/* Document Stats */}
