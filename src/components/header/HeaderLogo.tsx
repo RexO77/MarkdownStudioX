@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { FileText, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 interface HeaderLogoProps {
   currentDocument?: { title: string } | null;
@@ -22,15 +22,17 @@ const HeaderLogo = ({ currentDocument, onMenuClick, showMenu = false }: HeaderLo
           <Menu className="h-4 w-4" />
         </Button>
       )}
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 transform transition-transform hover:scale-105">
-        <FileText className="h-4 w-4 text-primary-foreground" />
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 via-teal-500 to-blue-600 shadow-lg transform transition-transform hover:scale-110 hover:shadow-xl">
+        <div className="text-white font-bold text-lg tracking-tight">
+          X
+        </div>
       </div>
       <div className="hidden sm:block">
-        <h1 className="text-lg font-semibold text-foreground transition-colors">
-          {currentDocument?.title || 'Markdown Studio'}
+        <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 via-teal-400 to-blue-500 bg-clip-text text-transparent">
+          {currentDocument?.title || 'Markdown Studio X'}
         </h1>
-        <p className="text-xs text-muted-foreground">
-          {currentDocument ? 'Document Editor' : 'Convert & Format with AI'}
+        <p className="text-xs text-muted-foreground font-medium">
+          {currentDocument ? 'Professional Document Editor' : 'AI-Powered Markdown SaaS Platform'}
         </p>
       </div>
     </div>
