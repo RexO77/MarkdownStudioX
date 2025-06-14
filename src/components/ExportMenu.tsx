@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Download, FileText, FileDown, Lock } from 'lucide-react';
-import { exportToPdf, exportToWord, exportToText, exportLatestVersion } from '@/utils/exportUtils';
+import { exportToPdf, exportToWord, exportToText, exportToLatex } from '@/utils/exportUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocuments } from '@/hooks/useDocuments';
 import { toast } from 'sonner';
@@ -22,7 +22,7 @@ const ExportMenu = ({ content }: ExportMenuProps) => {
   const { user } = useAuth();
   const { currentDocument, generateTitleFromContent } = useDocuments();
 
-  const handleExport = async (format: 'pdf' | 'word' | 'text' | 'latest') => {
+  const handleExport = async (format: 'pdf' | 'word' | 'text' | 'latex') => {
     try {
       if (format === 'pdf') {
         await exportToPdf(content);
@@ -36,15 +36,15 @@ const ExportMenu = ({ content }: ExportMenuProps) => {
           return;
         }
         await exportToText(content);
-      } else if (format === 'latest') {
+      } else if (format === 'latex') {
         if (!user) {
           toast.error('Sign in required', {
-            description: 'Latest version export is available for signed-in users only'
+            description: 'LaTeX export is available for signed-in users only'
           });
           return;
         }
         const title = currentDocument?.title || generateTitleFromContent(content);
-        await exportLatestVersion(content, title);
+        await exportToLatex(content, title);
       }
       
       toast.success(`Successfully exported to ${format.toUpperCase()}`);
@@ -99,11 +99,11 @@ const ExportMenu = ({ content }: ExportMenuProps) => {
               Export as Text
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={() => handleExport('latest')}
+              onClick={() => handleExport('latex')}
               className="hover:bg-magical-100/10 dark:hover:bg-magical-900/10 transition-colors duration-200 cursor-pointer"
             >
               <FileDown className="mr-2 h-4 w-4" />
-              Export Latest Version
+              Export as LaTeX
             </DropdownMenuItem>
           </>
         ) : (
@@ -121,7 +121,7 @@ const ExportMenu = ({ content }: ExportMenuProps) => {
               className="hover:bg-red-100/10 dark:hover:bg-red-900/10 transition-colors duration-200 cursor-pointer opacity-60"
             >
               <Lock className="mr-2 h-4 w-4" />
-              Export Latest Version
+              Export as LaTeX
               <span className="ml-auto text-xs text-muted-foreground">Sign in</span>
             </DropdownMenuItem>
           </>

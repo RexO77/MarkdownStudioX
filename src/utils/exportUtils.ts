@@ -113,24 +113,67 @@ export const exportToText = async (content: string) => {
   saveAs(blob, 'document.txt');
 };
 
-export const exportLatestVersion = async (content: string, title: string) => {
-  // Create a structured latest version export with metadata
-  const timestamp = new Date().toISOString();
-  const formattedContent = `# ${title}
+export const exportToLatex = async (content: string, title: string) => {
+  // Convert markdown to LaTeX format
+  let latexContent = content
+    // Headers
+    .replace(/^# (.+)$/gm, '\\section{$1}')
+    .replace(/^## (.+)$/gm, '\\subsection{$1}')
+    .replace(/^### (.+)$/gm, '\\subsubsection{$1}')
+    .replace(/^#### (.+)$/gm, '\\paragraph{$1}')
+    .replace(/^##### (.+)$/gm, '\\subparagraph{$1}')
+    
+    // Bold and italic
+    .replace(/\*\*([^*]+)\*\*/g, '\\textbf{$1}')
+    .replace(/\*([^*]+)\*/g, '\\textit{$1}')
+    .replace(/__([^_]+)__/g, '\\textbf{$1}')
+    .replace(/_([^_]+)_/g, '\\textit{$1}')
+    
+    // Code
+    .replace(/`([^`]+)`/g, '\\texttt{$1}')
+    .replace(/```[\s\S]*?```/g, (match) => {
+      const code = match.replace(/```(\w*\n)?|```$/g, '');
+      return `\\begin{verbatim}\n${code}\n\\end{verbatim}`;
+    })
+    
+    // Lists
+    .replace(/^[-*+] (.+)$/gm, '\\item $1')
+    .replace(/^\d+\. (.+)$/gm, '\\item $1')
+    
+    // Links
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '\\href{$2}{$1}')
+    
+    // Blockquotes
+    .replace(/^> (.+)$/gm, '\\begin{quotation}\n$1\n\\end{quotation}')
+    
+    // Escape special LaTeX characters
+    .replace(/([&%$#_{}])/g, '\\$1')
+    .replace(/\\/g, '\\textbackslash{}')
+    .replace(/\^/g, '\\textasciicircum{}')
+    .replace(/~/g, '\\textasciitilde{}');
 
-**Document Information:**
-- Exported: ${new Date(timestamp).toLocaleString()}
-- Version: Latest
-- Format: Markdown
+  // Create complete LaTeX document
+  const fullLatexContent = `\\documentclass{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[T1]{fontenc}
+\\usepackage{hyperref}
+\\usepackage{graphicx}
+\\usepackage{amsmath}
+\\usepackage{amsfonts}
+\\usepackage{amssymb}
 
----
+\\title{${title.replace(/([&%$#_{}])/g, '\\$1')}}
+\\author{Markdown Studio}
+\\date{\\today}
 
-${content}
+\\begin{document}
 
----
+\\maketitle
 
-*This document was exported from Markdown Studio - Latest Version*`;
+${latexContent}
 
-  const blob = new Blob([formattedContent], { type: 'text/markdown;charset=utf-8' });
-  saveAs(blob, `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_latest.md`);
+\\end{document}`;
+
+  const blob = new Blob([fullLatexContent], { type: 'text/plain;charset=utf-8' });
+  saveAs(blob, `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.tex`);
 };
