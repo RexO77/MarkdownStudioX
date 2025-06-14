@@ -26,6 +26,10 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
   const isMobile = useIsMobile();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Calculate accurate word count
+  const wordCount = value.trim() ? value.trim().split(/\s+/).filter(word => word.length > 0).length : 0;
+  const charCount = value.length;
+
   const { smartFormat, autoCorrectSyntax, insertTemplate, isProcessing } = useSmartEditor({
     onContentChange: onChange,
     currentContent: value
@@ -200,12 +204,6 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">
-            {value.split(' ').filter(w => w.length > 0).length} words
-          </Badge>
-          <Badge variant="outline" className="text-xs">
-            {value.length} chars
-          </Badge>
           <Button
             variant="ghost"
             size="sm"

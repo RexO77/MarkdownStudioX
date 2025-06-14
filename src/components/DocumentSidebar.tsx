@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Document, useDocuments } from '@/hooks/useDocuments';
-import { Plus, FileText, Clock, LogOut } from 'lucide-react';
+import { Plus, FileText, Clock, LogOut, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface DocumentSidebarProps {
   isOpen: boolean;
@@ -19,21 +20,70 @@ const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
   const { documents, currentDocument, createDocument, setCurrentDocument, fetchVersions } = useDocuments();
   const [newDocTitle, setNewDocTitle] = useState('');
   const [showNewDocForm, setShowNewDocForm] = useState(false);
+  const [deletingDoc, setDeletingDoc] = useState<string | null>(null);
 
   const handleCreateDocument = async () => {
-    if (!newDocTitle.trim()) return;
+    if (!newDocTitle.trim()) {
+      toast.error('Please enter a document title');
+      return;
+    }
     
-    const doc = await createDocument(newDocTitle);
-    if (doc) {
-      setNewDocTitle('');
-      setShowNewDocForm(false);
+    try {
+      const doc = await createDocument(newDocTitle);
+      if (doc) {
+        setNewDocTitle('');
+        setShowNewDocForm(false);
+        toast.success('Document created successfully!');
+      }
+    } catch (error) {
+      console.error('Create document error:', error);
+      toast.error('Failed to create document');
     }
   };
 
   const handleSelectDocument = async (doc: Document) => {
-    setCurrentDocument(doc);
-    await fetchVersions(doc.id);
-    onClose();
+    try {
+      console.log('Selecting document:', doc);
+      setCurrentDocument(doc);
+      await fetchVersions(doc.id);
+      onClose();
+      toast.success(`Opened "${doc.title}"`);
+    } catch (error) {
+      console.error('Select document error:', error);
+      toast.error('Failed to open document');
+    }
+  };
+
+  const handleDeleteDocument = async (doc: Document, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!confirm(`Are you sure you want to delete "${doc.title}"?`)) {
+      return;
+    }
+
+    setDeletingDoc(doc.id);
+    try {
+      // Mark document as inactive instead of deleting
+      await fetch(`/api/documents/${doc.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: false })
+      });
+      
+      // If this was the current document, clear it
+      if (currentDocument?.id === doc.id) {
+        setCurrentDocument(null);
+      }
+      
+      // Refresh documents list
+      window.location.reload(); // Simple refresh for now
+      toast.success('Document deleted successfully');
+    } catch (error) {
+      console.error('Delete document error:', error);
+      toast.error('Failed to delete document');
+    } finally {
+      setDeletingDoc(null);
+    }
   };
 
   if (!isOpen) return null;
@@ -93,7 +143,7 @@ const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
                 <div
                   key={doc.id}
                   className={cn(
-                    "p-3 rounded-lg border cursor-pointer transition-colors hover:bg-accent",
+                    "p-3 rounded-lg border cursor-pointer transition-colors hover:bg-accent group",
                     currentDocument?.id === doc.id && "bg-accent border-primary"
                   )}
                   onClick={() => handleSelectDocument(doc)}
@@ -106,6 +156,15 @@ const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
                         {new Date(doc.updated_at).toLocaleDateString()}
                       </p>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => handleDeleteDocument(doc, e)}
+                      disabled={deletingDoc === doc.id}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
                   </div>
                 </div>
               ))}
