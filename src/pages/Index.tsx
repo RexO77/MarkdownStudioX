@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import UnifiedEditor from '@/components/UnifiedEditor';
 import ModernHeader from '@/components/ModernHeader';
-import { ThemeProvider } from 'next-themes';
-import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useDocuments } from '@/hooks/useDocuments';
 
 const IndexContent = () => {
@@ -67,13 +66,7 @@ const IndexContent = () => {
 };
 
 const Index = () => {
-  return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <AuthProvider>
-        <IndexContent />
-      </AuthProvider>
-    </ThemeProvider>
-  );
+  return <IndexContent />;
 };
 
 export default Index;
