@@ -21,15 +21,15 @@ const Index = () => {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
         <ModernHeader content={content} onFormat={setContent} />
-        <main className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden">
           <UnifiedEditor
             value={content}
             onChange={handleContentChange}
             className="h-full"
           />
-        </main>
+        </div>
       </div>
     </ThemeProvider>
   );
