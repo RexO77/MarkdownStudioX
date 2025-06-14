@@ -1,10 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { EnhancedEditor } from '@/components/editor/EnhancedEditor';
+import { UnifiedEditor } from '@/components/UnifiedEditor';
 import ModernHeader from '@/components/ModernHeader';
-import { AdaptiveLayout } from '@/components/layout/AdaptiveLayout';
 import { StatusBar } from '@/components/ui/status-bar';
-import { FloatingToolbar } from '@/components/ui/floating-toolbar';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocuments } from '@/hooks/useDocuments';
 import { SignInExperienceDialog } from '@/components/SignInExperienceDialog';
@@ -13,7 +11,6 @@ const IndexContent = () => {
   const { user, loading } = useAuth();
   const { currentDocument, updateDocument, autoCreateDocument } = useDocuments();
   const [content, setContent] = useState('');
-  const [floatingToolbar, setFloatingToolbar] = useState({ visible: false, position: { x: 0, y: 0 } });
   const [documentStats, setDocumentStats] = useState({
     words: 0,
     characters: 0,
@@ -71,11 +68,6 @@ const IndexContent = () => {
     }
   };
 
-  const handleFormat = (format: string) => {
-    console.log('Format:', format);
-    setFloatingToolbar({ visible: false, position: { x: 0, y: 0 } });
-  };
-
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
@@ -96,43 +88,23 @@ const IndexContent = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20 transition-all duration-300">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
       {!user && <SignInExperienceDialog />}
       
-      <AdaptiveLayout
-        sidebar={<div className="p-4">
-          <h3 className="font-semibold mb-2">Files</h3>
-          <p className="text-sm text-muted-foreground">Document library will go here</p>
-        </div>}
-        rightPanel={<div className="p-4">
-          <h3 className="font-semibold mb-2">Outline</h3>
-          <p className="text-sm text-muted-foreground">Document outline will go here</p>
-        </div>}
-      >
-        <div className="flex flex-col h-full">
-          <ModernHeader content={content} onFormat={setContent} />
-          
-          <div className="flex-1 overflow-hidden">
-            <EnhancedEditor
-              value={content}
-              onChange={handleContentChange}
-              className="h-full transition-all duration-200"
-              placeholder="Start writing your markdown... Try pasting URLs, code, or other content for smart formatting!"
-            />
-          </div>
-          
-          <StatusBar 
-            documentStats={documentStats}
-            savingStatus="saved"
-            onlineUsers={user ? 1 : 0}
-          />
-        </div>
-      </AdaptiveLayout>
-
-      <FloatingToolbar
-        visible={floatingToolbar.visible}
-        position={floatingToolbar.position}
-        onFormat={handleFormat}
+      <ModernHeader content={content} onFormat={setContent} />
+      
+      <div className="flex-1">
+        <UnifiedEditor
+          value={content}
+          onChange={handleContentChange}
+          className="h-full"
+        />
+      </div>
+      
+      <StatusBar 
+        documentStats={documentStats}
+        savingStatus="saved"
+        onlineUsers={user ? 1 : 0}
       />
     </div>
   );

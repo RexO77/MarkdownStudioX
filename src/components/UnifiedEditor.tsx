@@ -1,9 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { convertMarkdownToHtml } from '@/utils/markdownUtils';
+import { useSmartEditor } from '@/hooks/useSmartEditor';
+import { useSmartPaste } from '@/components/editor/SmartPasteHandler';
+import { SmartTextSelection } from '@/components/editor/SmartTextSelection';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Moon, Sun, PanelLeftClose, PanelRightClose } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Eye, Edit, Moon, Sun, Sparkles, Wand2, Table, Code, List, Quote } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -16,9 +20,21 @@ interface UnifiedEditorProps {
 const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
   const [preview, setPreview] = useState('');
   const [activeView, setActiveView] = useState<'edit' | 'preview' | 'split'>('split');
-  const [showPreview, setShowPreview] = useState(true);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [selection, setSelection] = useState({ text: '', position: { x: 0, y: 0 }, visible: false });
   const { theme, setTheme } = useTheme();
   const isMobile = useIsMobile();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const { smartFormat, autoCorrectSyntax, insertTemplate, isProcessing } = useSmartEditor({
+    onContentChange: onChange,
+    currentContent: value
+  });
+  
+  const { handleSmartPaste } = useSmartPaste({
+    onContentChange: onChange,
+    currentContent: value
+  });
 
   useEffect(() => {
     const htmlContent = convertMarkdownToHtml(value);
@@ -28,83 +44,197 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
   useEffect(() => {
     if (isMobile) {
       setActiveView('edit');
-      setShowPreview(false);
     } else {
       setActiveView('split');
-      setShowPreview(true);
     }
   }, [isMobile]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const handlePaste = (e: ClipboardEvent) => handleSmartPaste(e);
+    const handleSelection = () => {
+      const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+      
+      if (selectedText.trim().length > 0) {
+        const rect = textarea.getBoundingClientRect();
+        const position = {
+          x: rect.left + (textarea.selectionStart * 8),
+          y: rect.top - 10
+        };
+        
+        setSelection({
+          text: selectedText,
+          position,
+          visible: true
+        });
+      } else {
+        setSelection(prev => ({ ...prev, visible: false }));
+      }
+    };
+
+    textarea.addEventListener('paste', handlePaste);
+    textarea.addEventListener('mouseup', handleSelection);
+    textarea.addEventListener('keyup', handleSelection);
+
+    return () => {
+      textarea.removeEventListener('paste', handlePaste);
+      textarea.removeEventListener('mouseup', handleSelection);
+      textarea.removeEventListener('keyup', handleSelection);
+    };
+  }, [handleSmartPaste]);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  const toggleView = () => {
-    if (isMobile) {
-      setActiveView(activeView === 'edit' ? 'preview' : 'edit');
-    } else {
-      setShowPreview(!showPreview);
+  const handleFormat = (format: string, selectedText?: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = selectedText || textarea.value.substring(start, end);
+    
+    let formattedText = '';
+    
+    switch (format) {
+      case 'bold':
+        formattedText = `**${text}**`;
+        break;
+      case 'italic':
+        formattedText = `*${text}*`;
+        break;
+      case 'code':
+        formattedText = `\`${text}\``;
+        break;
+      case 'link':
+        formattedText = `[${text}](url)`;
+        break;
+      case 'heading':
+        formattedText = `# ${text}`;
+        break;
+      default:
+        formattedText = text;
     }
+
+    const newValue = value.substring(0, start) + formattedText + value.substring(end);
+    onChange(newValue);
+    setSelection(prev => ({ ...prev, visible: false }));
   };
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = autoCorrectSyntax(e.target.value);
+    onChange(newContent);
+  };
+
+  const templates = [
+    { icon: Table, name: 'table', label: 'Table' },
+    { icon: Code, name: 'codeblock', label: 'Code Block' },
+    { icon: List, name: 'checklist', label: 'Checklist' },
+    { icon: Quote, name: 'quote', label: 'Quote' },
+    { icon: Sparkles, name: 'note', label: 'Note' },
+    { icon: Wand2, name: 'mermaid', label: 'Diagram' },
+  ];
 
   return (
     <div className={cn("h-full flex flex-col bg-background", className)}>
-      {/* Mobile Controls */}
-      {isMobile && (
-        <div className="flex-shrink-0 flex justify-between items-center p-3 border-b bg-card/50 backdrop-blur-sm z-10">
-          <div className="flex gap-2">
+      {/* Smart Toolbar */}
+      <div className="flex items-center justify-between p-2 border-b bg-background/80 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={smartFormat}
+            disabled={isProcessing}
+            className="h-8"
+          >
+            <Sparkles className="h-4 w-4 mr-1" />
+            {isProcessing ? 'Formatting...' : 'AI Format'}
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowTemplates(!showTemplates)}
+            className="h-8"
+          >
+            <Wand2 className="h-4 w-4 mr-1" />
+            Templates
+          </Button>
+
+          {/* View Toggle */}
+          {isMobile ? (
+            <div className="flex gap-1">
+              <Button
+                variant={activeView === 'edit' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveView('edit')}
+                className="h-8"
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+              <Button
+                variant={activeView === 'preview' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveView('preview')}
+                className="h-8"
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                Preview
+              </Button>
+            </div>
+          ) : (
             <Button
-              variant={activeView === 'edit' ? 'default' : 'outline'}
+              variant="ghost"
               size="sm"
-              onClick={() => setActiveView('edit')}
-              className="flex items-center gap-2"
+              onClick={() => setActiveView(activeView === 'split' ? 'edit' : 'split')}
+              className="h-8"
             >
-              <Edit className="h-4 w-4" />
-              Edit
+              <Eye className="h-4 w-4 mr-1" />
+              {activeView === 'split' ? 'Hide Preview' : 'Show Preview'}
             </Button>
-            <Button
-              variant={activeView === 'preview' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setActiveView('preview')}
-              className="flex items-center gap-2"
-            >
-              <Eye className="h-4 w-4" />
-              Preview
-            </Button>
-          </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs">
+            {value.split(' ').filter(w => w.length > 0).length} words
+          </Badge>
+          <Badge variant="outline" className="text-xs">
+            {value.length} chars
+          </Badge>
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleTheme}
-            className="p-2"
+            className="h-8 w-8 p-0"
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
         </div>
-      )}
+      </div>
 
-      {/* Desktop Controls */}
-      {!isMobile && (
-        <div className="flex-shrink-0 flex justify-end items-center p-3 border-b bg-card/50 backdrop-blur-sm z-10">
-          <div className="flex gap-2">
+      {/* Template Quick Access */}
+      {showTemplates && (
+        <div className="flex items-center gap-1 p-2 border-b bg-muted/30">
+          {templates.map(({ icon: Icon, name, label }) => (
             <Button
+              key={name}
               variant="ghost"
               size="sm"
-              onClick={toggleView}
-              className="flex items-center gap-2"
+              onClick={() => {
+                insertTemplate(name);
+                setShowTemplates(false);
+              }}
+              className="h-8 text-xs"
             >
-              {showPreview ? <PanelRightClose className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-              {showPreview ? 'Hide Preview' : 'Show Preview'}
+              <Icon className="h-3 w-3 mr-1" />
+              {label}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleTheme}
-              className="p-2"
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-          </div>
+          ))}
         </div>
       )}
 
@@ -114,11 +244,12 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
         {(activeView === 'edit' || activeView === 'split') && (
           <div className={cn(
             "flex flex-col",
-            isMobile ? "w-full" : showPreview ? "w-1/2 border-r" : "w-full"
+            isMobile ? "w-full" : activeView === 'split' ? "w-1/2 border-r" : "w-full"
           )}>
             <textarea
+              ref={textareaRef}
               value={value}
-              onChange={(e) => onChange(e.target.value)}
+              onChange={handleContentChange}
               className="flex-1 w-full p-6 bg-background text-foreground resize-none focus:outline-none
                 font-mono text-sm leading-relaxed transition-colors duration-200
                 placeholder:text-muted-foreground border-0 outline-none"
@@ -138,13 +269,16 @@ console.log('Hello, World!');
 > This is a blockquote
 
 1. Numbered list
-2. Another item"
+2. Another item
+
+Or try pasting URLs, code, or other content for smart formatting!"
+              spellCheck={false}
             />
           </div>
         )}
 
         {/* Preview Panel */}
-        {(activeView === 'preview' || (activeView === 'split' && showPreview)) && (
+        {(activeView === 'preview' || activeView === 'split') && (
           <div className={cn(
             "flex flex-col",
             isMobile ? "w-full" : "w-1/2"
@@ -174,6 +308,14 @@ console.log('Hello, World!');
           </div>
         )}
       </div>
+
+      {/* Smart Text Selection Toolbar */}
+      <SmartTextSelection
+        visible={selection.visible}
+        selectedText={selection.text}
+        position={selection.position}
+        onFormat={handleFormat}
+      />
     </div>
   );
 };
