@@ -30,6 +30,19 @@ export function StatusBar({
     return null;
   }
 
+  const getFocusModeLabel = (mode: string) => {
+    switch (mode) {
+      case 'zen':
+        return 'Zen Mode';
+      case 'distraction-free':
+        return 'Focus';
+      case 'presentation':
+        return 'Presentation';
+      default:
+        return 'Default';
+    }
+  };
+
   return (
     <div className={cn(
       'flex items-center justify-between px-4 py-2 border-t bg-background/80 backdrop-blur-sm text-xs text-muted-foreground',
@@ -71,10 +84,7 @@ export function StatusBar({
       <div className="flex items-center gap-4">
         {/* Focus Mode */}
         <Badge variant="outline" className="text-xs">
-          {mode === 'default' ? 'Default' : 
-           mode === 'zen' ? 'Zen Mode' : 
-           mode === 'distraction-free' ? 'Focus' : 
-           mode === 'presentation' ? 'Presentation' : 'Default'}
+          {getFocusModeLabel(mode)}
         </Badge>
 
         {/* Document Stats */}
