@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { UnifiedEditor } from '@/components/UnifiedEditor';
+import UnifiedEditor from '@/components/UnifiedEditor';
 import ModernHeader from '@/components/ModernHeader';
 import { StatusBar } from '@/components/ui/status-bar';
 import { useAuth } from '@/hooks/useAuth';
