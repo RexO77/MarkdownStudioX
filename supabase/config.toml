@@ -1,4 +1,8 @@
+
 project_id = "kfbsptlqcbfvdxqkqemk"
 
 [functions.format]
+verify_jwt = false
+
+[functions.get-secret]
 verify_jwt = false
