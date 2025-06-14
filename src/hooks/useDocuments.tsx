@@ -29,6 +29,23 @@ export const useDocuments = () => {
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const generateTitleFromContent = (content: string): string => {
+    const firstLine = content.split('\n')[0].trim();
+    if (firstLine && firstLine.length > 0) {
+      // Remove markdown syntax for title
+      const cleanTitle = firstLine.replace(/^#+\s*/, '').replace(/\*\*|\*|`/g, '');
+      return cleanTitle.length > 50 ? cleanTitle.substring(0, 50) + '...' : cleanTitle;
+    }
+    return 'Untitled Document';
+  };
+
+  const autoCreateDocument = async (content: string): Promise<Document | null> => {
+    if (!user || currentDocument) return null;
+
+    const title = generateTitleFromContent(content);
+    return await createDocument(title, content);
+  };
+
   const fetchDocuments = async () => {
     if (!user) return;
     
@@ -177,6 +194,8 @@ export const useDocuments = () => {
     createVersion,
     fetchVersions,
     restoreVersion,
-    fetchDocuments
+    fetchDocuments,
+    autoCreateDocument,
+    generateTitleFromContent
   };
 };

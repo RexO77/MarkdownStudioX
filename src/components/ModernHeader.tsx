@@ -18,9 +18,20 @@ interface ModernHeaderProps {
 
 const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
   const { user, signOut } = useAuth();
-  const { currentDocument, updateDocument, createVersion, versions, restoreVersion } = useDocuments();
+  const { 
+    currentDocument, 
+    updateDocument, 
+    createVersion, 
+    versions, 
+    restoreVersion, 
+    autoCreateDocument,
+    generateTitleFromContent,
+    fetchVersions 
+  } = useDocuments();
   const [showDocuments, setShowDocuments] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   const handleSave = async () => {
     if (!user) {
@@ -30,11 +41,29 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
       return;
     }
 
-    if (currentDocument) {
-      await updateDocument(currentDocument.id, currentDocument.title, content, true);
+    setIsSaving(true);
+    try {
+      let documentToSave = currentDocument;
+
+      // Auto-create document if none exists
+      if (!documentToSave) {
+        const title = generateTitleFromContent(content);
+        documentToSave = await autoCreateDocument(content);
+        if (!documentToSave) {
+          toast.error('Failed to create document');
+          return;
+        }
+      } else {
+        // Update existing document
+        await updateDocument(documentToSave.id, documentToSave.title, content, true);
+      }
+
       toast.success('Document saved with new version!');
-    } else {
-      toast.error('No document selected');
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save document');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -54,16 +83,35 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
     }
   };
 
-  const handleShowVersions = () => {
+  const handleShowVersions = async () => {
     if (!user) {
       toast.error('Please sign in to access version history');
       return;
     }
-    if (!currentDocument) {
-      toast.error('Please select a document first');
-      return;
+
+    setIsLoadingHistory(true);
+    try {
+      let documentToShow = currentDocument;
+
+      // Auto-create document if none exists
+      if (!documentToShow) {
+        const title = generateTitleFromContent(content);
+        documentToShow = await autoCreateDocument(content);
+        if (!documentToShow) {
+          toast.error('Failed to create document');
+          return;
+        }
+      }
+
+      // Fetch versions for the document
+      await fetchVersions(documentToShow.id);
+      setShowVersions(true);
+    } catch (error) {
+      console.error('History error:', error);
+      toast.error('Failed to load version history');
+    } finally {
+      setIsLoadingHistory(false);
     }
-    setShowVersions(true);
   };
 
   // Guest user header - simplified without Format AI
@@ -166,20 +214,26 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
               variant="outline"
               size="sm"
               onClick={handleShowVersions}
+              disabled={isLoadingHistory}
               className="flex items-center gap-2"
             >
               <Clock className="h-4 w-4" />
-              <span className="hidden sm:inline">History</span>
+              <span className="hidden sm:inline">
+                {isLoadingHistory ? 'Loading...' : 'History'}
+              </span>
             </Button>
             
             <Button 
               onClick={handleSave} 
+              disabled={isSaving}
               variant="outline"
               size="sm"
               className="flex items-center gap-2"
             >
               <Save className="h-4 w-4" />
-              <span className="hidden sm:inline">Save</span>
+              <span className="hidden sm:inline">
+                {isSaving ? 'Saving...' : 'Save'}
+              </span>
             </Button>
             
             <Button
