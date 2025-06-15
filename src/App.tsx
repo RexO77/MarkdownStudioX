@@ -1,4 +1,5 @@
 
+import { createRoot } from 'react-dom/client'
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +9,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import { AuthProvider } from "@/hooks/useAuth";
 import { FocusModeProvider } from "@/components/layout/FocusMode";
 import { CommandPalette } from "@/components/ui/command-palette";
+import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 
@@ -22,6 +24,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <CommandPalette />
+            <Analytics />
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
