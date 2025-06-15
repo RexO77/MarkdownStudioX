@@ -13,21 +13,20 @@ import AuthenticatedHeaderActions from './header/AuthenticatedHeaderActions';
 interface ModernHeaderProps {
   content: string;
   onFormat: (formattedContent: string) => void;
+  onNewDocument?: () => void;
 }
 
-const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
+const ModernHeader = ({ content, onFormat, onNewDocument }: ModernHeaderProps) => {
   const { user, signOut } = useAuth();
   const { 
     currentDocument, 
-    updateDocument, 
-    createVersion, 
     versions, 
     restoreVersion, 
-    autoCreateDocument,
-    generateTitleFromContent,
+    saveCurrentDocument,
     fetchVersions,
     saving
   } = useDocuments();
+  
   const [showDocuments, setShowDocuments] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
   const [isFormatting, setIsFormatting] = useState(false);
@@ -43,35 +42,20 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
     }
 
     try {
-      let documentToSave = currentDocument;
-
-      if (!documentToSave) {
-        const title = generateTitleFromContent(content);
-        documentToSave = await autoCreateDocument(content);
-        if (!documentToSave) {
-          toast.error('Failed to create document');
-          return;
-        }
-      } else {
-        await updateDocument(documentToSave.id, documentToSave.title, content, true);
-      }
-
+      const title = currentDocument?.title || 'Untitled Document';
+      await saveCurrentDocument(title, content, true);
       toast.success('Document saved successfully!', {
         description: 'New version created'
       });
     } catch (error) {
       console.error('Save error:', error);
-      toast.error('Failed to save document', {
-        description: 'Please try again'
-      });
+      toast.error('Failed to save document');
     }
   };
 
   const handleFormat = async () => {
     if (!content.trim()) {
-      toast.error('No content to format', {
-        description: 'Please add some content first'
-      });
+      toast.error('No content to format');
       return;
     }
 
@@ -83,33 +67,17 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
 
       if (error) {
         console.error('Format error:', error);
-        if (error.message?.includes('API key') || error.message?.includes('401')) {
-          toast.error('AI formatting unavailable', {
-            description: 'API key configuration needed'
-          });
-        } else {
-          toast.error('Failed to format content', {
-            description: 'Please try again later'
-          });
-        }
+        toast.error('AI formatting failed');
         return;
       }
 
       if (data?.formattedContent) {
         onFormat(data.formattedContent);
-        toast.success('Content formatted successfully!', {
-          description: 'AI enhanced your markdown'
-        });
-      } else {
-        toast.error('No formatted content received', {
-          description: 'Please try again'
-        });
+        toast.success('Content formatted successfully!');
       }
     } catch (error) {
       console.error('Format error:', error);
-      toast.error('AI formatting failed', {
-        description: 'Service temporarily unavailable'
-      });
+      toast.error('AI formatting failed');
     } finally {
       setIsFormatting(false);
     }
@@ -117,27 +85,18 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
 
   const handleShowVersions = async () => {
     if (!user) {
-      toast.error('Sign in required', {
-        description: 'Version history is available for signed-in users'
-      });
+      toast.error('Sign in to view version history');
+      return;
+    }
+
+    if (!currentDocument) {
+      toast.error('No document selected');
       return;
     }
 
     setIsLoadingHistory(true);
     try {
-      let documentToShow = currentDocument;
-
-      if (!documentToShow) {
-        const title = generateTitleFromContent(content);
-        documentToShow = await autoCreateDocument(content);
-        if (!documentToShow) {
-          toast.error('Failed to create document');
-          return;
-        }
-      }
-
-      console.log('Loading versions for document:', documentToShow.id);
-      await fetchVersions(documentToShow.id);
+      await fetchVersions(currentDocument.id);
       setShowVersions(true);
     } catch (error) {
       console.error('History error:', error);
@@ -149,12 +108,13 @@ const ModernHeader = ({ content, onFormat }: ModernHeaderProps) => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-200">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-16 items-center justify-between px-4 md:px-6">
           <HeaderLogo 
             currentDocument={currentDocument}
             onMenuClick={user ? () => setShowDocuments(true) : undefined}
             showMenu={!!user}
+            onNewDocument={onNewDocument}
           />
           
           {user ? (

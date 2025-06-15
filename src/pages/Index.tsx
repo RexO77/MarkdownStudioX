@@ -9,37 +9,48 @@ import { SignInExperienceDialog } from '@/components/SignInExperienceDialog';
 
 const IndexContent = () => {
   const { user, loading } = useAuth();
-  const { currentDocument, updateDocument, autoCreateDocument } = useDocuments();
+  const { 
+    currentDocument, 
+    saveCurrentDocument, 
+    autoCreateDocument,
+    clearCurrentDocument 
+  } = useDocuments();
+  
   const [content, setContent] = useState('');
   const [documentStats, setDocumentStats] = useState({
     words: 0,
     characters: 0,
     readingTime: 0
   });
-  const autoCreateTriggered = useRef(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedContent = useRef<string>('');
+  const isLoadingDocument = useRef(false);
 
   // Load content when current document changes
   useEffect(() => {
-    if (currentDocument) {
+    if (currentDocument && !isLoadingDocument.current) {
+      isLoadingDocument.current = true;
       console.log('Loading content from current document:', currentDocument.title);
-      setContent(currentDocument.content || '');
-      lastSavedContent.current = currentDocument.content || '';
-      autoCreateTriggered.current = false;
-    } else if (!user) {
-      const savedContent = localStorage.getItem('markdown-content');
-      if (savedContent) {
-        console.log('Loading content from localStorage');
-        setContent(savedContent);
-        lastSavedContent.current = savedContent;
-      }
-      autoCreateTriggered.current = false;
-    } else {
+      console.log('Document content:', currentDocument.content || 'empty');
+      
+      const docContent = currentDocument.content || '';
+      setContent(docContent);
+      lastSavedContent.current = docContent;
+      
+      setTimeout(() => {
+        isLoadingDocument.current = false;
+      }, 100);
+    } else if (!user && !currentDocument) {
+      // Load from localStorage for guests
+      const savedContent = localStorage.getItem('markdown-content') || '';
+      console.log('Loading content from localStorage:', savedContent.length);
+      setContent(savedContent);
+      lastSavedContent.current = savedContent;
+    } else if (user && !currentDocument) {
+      // Clear content when logged in but no document selected
       console.log('No current document, clearing content');
       setContent('');
       lastSavedContent.current = '';
-      autoCreateTriggered.current = false;
     }
   }, [currentDocument, user]);
 
@@ -47,43 +58,55 @@ const IndexContent = () => {
   useEffect(() => {
     const words = content.trim() ? content.trim().split(/\s+/).length : 0;
     const characters = content.length;
-    const readingTime = Math.max(1, Math.ceil(words / 200)); // 200 words per minute
+    const readingTime = Math.max(1, Math.ceil(words / 200));
 
     setDocumentStats({ words, characters, readingTime });
   }, [content]);
 
   const handleContentChange = async (newContent: string) => {
+    if (isLoadingDocument.current) {
+      console.log('Skipping content change - document is loading');
+      return;
+    }
+
     console.log('Content changed, length:', newContent.length);
     setContent(newContent);
 
+    // Clear existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    if (user && currentDocument) {
-      // Only save if content actually changed
-      if (newContent !== lastSavedContent.current) {
-        console.log('Auto-saving current document after 1 second delay');
-        saveTimeoutRef.current = setTimeout(async () => {
-          await updateDocument(currentDocument.id, currentDocument.title, newContent, false);
-          lastSavedContent.current = newContent;
-        }, 1000);
-      }
-    } else if (user && !currentDocument && !autoCreateTriggered.current && newContent.trim().length > 10) {
-      console.log('Auto-creating new document');
-      autoCreateTriggered.current = true;
-      try {
-        const newDoc = await autoCreateDocument(newContent);
-        if (newDoc) {
-          lastSavedContent.current = newContent;
-        }
-      } catch (error) {
-        console.error('Auto-create document failed:', error);
-        autoCreateTriggered.current = false;
-      }
-    } else if (!user) {
+    // For guests, save to localStorage immediately
+    if (!user) {
       localStorage.setItem('markdown-content', newContent);
+      return;
     }
+
+    // For authenticated users, auto-save after delay
+    if (newContent !== lastSavedContent.current) {
+      console.log('Scheduling auto-save in 2 seconds');
+      saveTimeoutRef.current = setTimeout(async () => {
+        try {
+          if (currentDocument) {
+            await saveCurrentDocument(currentDocument.title, newContent, false);
+          } else if (newContent.trim().length > 10) {
+            console.log('Auto-creating document for new content');
+            await autoCreateDocument(newContent);
+          }
+          lastSavedContent.current = newContent;
+        } catch (error) {
+          console.error('Auto-save failed:', error);
+        }
+      }, 2000);
+    }
+  };
+
+  // Create new document
+  const handleNewDocument = () => {
+    clearCurrentDocument();
+    setContent('');
+    lastSavedContent.current = '';
   };
 
   useEffect(() => {
@@ -109,7 +132,11 @@ const IndexContent = () => {
     <div className="h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
       {!user && <SignInExperienceDialog />}
       
-      <ModernHeader content={content} onFormat={setContent} />
+      <ModernHeader 
+        content={content} 
+        onFormat={setContent}
+        onNewDocument={handleNewDocument}
+      />
       
       <div className="flex-1">
         <UnifiedEditor

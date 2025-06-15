@@ -3,12 +3,12 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { Document, useDocuments } from '@/hooks/useDocuments';
-import { Plus, FileText, Clock, LogOut, Trash2 } from 'lucide-react';
+import { Plus, FileText, LogOut, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DocumentSidebarProps {
   isOpen: boolean;
@@ -17,7 +17,14 @@ interface DocumentSidebarProps {
 
 const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
   const { user, signOut } = useAuth();
-  const { documents, currentDocument, createDocument, setCurrentDocument, fetchVersions } = useDocuments();
+  const { 
+    documents, 
+    currentDocument, 
+    createDocument, 
+    setCurrentDocument, 
+    fetchDocuments 
+  } = useDocuments();
+  
   const [newDocTitle, setNewDocTitle] = useState('');
   const [showNewDocForm, setShowNewDocForm] = useState(false);
   const [deletingDoc, setDeletingDoc] = useState<string | null>(null);
@@ -31,8 +38,10 @@ const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
     try {
       const doc = await createDocument(newDocTitle);
       if (doc) {
+        await setCurrentDocument(doc);
         setNewDocTitle('');
         setShowNewDocForm(false);
+        onClose();
         toast.success('Document created successfully!');
       }
     } catch (error) {
@@ -43,9 +52,8 @@ const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
 
   const handleSelectDocument = async (doc: Document) => {
     try {
-      console.log('Selecting document:', doc);
-      setCurrentDocument(doc);
-      await fetchVersions(doc.id);
+      console.log('Selecting document from sidebar:', doc.title, 'content length:', doc.content?.length || 0);
+      await setCurrentDocument(doc);
       onClose();
       toast.success(`Opened "${doc.title}"`);
     } catch (error) {
@@ -63,20 +71,22 @@ const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
 
     setDeletingDoc(doc.id);
     try {
-      // Mark document as inactive instead of deleting
-      await fetch(`/api/documents/${doc.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: false })
-      });
+      const { error } = await supabase
+        .from('documents')
+        .update({ is_active: false })
+        .eq('id', doc.id)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+      
+      // Refresh documents list
+      await fetchDocuments();
       
       // If this was the current document, clear it
       if (currentDocument?.id === doc.id) {
         setCurrentDocument(null);
       }
       
-      // Refresh documents list
-      window.location.reload(); // Simple refresh for now
       toast.success('Document deleted successfully');
     } catch (error) {
       console.error('Delete document error:', error);
@@ -90,16 +100,13 @@ const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
 
   return (
     <>
-      {/* Backdrop overlay */}
       <div 
         className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
       
-      {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 w-80 bg-background border-r shadow-lg transform transition-transform duration-200 ease-in-out">
+      <div className="fixed inset-y-0 left-0 z-50 w-80 bg-background border-r shadow-lg">
         <div className="flex flex-col h-full">
-          {/* Header */}
           <div className="p-4 border-b">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Documents</h2>
@@ -136,7 +143,6 @@ const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
             )}
           </div>
 
-          {/* Documents List */}
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-2">
               {documents.map((doc) => (
@@ -154,6 +160,9 @@ const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
                       <p className="font-medium truncate">{doc.title}</p>
                       <p className="text-sm text-muted-foreground">
                         {new Date(doc.updated_at).toLocaleDateString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {doc.content?.length || 0} characters
                       </p>
                     </div>
                     <Button
@@ -179,7 +188,6 @@ const DocumentSidebar = ({ isOpen, onClose }: DocumentSidebarProps) => {
             </div>
           </ScrollArea>
 
-          {/* User Info & Logout */}
           <div className="p-4 border-t">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">

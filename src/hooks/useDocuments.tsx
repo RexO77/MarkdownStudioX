@@ -17,7 +17,8 @@ export const useDocuments = () => {
     setDocuments,
     fetchDocuments,
     createDocument,
-    updateDocument
+    updateDocument,
+    clearCurrentDocument
   } = useDocumentOperations();
 
   const {
@@ -36,11 +37,11 @@ export const useDocuments = () => {
       console.log('Auto-creating document with title:', title);
       const result = await createDocument(title, content);
       if (result) {
-        // Set as current document immediately
-        await setCurrentDocument(result);
-        // Create initial version
+        // Set as current document and create initial version
+        const selectedDoc = await setCurrentDocument(result);
         await createVersion(result.id, content, title, 'Initial version');
         toast.success('Document created automatically!');
+        return selectedDoc;
       }
       return result;
     } catch (error) {
@@ -51,11 +52,13 @@ export const useDocuments = () => {
   };
 
   const updateDocumentWithVersion = async (id: string, title: string, content: string, createNewVersion: boolean = false) => {
-    await updateDocument(id, title, content, createNewVersion);
+    const success = await updateDocument(id, title, content);
     
-    if (createNewVersion) {
+    if (success && createNewVersion) {
       await createVersion(id, content, title, 'Manual save');
     }
+    
+    return success;
   };
 
   const restoreVersion = async (version: any) => {
@@ -64,22 +67,46 @@ export const useDocuments = () => {
 
   const selectDocument = async (document: any) => {
     console.log('Document selected:', document.title);
-    await setCurrentDocument(document);
-    // Automatically fetch versions when a document is selected
+    const selectedDoc = await setCurrentDocument(document);
+    
+    // Fetch versions for the selected document
     if (document?.id) {
       await fetchVersions(document.id);
     }
+    
+    return selectedDoc;
   };
 
+  const saveCurrentDocument = async (title: string, content: string, createNewVersion: boolean = false) => {
+    if (!user) {
+      localStorage.setItem('markdown-content', content);
+      toast.success('Content saved locally!');
+      return null;
+    }
+
+    if (!currentDocument) {
+      // Create new document
+      const newDoc = await autoCreateDocument(content);
+      return newDoc;
+    } else {
+      // Update existing document
+      const success = await updateDocumentWithVersion(currentDocument.id, title, content, createNewVersion);
+      if (success && createNewVersion) {
+        toast.success('Document saved with new version!');
+      }
+      return currentDocument;
+    }
+  };
+
+  // Initialize documents when user changes
   useEffect(() => {
     if (user) {
       console.log('User authenticated, fetching documents');
       fetchDocuments();
     } else {
-      // Clear state when user logs out
       console.log('User not authenticated, clearing state');
       setDocuments([]);
-      setCurrentDocument(null);
+      clearCurrentDocument();
       setVersions([]);
     }
   }, [user]);
@@ -108,7 +135,9 @@ export const useDocuments = () => {
     restoreVersion,
     fetchDocuments,
     autoCreateDocument,
-    generateTitleFromContent
+    generateTitleFromContent,
+    saveCurrentDocument,
+    clearCurrentDocument
   };
 };
 

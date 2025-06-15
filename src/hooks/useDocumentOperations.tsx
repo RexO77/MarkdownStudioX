@@ -70,8 +70,9 @@ export const useDocumentOperations = () => {
       }
       
       console.log('Created document:', data.id);
-      // Refresh documents list
-      await fetchDocuments();
+      
+      // Add to local state immediately
+      setDocuments(prev => [data, ...prev]);
       
       return data;
     } catch (error) {
@@ -83,15 +84,15 @@ export const useDocumentOperations = () => {
     }
   };
 
-  const updateDocument = async (id: string, title: string, content: string, createNewVersion: boolean = false) => {
+  const updateDocument = async (id: string, title: string, content: string) => {
     if (!user) {
       console.log('No user found for updating document');
-      return;
+      return false;
     }
 
     setSaving(true);
     try {
-      console.log('Updating document:', { id, title, createNewVersion });
+      console.log('Updating document:', { id, title, contentLength: content.length });
       const { error } = await supabase
         .from('documents')
         .update({ 
@@ -109,7 +110,7 @@ export const useDocumentOperations = () => {
 
       console.log('Document updated successfully');
       
-      // Update current document state immediately
+      // Update current document if it's the one being updated
       if (currentDocument?.id === id) {
         const updatedDoc = { 
           ...currentDocument, 
@@ -119,18 +120,17 @@ export const useDocumentOperations = () => {
         };
         setCurrentDocument(updatedDoc);
         
-        // Update the documents list
+        // Update in documents list
         setDocuments(prev => prev.map(doc => 
           doc.id === id ? updatedDoc : doc
         ));
       }
 
-      if (createNewVersion) {
-        toast.success('Document saved with new version!');
-      }
+      return true;
     } catch (error) {
       console.error('Error updating document:', error);
       toast.error('Failed to update document');
+      return false;
     } finally {
       setSaving(false);
     }
@@ -139,7 +139,11 @@ export const useDocumentOperations = () => {
   const selectDocument = async (document: Document) => {
     console.log('Selecting document:', document.id, document.title);
     setCurrentDocument(document);
-    toast.success(`Opened "${document.title}"`);
+    return document;
+  };
+
+  const clearCurrentDocument = () => {
+    setCurrentDocument(null);
   };
 
   return {
@@ -151,6 +155,7 @@ export const useDocumentOperations = () => {
     setDocuments,
     fetchDocuments,
     createDocument,
-    updateDocument
+    updateDocument,
+    clearCurrentDocument
   };
 };
