@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Moon, Sun, Sparkles, Wand2 } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/components/ui/theme-provider';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EditorToolbarProps {

@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { convertMarkdownToHtml } from '@/utils/markdownUtils';
 import { Moon, Sun } from 'lucide-react';
 import { Button } from './ui/button';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/components/ui/theme-provider';
 
 interface PreviewProps {
   content: string;
