@@ -21,15 +21,18 @@ const IndexContent = () => {
 
   useEffect(() => {
     if (currentDocument) {
+      console.log('Setting content from current document:', currentDocument.title);
       setContent(currentDocument.content);
       autoCreateTriggered.current = false;
     } else if (!user) {
       const savedContent = localStorage.getItem('markdown-content');
       if (savedContent) {
+        console.log('Loading content from localStorage');
         setContent(savedContent);
       }
       autoCreateTriggered.current = false;
     } else {
+      console.log('No current document, clearing content');
       setContent('');
       autoCreateTriggered.current = false;
     }
@@ -45,6 +48,7 @@ const IndexContent = () => {
   }, [content]);
 
   const handleContentChange = async (newContent: string) => {
+    console.log('Content changed, length:', newContent.length);
     setContent(newContent);
 
     if (saveTimeoutRef.current) {
@@ -52,10 +56,12 @@ const IndexContent = () => {
     }
 
     if (user && currentDocument) {
+      console.log('Auto-saving current document after 1 second delay');
       saveTimeoutRef.current = setTimeout(() => {
         updateDocument(currentDocument.id, currentDocument.title, newContent, false);
       }, 1000);
     } else if (user && !currentDocument && !autoCreateTriggered.current && newContent.trim().length > 10) {
+      console.log('Auto-creating new document');
       autoCreateTriggered.current = true;
       try {
         await autoCreateDocument(newContent);

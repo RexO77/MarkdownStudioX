@@ -13,10 +13,14 @@ export const useDocumentOperations = () => {
   const [saving, setSaving] = useState(false);
 
   const fetchDocuments = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found for fetching documents');
+      return;
+    }
     
     setLoading(true);
     try {
+      console.log('Fetching documents for user:', user.id);
       const { data, error } = await supabase
         .from('documents')
         .select('*')
@@ -24,10 +28,15 @@ export const useDocumentOperations = () => {
         .eq('is_active', true)
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching documents:', error);
+        throw error;
+      }
+      
+      console.log('Fetched documents:', data);
       setDocuments(data || []);
     } catch (error) {
-      console.error('Error fetching documents:', error);
+      console.error('Error in fetchDocuments:', error);
       toast.error('Failed to load documents');
     } finally {
       setLoading(false);
@@ -35,10 +44,14 @@ export const useDocumentOperations = () => {
   };
 
   const createDocument = async (title: string = 'Untitled Document', content: string = '') => {
-    if (!user) return null;
+    if (!user) {
+      console.log('No user found for creating document');
+      return null;
+    }
 
     setSaving(true);
     try {
+      console.log('Creating document:', { title, content: content.substring(0, 50) + '...' });
       const { data, error } = await supabase
         .from('documents')
         .insert({
@@ -49,8 +62,12 @@ export const useDocumentOperations = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating document:', error);
+        throw error;
+      }
       
+      console.log('Created document:', data);
       await fetchDocuments();
       setCurrentDocument(data);
       
@@ -65,26 +82,45 @@ export const useDocumentOperations = () => {
   };
 
   const updateDocument = async (id: string, title: string, content: string, createNewVersion: boolean = false) => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found for updating document');
+      return;
+    }
 
     setSaving(true);
     try {
+      console.log('Updating document:', { id, title, createNewVersion });
       const { error } = await supabase
         .from('documents')
-        .update({ title, content, updated_at: new Date().toISOString() })
+        .update({ 
+          title, 
+          content, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', id)
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating document:', error);
+        throw error;
+      }
 
       if (createNewVersion) {
         toast.success('Document saved with new version!');
       }
 
-      await fetchDocuments();
-      
+      // Update the current document state immediately
       if (currentDocument?.id === id) {
-        setCurrentDocument(prev => prev ? { ...prev, title, content } : null);
+        const updatedDoc = { ...currentDocument, title, content, updated_at: new Date().toISOString() };
+        setCurrentDocument(updatedDoc);
+        
+        // Update the documents list
+        setDocuments(prev => prev.map(doc => 
+          doc.id === id ? updatedDoc : doc
+        ));
+      } else {
+        // Refresh documents if we're not updating the current one
+        await fetchDocuments();
       }
     } catch (error) {
       console.error('Error updating document:', error);
@@ -94,12 +130,18 @@ export const useDocumentOperations = () => {
     }
   };
 
+  const selectDocument = async (document: Document) => {
+    console.log('Selecting document:', document);
+    setCurrentDocument(document);
+    toast.success(`Opened "${document.title}"`);
+  };
+
   return {
     documents,
     currentDocument,
     loading,
     saving,
-    setCurrentDocument,
+    setCurrentDocument: selectDocument,
     setDocuments,
     fetchDocuments,
     createDocument,

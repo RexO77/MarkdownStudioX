@@ -33,6 +33,7 @@ export const useDocuments = () => {
 
     const title = generateTitleFromContent(content);
     try {
+      console.log('Auto-creating document with title:', title);
       const result = await createDocument(title, content);
       if (result) {
         // Create initial version
@@ -59,16 +60,37 @@ export const useDocuments = () => {
     await restoreVersionBase(version, currentDocument, updateDocumentWithVersion);
   };
 
+  const selectDocument = async (document: any) => {
+    console.log('Document selected:', document.title);
+    await setCurrentDocument(document);
+    // Automatically fetch versions when a document is selected
+    if (document?.id) {
+      await fetchVersions(document.id);
+    }
+  };
+
   useEffect(() => {
     if (user) {
+      console.log('User authenticated, fetching documents');
       fetchDocuments();
     } else {
       // Clear state when user logs out
+      console.log('User not authenticated, clearing state');
       setDocuments([]);
       setCurrentDocument(null);
       setVersions([]);
     }
   }, [user]);
+
+  // Fetch versions when current document changes
+  useEffect(() => {
+    if (currentDocument?.id && user) {
+      console.log('Current document changed, fetching versions for:', currentDocument.title);
+      fetchVersions(currentDocument.id);
+    } else {
+      setVersions([]);
+    }
+  }, [currentDocument?.id, user]);
 
   return {
     documents,
@@ -76,7 +98,7 @@ export const useDocuments = () => {
     versions,
     loading,
     saving,
-    setCurrentDocument,
+    setCurrentDocument: selectDocument,
     createDocument,
     updateDocument: updateDocumentWithVersion,
     createVersion,

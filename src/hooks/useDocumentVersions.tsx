@@ -10,9 +10,13 @@ export const useDocumentVersions = () => {
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
 
   const createVersion = async (documentId: string, content: string, title: string, changeSummary?: string) => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found for creating version');
+      return;
+    }
 
     try {
+      console.log('Creating version for document:', documentId);
       const { error } = await supabase.rpc('create_document_version', {
         p_document_id: documentId,
         p_content: content,
@@ -27,6 +31,7 @@ export const useDocumentVersions = () => {
       
       // Refresh versions after creating new one
       await fetchVersions(documentId);
+      console.log('Version created successfully');
     } catch (error) {
       console.error('Error creating version:', error);
       toast.error('Failed to create version');
@@ -35,7 +40,8 @@ export const useDocumentVersions = () => {
 
   const fetchVersions = async (documentId: string) => {
     if (!user || !documentId) {
-      console.log('Cannot fetch versions: no user or documentId');
+      console.log('Cannot fetch versions: no user or documentId', { user: !!user, documentId });
+      setVersions([]);
       return;
     }
 
@@ -54,11 +60,12 @@ export const useDocumentVersions = () => {
         throw error;
       }
       
-      console.log('Fetched versions:', data);
+      console.log('Fetched versions:', data?.length || 0, 'versions');
       setVersions(data || []);
     } catch (error) {
       console.error('Error fetching versions:', error);
       toast.error('Failed to load version history');
+      setVersions([]);
     }
   };
 
@@ -69,6 +76,7 @@ export const useDocumentVersions = () => {
     }
 
     try {
+      console.log('Restoring version:', version.version_number);
       await updateDocument(currentDocument.id, version.title, version.content, true);
       toast.success(`Restored to version ${version.version_number}`);
     } catch (error) {
