@@ -100,18 +100,22 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
 
       {/* Template Panel - Only for authenticated users */}
       {user && showTemplates && (
-        <TemplatePanel onInsert={(template) => {
-          const textarea = textareaRef.current;
-          if (textarea) {
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const newValue = value.substring(0, start) + template + value.substring(end);
-            onChange(newValue);
-          } else {
-            onChange(value + '\n\n' + template);
-          }
-          setShowTemplates(false);
-        }} />
+        <TemplatePanel 
+          visible={showTemplates}
+          onInsertTemplate={(template) => {
+            const textarea = textareaRef.current;
+            if (textarea) {
+              const start = textarea.selectionStart;
+              const end = textarea.selectionEnd;
+              const newValue = value.substring(0, start) + template + value.substring(end);
+              onChange(newValue);
+            } else {
+              onChange(value + '\n\n' + template);
+            }
+            setShowTemplates(false);
+          }}
+          onClose={() => setShowTemplates(false)}
+        />
       )}
 
       <div className="flex-1 flex overflow-hidden">
@@ -133,7 +137,9 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
                     <AIFeatureGate 
                       feature="AI Format & Enhancement"
                       description="Get intelligent formatting, grammar improvements, and content enhancement powered by AI."
-                    />
+                    >
+                      <div />
+                    </AIFeatureGate>
                   </div>
                 </div>
               </div>
@@ -159,7 +165,9 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
             <AIFeatureGate 
               feature="Smart Templates & AI Tools"
               description="Access pre-built templates, smart text selection, and AI-powered content generation."
-            />
+            >
+              <div />
+            </AIFeatureGate>
           </div>
         </div>
       )}
