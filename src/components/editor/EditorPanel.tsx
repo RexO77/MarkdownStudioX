@@ -34,7 +34,11 @@ export const EditorPanel = ({ value, onChange, onPaste, onSelectionChange, class
           visible: true
         });
       } else {
-        onSelectionChange(prev => ({ ...prev, visible: false }));
+        onSelectionChange({
+          text: '',
+          position: { x: 0, y: 0 },
+          visible: false
+        });
       }
     };
 
