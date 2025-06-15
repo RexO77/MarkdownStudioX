@@ -36,6 +36,8 @@ export const useDocuments = () => {
       console.log('Auto-creating document with title:', title);
       const result = await createDocument(title, content);
       if (result) {
+        // Set as current document immediately
+        await setCurrentDocument(result);
         // Create initial version
         await createVersion(result.id, content, title, 'Initial version');
         toast.success('Document created automatically!');

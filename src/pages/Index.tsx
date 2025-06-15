@@ -18,22 +18,27 @@ const IndexContent = () => {
   });
   const autoCreateTriggered = useRef(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastSavedContent = useRef<string>('');
 
+  // Load content when current document changes
   useEffect(() => {
     if (currentDocument) {
-      console.log('Setting content from current document:', currentDocument.title);
-      setContent(currentDocument.content);
+      console.log('Loading content from current document:', currentDocument.title);
+      setContent(currentDocument.content || '');
+      lastSavedContent.current = currentDocument.content || '';
       autoCreateTriggered.current = false;
     } else if (!user) {
       const savedContent = localStorage.getItem('markdown-content');
       if (savedContent) {
         console.log('Loading content from localStorage');
         setContent(savedContent);
+        lastSavedContent.current = savedContent;
       }
       autoCreateTriggered.current = false;
     } else {
       console.log('No current document, clearing content');
       setContent('');
+      lastSavedContent.current = '';
       autoCreateTriggered.current = false;
     }
   }, [currentDocument, user]);
@@ -56,15 +61,22 @@ const IndexContent = () => {
     }
 
     if (user && currentDocument) {
-      console.log('Auto-saving current document after 1 second delay');
-      saveTimeoutRef.current = setTimeout(() => {
-        updateDocument(currentDocument.id, currentDocument.title, newContent, false);
-      }, 1000);
+      // Only save if content actually changed
+      if (newContent !== lastSavedContent.current) {
+        console.log('Auto-saving current document after 1 second delay');
+        saveTimeoutRef.current = setTimeout(async () => {
+          await updateDocument(currentDocument.id, currentDocument.title, newContent, false);
+          lastSavedContent.current = newContent;
+        }, 1000);
+      }
     } else if (user && !currentDocument && !autoCreateTriggered.current && newContent.trim().length > 10) {
       console.log('Auto-creating new document');
       autoCreateTriggered.current = true;
       try {
-        await autoCreateDocument(newContent);
+        const newDoc = await autoCreateDocument(newContent);
+        if (newDoc) {
+          lastSavedContent.current = newContent;
+        }
       } catch (error) {
         console.error('Auto-create document failed:', error);
         autoCreateTriggered.current = false;

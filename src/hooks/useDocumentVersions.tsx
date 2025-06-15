@@ -29,9 +29,9 @@ export const useDocumentVersions = () => {
         throw error;
       }
       
+      console.log('Version created successfully');
       // Refresh versions after creating new one
       await fetchVersions(documentId);
-      console.log('Version created successfully');
     } catch (error) {
       console.error('Error creating version:', error);
       toast.error('Failed to create version');

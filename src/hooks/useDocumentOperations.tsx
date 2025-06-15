@@ -15,6 +15,7 @@ export const useDocumentOperations = () => {
   const fetchDocuments = async () => {
     if (!user) {
       console.log('No user found for fetching documents');
+      setDocuments([]);
       return;
     }
     
@@ -33,11 +34,12 @@ export const useDocumentOperations = () => {
         throw error;
       }
       
-      console.log('Fetched documents:', data);
+      console.log('Fetched documents:', data?.length || 0);
       setDocuments(data || []);
     } catch (error) {
       console.error('Error in fetchDocuments:', error);
       toast.error('Failed to load documents');
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
@@ -51,7 +53,7 @@ export const useDocumentOperations = () => {
 
     setSaving(true);
     try {
-      console.log('Creating document:', { title, content: content.substring(0, 50) + '...' });
+      console.log('Creating document:', { title, contentLength: content.length });
       const { data, error } = await supabase
         .from('documents')
         .insert({
@@ -67,9 +69,9 @@ export const useDocumentOperations = () => {
         throw error;
       }
       
-      console.log('Created document:', data);
+      console.log('Created document:', data.id);
+      // Refresh documents list
       await fetchDocuments();
-      setCurrentDocument(data);
       
       return data;
     } catch (error) {
@@ -105,22 +107,26 @@ export const useDocumentOperations = () => {
         throw error;
       }
 
-      if (createNewVersion) {
-        toast.success('Document saved with new version!');
-      }
-
-      // Update the current document state immediately
+      console.log('Document updated successfully');
+      
+      // Update current document state immediately
       if (currentDocument?.id === id) {
-        const updatedDoc = { ...currentDocument, title, content, updated_at: new Date().toISOString() };
+        const updatedDoc = { 
+          ...currentDocument, 
+          title, 
+          content, 
+          updated_at: new Date().toISOString() 
+        };
         setCurrentDocument(updatedDoc);
         
         // Update the documents list
         setDocuments(prev => prev.map(doc => 
           doc.id === id ? updatedDoc : doc
         ));
-      } else {
-        // Refresh documents if we're not updating the current one
-        await fetchDocuments();
+      }
+
+      if (createNewVersion) {
+        toast.success('Document saved with new version!');
       }
     } catch (error) {
       console.error('Error updating document:', error);
@@ -131,7 +137,7 @@ export const useDocumentOperations = () => {
   };
 
   const selectDocument = async (document: Document) => {
-    console.log('Selecting document:', document);
+    console.log('Selecting document:', document.id, document.title);
     setCurrentDocument(document);
     toast.success(`Opened "${document.title}"`);
   };
