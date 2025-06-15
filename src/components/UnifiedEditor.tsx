@@ -1,14 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { convertMarkdownToHtml } from '@/utils/markdownUtils';
+import Preview from './Preview';
+import { RestrictedEditorToolbar } from './editor/RestrictedEditorToolbar';
+import { useAuth } from '@/hooks/useAuth';
+import { AIFeatureGate } from './auth/AIFeatureGate';
+import { EnhancedEditor } from './editor/EnhancedEditor';
+import { TemplatePanel } from './editor/TemplatePanel';
 import { useSmartEditor } from '@/hooks/useSmartEditor';
-import { useSmartPaste } from '@/components/editor/SmartPasteHandler';
-import { SmartTextSelection } from '@/components/editor/SmartTextSelection';
-import { EditorToolbar } from '@/components/editor/EditorToolbar';
-import { TemplatePanel } from '@/components/editor/TemplatePanel';
-import { EditorPanel } from '@/components/editor/EditorPanel';
-import { PreviewPanel } from '@/components/editor/PreviewPanel';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UnifiedEditorProps {
@@ -18,122 +17,152 @@ interface UnifiedEditorProps {
 }
 
 const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
-  const [preview, setPreview] = useState('');
+  const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [activeView, setActiveView] = useState<'edit' | 'preview' | 'split'>('split');
   const [showTemplates, setShowTemplates] = useState(false);
-  const [selection, setSelection] = useState({ text: '', position: { x: 0, y: 0 }, visible: false });
-  const isMobile = useIsMobile();
-
-  const { smartFormat, autoCorrectSyntax, insertTemplate, isProcessing } = useSmartEditor({
-    onContentChange: onChange,
-    currentContent: value
-  });
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  const { handleSmartPaste } = useSmartPaste({
+  const { smartFormat, isProcessing } = useSmartEditor({
     onContentChange: onChange,
     currentContent: value
   });
 
+  // Auto-adjust view for mobile
   useEffect(() => {
-    const htmlContent = convertMarkdownToHtml(value);
-    setPreview(htmlContent);
-  }, [value]);
-
-  useEffect(() => {
-    if (isMobile) {
+    if (isMobile && activeView === 'split') {
       setActiveView('edit');
-    } else {
-      setActiveView('split');
     }
-  }, [isMobile]);
+  }, [isMobile, activeView]);
 
-  const handleFormat = (format: string, selectedText?: string) => {
-    // Format selected text logic
-    const formattedText = selectedText || '';
-    
-    let newFormattedText = '';
-    
-    switch (format) {
-      case 'bold':
-        newFormattedText = `**${formattedText}**`;
-        break;
-      case 'italic':
-        newFormattedText = `*${formattedText}*`;
-        break;
-      case 'code':
-        newFormattedText = `\`${formattedText}\``;
-        break;
-      case 'link':
-        newFormattedText = `[${formattedText}](url)`;
-        break;
-      case 'heading':
-        newFormattedText = `# ${formattedText}`;
-        break;
-      default:
-        newFormattedText = formattedText;
-    }
-
-    // Apply formatting to the content
-    const newValue = value.replace(selectedText || '', newFormattedText);
-    onChange(newValue);
-    setSelection(prev => ({ ...prev, visible: false }));
+  const handleSmartFormat = () => {
+    if (!user) return;
+    smartFormat();
   };
 
-  const handleContentChange = (newContent: string) => {
-    const correctedContent = autoCorrectSyntax(newContent);
-    onChange(correctedContent);
+  const handleToggleTemplates = () => {
+    if (!user) return;
+    setShowTemplates(!showTemplates);
   };
+
+  const handleViewChange = (view: 'edit' | 'preview' | 'split') => {
+    if (isMobile && view === 'split') {
+      setActiveView('edit');
+      return;
+    }
+    setActiveView(view);
+  };
+
+  const renderEditor = () => {
+    if (user) {
+      return (
+        <EnhancedEditor
+          value={value}
+          onChange={onChange}
+          className="h-full"
+          placeholder="Start writing your markdown..."
+        />
+      );
+    }
+
+    return (
+      <div className="h-full flex flex-col">
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Start writing your markdown... (Sign in to unlock AI features)"
+          className={cn(
+            'flex-1 w-full resize-none border-0 bg-transparent px-4 py-4',
+            'text-sm leading-relaxed',
+            'focus:outline-none focus:ring-0',
+            'font-mono'
+          )}
+          spellCheck={false}
+        />
+      </div>
+    );
+  };
+
+  const showEdit = activeView === 'edit' || activeView === 'split';
+  const showPreview = activeView === 'preview' || activeView === 'split';
 
   return (
-    <div className={cn("h-full flex flex-col bg-background", className)}>
-      <EditorToolbar
-        onSmartFormat={smartFormat}
+    <div className={cn('flex flex-col h-full bg-background', className)}>
+      <RestrictedEditorToolbar
+        onSmartFormat={handleSmartFormat}
         isProcessing={isProcessing}
         showTemplates={showTemplates}
-        onToggleTemplates={() => setShowTemplates(!showTemplates)}
+        onToggleTemplates={handleToggleTemplates}
         activeView={activeView}
-        onViewChange={setActiveView}
+        onViewChange={handleViewChange}
       />
 
-      <TemplatePanel
-        visible={showTemplates}
-        onInsertTemplate={insertTemplate}
-        onClose={() => setShowTemplates(false)}
-      />
+      {/* Template Panel - Only for authenticated users */}
+      {user && showTemplates && (
+        <TemplatePanel onInsert={(template) => {
+          const textarea = textareaRef.current;
+          if (textarea) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const newValue = value.substring(0, start) + template + value.substring(end);
+            onChange(newValue);
+          } else {
+            onChange(value + '\n\n' + template);
+          }
+          setShowTemplates(false);
+        }} />
+      )}
 
-      {/* Editor Content */}
-      <div className="flex-1 flex min-h-0 overflow-hidden">
+      <div className="flex-1 flex overflow-hidden">
         {/* Editor Panel */}
-        {(activeView === 'edit' || activeView === 'split') && (
-          <EditorPanel
-            value={value}
-            onChange={handleContentChange}
-            onPaste={handleSmartPaste}
-            onSelectionChange={setSelection}
-            className={cn(
-              isMobile ? "w-full" : activeView === 'split' ? "w-1/2 border-r" : "w-full"
+        {showEdit && (
+          <div className={cn(
+            'border-r border-border bg-background',
+            showPreview ? 'w-1/2' : 'w-full'
+          )}>
+            {user ? (
+              renderEditor()
+            ) : (
+              <div className="h-full flex flex-col">
+                {renderEditor()}
+                
+                {/* Non-authenticated user AI features showcase */}
+                <div className="border-t p-4 bg-muted/30">
+                  <div className="max-w-md mx-auto">
+                    <AIFeatureGate 
+                      feature="AI Format & Enhancement"
+                      description="Get intelligent formatting, grammar improvements, and content enhancement powered by AI."
+                    />
+                  </div>
+                </div>
+              </div>
             )}
-          />
+          </div>
         )}
 
         {/* Preview Panel */}
-        {(activeView === 'preview' || activeView === 'split') && (
-          <PreviewPanel
-            content={preview}
-            className={cn(
-              isMobile ? "w-full" : "w-1/2"
-            )}
-          />
+        {showPreview && (
+          <div className={cn(
+            'bg-background',
+            showEdit ? 'w-1/2' : 'w-full'
+          )}>
+            <Preview content={value} />
+          </div>
         )}
       </div>
 
-      {/* Smart Text Selection Toolbar */}
-      <SmartTextSelection
-        visible={selection.visible}
-        selectedText={selection.text}
-        position={selection.position}
-        onFormat={handleFormat}
-      />
+      {/* AI Features Showcase for non-authenticated users */}
+      {!user && !showEdit && activeView === 'preview' && (
+        <div className="border-t p-4 bg-muted/30">
+          <div className="max-w-md mx-auto">
+            <AIFeatureGate 
+              feature="Smart Templates & AI Tools"
+              description="Access pre-built templates, smart text selection, and AI-powered content generation."
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
