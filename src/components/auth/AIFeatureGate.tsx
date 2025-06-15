@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +20,7 @@ export const AIFeatureGate = ({
   showUpgrade = true 
 }: AIFeatureGateProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   if (user) {
     return <>{children}</>;
@@ -27,6 +29,10 @@ export const AIFeatureGate = ({
   if (!showUpgrade) {
     return null;
   }
+
+  const handleSignIn = () => {
+    navigate('/auth');
+  };
 
   return (
     <Card className="border-2 border-dashed border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
@@ -48,7 +54,7 @@ export const AIFeatureGate = ({
           Sign in for free to unlock AI-powered features
         </p>
         <Button 
-          onClick={() => window.location.href = '/auth'}
+          onClick={handleSignIn}
           className="w-full"
         >
           <Sparkles className="mr-2 h-4 w-4" />

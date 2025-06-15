@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ const SESSION_KEY = "md-studio-signin-dialog-dismissed";
 
 export function SignInExperienceDialog() {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Only show if they haven't dismissed it this session
@@ -27,7 +29,7 @@ export function SignInExperienceDialog() {
   };
 
   const handleSignIn = () => {
-    window.location.href = "/auth";
+    navigate('/auth');
   };
 
   return (

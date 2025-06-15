@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Moon, Sun, Sparkles, Wand2, Lock } from 'lucide-react';
 import { useTheme } from '@/components/ui/theme-provider';
@@ -27,6 +28,7 @@ export const RestrictedEditorToolbar = ({
   const { theme, setTheme } = useTheme();
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -38,7 +40,7 @@ export const RestrictedEditorToolbar = ({
         description: 'Sign in for free to access AI features',
         action: {
           label: 'Sign In',
-          onClick: () => window.location.href = '/auth'
+          onClick: () => navigate('/auth')
         }
       });
       return;
@@ -49,6 +51,10 @@ export const RestrictedEditorToolbar = ({
     } else if (featureName === 'Templates') {
       onToggleTemplates();
     }
+  };
+
+  const handleSignInClick = () => {
+    navigate('/auth');
   };
 
   return (
@@ -115,7 +121,7 @@ export const RestrictedEditorToolbar = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.href = '/auth'}
+            onClick={handleSignInClick}
             className="hidden md:flex items-center gap-2 h-8 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20 text-primary hover:bg-primary/10"
           >
             <Sparkles className="h-3 w-3" />

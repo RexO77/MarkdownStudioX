@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ExportMenu from '../ExportMenu';
 import { Github, Star, Save } from 'lucide-react';
@@ -10,6 +11,12 @@ interface GuestHeaderActionsProps {
 }
 
 const GuestHeaderActions = ({ content, onSave }: GuestHeaderActionsProps) => {
+  const navigate = useNavigate();
+
+  const handleSignIn = () => {
+    navigate('/auth');
+  };
+
   return (
     <div className="flex items-center gap-2">
       <ExportMenu content={content} />
@@ -38,7 +45,7 @@ const GuestHeaderActions = ({ content, onSave }: GuestHeaderActionsProps) => {
       <Button
         variant="outline"
         size="sm"
-        onClick={() => window.location.href = '/auth'}
+        onClick={handleSignIn}
         className="ml-2 hover:bg-primary hover:text-primary-foreground transition-all duration-200 hover:scale-105"
       >
         Sign In
