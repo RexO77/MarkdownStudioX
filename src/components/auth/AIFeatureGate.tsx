@@ -3,7 +3,7 @@ import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Lock, Sparkles, Wand2, Brain } from 'lucide-react';
+import { Lock, Sparkles } from 'lucide-react';
 
 interface AIFeatureGateProps {
   children: React.ReactNode;

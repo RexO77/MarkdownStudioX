@@ -5,7 +5,6 @@ import { Eye, Edit, Moon, Sun, Sparkles, Wand2, Lock } from 'lucide-react';
 import { useTheme } from '@/components/ui/theme-provider';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/useAuth';
-import { AIFeatureTooltip } from '@/components/auth/AIFeatureGate';
 import { toast } from 'sonner';
 
 interface RestrictedEditorToolbarProps {
@@ -55,34 +54,28 @@ export const RestrictedEditorToolbar = ({
   return (
     <div className="flex items-center justify-between p-2 border-b bg-background/80 backdrop-blur-sm">
       <div className="flex items-center gap-2">
-        <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleAIFeatureClick('AI Format')}
-            disabled={isProcessing}
-            className={`h-8 ${!user ? 'text-muted-foreground' : ''}`}
-          >
-            <Sparkles className="h-4 w-4 mr-1" />
-            {isProcessing ? 'Formatting...' : 'AI Format'}
-            {!user && <Lock className="h-3 w-3 ml-1" />}
-          </Button>
-          <AIFeatureTooltip feature="AI Format" />
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleAIFeatureClick('AI Format')}
+          disabled={isProcessing}
+          className={`h-8 ${!user ? 'text-muted-foreground' : ''}`}
+        >
+          <Sparkles className="h-4 w-4 mr-1" />
+          {isProcessing ? 'Formatting...' : 'AI Format'}
+          {!user && <Lock className="h-3 w-3 ml-1" />}
+        </Button>
         
-        <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleAIFeatureClick('Templates')}
-            className={`h-8 ${!user ? 'text-muted-foreground' : ''}`}
-          >
-            <Wand2 className="h-4 w-4 mr-1" />
-            Templates
-            {!user && <Lock className="h-3 w-3 ml-1" />}
-          </Button>
-          <AIFeatureTooltip feature="Templates" />
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleAIFeatureClick('Templates')}
+          className={`h-8 ${!user ? 'text-muted-foreground' : ''}`}
+        >
+          <Wand2 className="h-4 w-4 mr-1" />
+          Templates
+          {!user && <Lock className="h-3 w-3 ml-1" />}
+        </Button>
 
         {/* View Toggle - Available for all users */}
         {isMobile ? (
@@ -119,12 +112,15 @@ export const RestrictedEditorToolbar = ({
         )}
 
         {!user && (
-          <div className="hidden md:flex items-center gap-2 ml-4 px-3 py-1 bg-gradient-to-r from-primary/10 to-primary/5 rounded-full border border-primary/20">
-            <Sparkles className="h-3 w-3 text-primary" />
-            <span className="text-xs text-primary font-medium">
-              Sign in for AI features
-            </span>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/auth'}
+            className="hidden md:flex items-center gap-2 h-8 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20 text-primary hover:bg-primary/10"
+          >
+            <Sparkles className="h-3 w-3" />
+            Sign in for AI features
+          </Button>
         )}
       </div>
 

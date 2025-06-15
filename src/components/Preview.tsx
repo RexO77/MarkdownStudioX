@@ -2,9 +2,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { convertMarkdownToHtml } from '@/utils/markdownUtils';
-import { Moon, Sun } from 'lucide-react';
-import { Button } from './ui/button';
-import { useTheme } from '@/components/ui/theme-provider';
 
 interface PreviewProps {
   content: string;
@@ -12,29 +9,10 @@ interface PreviewProps {
 }
 
 const Preview = ({ content, className }: PreviewProps) => {
-  const { theme, setTheme } = useTheme();
   const html = convertMarkdownToHtml(content);
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
 
   return (
     <div className={cn("w-full h-full flex flex-col", className)}>
-      <div className="sticky top-0 z-10 flex justify-end items-center p-2 border-b border-editor-border dark:border-gray-700 bg-background">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleTheme}
-          className="hover:bg-accent transition-colors duration-200"
-        >
-          {theme === 'dark' ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-        </Button>
-      </div>
       <div className="flex-1 overflow-auto">
         <div 
           className="prose prose-slate dark:prose-invert max-w-none p-4 md:p-8 bg-background
