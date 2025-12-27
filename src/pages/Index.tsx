@@ -12,6 +12,12 @@ const Index = () => {
     readingTime: 0
   });
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const contentRef = useRef(content);
+
+  // Keep contentRef updated for beforeunload handler
+  useEffect(() => {
+    contentRef.current = content;
+  }, [content]);
 
   // Load content from localStorage on mount
   useEffect(() => {
@@ -21,9 +27,20 @@ const Index = () => {
 
   // Calculate document statistics
   useEffect(() => {
-    const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+    // Filter out markdown syntax for more accurate word count
+    const plainText = content
+      .replace(/^#{1,6}\s+/gm, '') // Remove headers
+      .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold
+      .replace(/\*([^*]+)\*/g, '$1') // Remove italic
+      .replace(/`[^`]+`/g, '') // Remove inline code
+      .replace(/```[\s\S]*?```/g, '') // Remove code blocks
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Keep link text only
+      .trim();
+
+    const words = plainText ? plainText.split(/\s+/).filter(w => w.length > 0).length : 0;
     const characters = content.length;
-    const readingTime = Math.max(1, Math.ceil(words / 200));
+    // Show 0 min for empty, otherwise calculate based on 200 wpm
+    const readingTime = words === 0 ? 0 : Math.max(1, Math.ceil(words / 200));
 
     setDocumentStats({ words, characters, readingTime });
   }, [content]);
@@ -46,12 +63,22 @@ const Index = () => {
     localStorage.setItem('markdown-content', content);
   };
 
-  // Cleanup timeout on unmount
+  // Cleanup timeout and add beforeunload handler
   useEffect(() => {
+    // Save content before page unload to prevent data loss
+    const handleBeforeUnload = () => {
+      localStorage.setItem('markdown-content', contentRef.current);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Final save on unmount
+      localStorage.setItem('markdown-content', contentRef.current);
     };
   }, []);
 
@@ -80,3 +107,4 @@ const Index = () => {
 };
 
 export default Index;
+

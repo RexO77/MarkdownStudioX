@@ -1,5 +1,6 @@
 
 import React from 'react';
+import DOMPurify from 'dompurify';
 import { cn } from '@/lib/utils';
 import { convertMarkdownToHtml } from '@/utils/markdownUtils';
 
@@ -8,13 +9,20 @@ interface PreviewProps {
   className?: string;
 }
 
-const Preview = ({ content, className }: PreviewProps) => {
-  const html = convertMarkdownToHtml(content);
+const Preview = React.memo(({ content, className }: PreviewProps) => {
+  const rawHtml = convertMarkdownToHtml(content);
+  // Sanitize HTML to prevent XSS attacks
+  const html = DOMPurify.sanitize(rawHtml, {
+    ADD_TAGS: ['iframe'], // Allow iframes for embeds if needed
+    ADD_ATTR: ['target', 'rel'], // Allow target="_blank" on links
+    FORBID_TAGS: ['script', 'style'],
+    FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover']
+  });
 
   return (
     <div className={cn("w-full h-full flex flex-col", className)}>
       <div className="flex-1 overflow-auto">
-        <div 
+        <div
           className="prose prose-slate dark:prose-invert max-w-none p-4 md:p-8 bg-background
             prose-h1:text-4xl prose-h1:font-bold prose-h1:mb-6 prose-h1:border-b prose-h1:pb-2
             prose-h2:text-3xl prose-h2:font-bold prose-h2:mb-5 prose-h2:border-b prose-h2:pb-2
@@ -43,6 +51,9 @@ const Preview = ({ content, className }: PreviewProps) => {
       </div>
     </div>
   );
-};
+});
+
+Preview.displayName = 'Preview';
 
 export default Preview;
+

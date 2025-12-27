@@ -91,6 +91,14 @@
     border-color: hsl(var(--border));
   }
 
+  /* Disable all transitions during theme switch for instant change */
+  .theme-switching,
+  .theme-switching *,
+  .theme-switching *::before,
+  .theme-switching *::after {
+    transition: none !important;
+  }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
@@ -124,20 +132,30 @@
     background-color: hsl(var(--muted-foreground) / 0.4);
   }
 
-  /* Smooth spring transitions */
-  * {
-    transition-property: transform, opacity, box-shadow;
-    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-    transition-duration: 200ms;
-  }
-
-  /* Interactive elements with color transitions */
+  /* 
+   * Targeted transitions for interactive elements only
+   * Removed global * selector which was causing:
+   * - Performance issues during scroll
+   * - Transparency bugs on floating elements
+   * - Unexpected transitions on third-party components
+   */
   button,
   a,
   [role="button"],
-  input:focus,
-  textarea:focus {
+  .transition-all,
+  .transition-colors,
+  .transition-opacity,
+  .transition-transform {
     transition-property: transform, opacity, box-shadow, background-color, border-color, color;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    transition-duration: 150ms;
+  }
+
+  /* Focus states with smooth transitions */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    transition-property: box-shadow, border-color;
     transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
     transition-duration: 150ms;
   }

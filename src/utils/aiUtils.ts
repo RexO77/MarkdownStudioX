@@ -1,9 +1,24 @@
+import { getStoredApiKey } from '@/components/ui/api-key-dialog';
+
+export class ApiKeyRequiredError extends Error {
+  constructor() {
+    super('API key required');
+    this.name = 'ApiKeyRequiredError';
+  }
+}
+
 export const formatContentWithAI = async (content: string): Promise<string> => {
+  const apiKey = getStoredApiKey();
+
+  if (!apiKey) {
+    throw new ApiKeyRequiredError();
+  }
+
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY || ''}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -31,7 +46,7 @@ export const formatContentWithAI = async (content: string): Promise<string> => {
             content: content
           }
         ],
-        temperature: 1,
+        temperature: 0.4, // Lower temperature for more consistent formatting
         max_completion_tokens: 32768,
         top_p: 1,
         stream: false,
@@ -52,30 +67,3 @@ export const formatContentWithAI = async (content: string): Promise<string> => {
     throw error;
   }
 };
-
-// Chrome Extension Message Handler
-export const setupChromeExtension = (): void => {
-  if (typeof chrome !== 'undefined' && chrome.runtime) {
-    chrome.runtime.onMessage.addListener((
-      request: { action: string; content: string },
-      sender: chrome.runtime.MessageSender,
-      sendResponse: (response: { success: boolean; content?: string; error?: string }) => void
-    ) => {
-      if (request.action === 'formatMarkdown') {
-        formatContentWithAI(request.content)
-          .then(formattedContent => {
-            sendResponse({ success: true, content: formattedContent });
-          })
-          .catch(error => {
-            sendResponse({ success: false, error: error.message });
-          });
-        return true; // Required for async response
-      }
-    });
-  }
-};
-
-// Initialize Chrome extension functionality if in extension context
-if (typeof chrome !== 'undefined' && chrome.runtime) {
-  setupChromeExtension();
-}

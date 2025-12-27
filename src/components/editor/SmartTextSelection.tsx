@@ -10,13 +10,15 @@ interface SmartTextSelectionProps {
   selectedText: string;
   position?: { x: number; y: number };
   visible: boolean;
+  onClose?: () => void;
 }
 
-export function SmartTextSelection({ 
-  onFormat, 
-  selectedText, 
-  position = { x: 0, y: 0 }, 
-  visible 
+export function SmartTextSelection({
+  onFormat,
+  selectedText,
+  position = { x: 0, y: 0 },
+  visible,
+  onClose
 }: SmartTextSelectionProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -25,19 +27,19 @@ export function SmartTextSelection({
     if (selectedText && selectedText.length > 3) {
       // Generate smart suggestions based on selected text
       const textSuggestions = [];
-      
+
       if (/^\d+$/.test(selectedText)) {
         textSuggestions.push('Convert to bold');
       }
-      
+
       if (selectedText.includes('http')) {
         textSuggestions.push('Convert to link');
       }
-      
+
       if (selectedText.length > 20) {
         textSuggestions.push('Make heading');
       }
-      
+
       if (/[A-Z][a-z]+/.test(selectedText)) {
         textSuggestions.push('Add emphasis');
       }
@@ -45,6 +47,27 @@ export function SmartTextSelection({
       setSuggestions(textSuggestions);
     }
   }, [selectedText]);
+
+  // Click-outside handler to dismiss toolbar
+  useEffect(() => {
+    if (!visible) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (toolbarRef.current && !toolbarRef.current.contains(event.target as Node)) {
+        onClose?.();
+      }
+    };
+
+    // Delay adding listener to avoid immediate dismissal
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [visible, onClose]);
 
   if (!visible || !selectedText) return null;
 
@@ -61,12 +84,18 @@ export function SmartTextSelection({
     <div
       ref={toolbarRef}
       className={cn(
-        'fixed z-50 bg-popover border rounded-lg shadow-lg p-2',
+        'fixed z-50 border rounded-lg shadow-xl p-2',
+        // Explicit solid background with fallback
+        'bg-popover/95 backdrop-blur-sm',
+        // Ensure solid background in browsers without backdrop-filter
+        'supports-[backdrop-filter]:bg-popover/90',
         'animate-fade-in transform transition-all duration-200'
       )}
       style={{
         left: Math.max(10, position.x - 100),
         top: Math.max(10, position.y - 60),
+        // Ensure solid background color as inline style fallback
+        backgroundColor: 'hsl(var(--popover))',
       }}
     >
       {/* Selection Info */}
@@ -96,9 +125,9 @@ export function SmartTextSelection({
           <div className="text-xs text-muted-foreground mb-1">Smart suggestions:</div>
           <div className="flex flex-wrap gap-1">
             {suggestions.map((suggestion, index) => (
-              <Badge 
+              <Badge
                 key={index}
-                variant="secondary" 
+                variant="secondary"
                 className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground"
                 onClick={() => onFormat('ai-suggestion', selectedText)}
               >
@@ -111,3 +140,4 @@ export function SmartTextSelection({
     </div>
   );
 }
+

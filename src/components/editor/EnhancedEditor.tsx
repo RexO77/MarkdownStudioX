@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useSmartEditor } from '@/hooks/useSmartEditor';
 import { useSmartPaste } from './SmartPasteHandler';
@@ -12,35 +12,89 @@ interface EnhancedEditorProps {
   placeholder?: string;
 }
 
+// Helper to get approximate caret position
+function getCaretPosition(textarea: HTMLTextAreaElement): { x: number; y: number } {
+  const { selectionStart, selectionEnd } = textarea;
+  const rect = textarea.getBoundingClientRect();
+  const style = getComputedStyle(textarea);
+
+  // Create a hidden div to mirror textarea content
+  const div = document.createElement('div');
+  div.style.cssText = `
+    position: absolute;
+    visibility: hidden;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font: ${style.font};
+    padding: ${style.padding};
+    width: ${textarea.clientWidth}px;
+    line-height: ${style.lineHeight};
+  `;
+
+  // Get text before selection
+  const textBeforeSelection = textarea.value.substring(0, selectionStart);
+  div.textContent = textBeforeSelection;
+
+  // Add a span to mark the caret position
+  const span = document.createElement('span');
+  span.textContent = textarea.value.substring(selectionStart, selectionEnd) || '|';
+  div.appendChild(span);
+
+  document.body.appendChild(div);
+
+  const spanRect = span.getBoundingClientRect();
+  const divRect = div.getBoundingClientRect();
+
+  document.body.removeChild(div);
+
+  // Calculate position relative to viewport
+  const x = rect.left + (spanRect.left - divRect.left) + span.offsetWidth / 2;
+  const y = rect.top + (spanRect.top - divRect.top) - 10;
+
+  return {
+    x: Math.max(100, Math.min(window.innerWidth - 200, x)),
+    y: Math.max(60, y)
+  };
+}
+
 export function EnhancedEditor({ value, onChange, className, placeholder }: EnhancedEditorProps) {
   const [selection, setSelection] = useState({ text: '', position: { x: 0, y: 0 }, visible: false });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
+  const valueRef = useRef(value);
+
+  // Keep value ref updated for use in callbacks
+  valueRef.current = value;
+
   const { autoCorrectSyntax } = useSmartEditor({
     onContentChange: onChange,
     currentContent: value
   });
-  
+
   const { handleSmartPaste } = useSmartPaste({
     onContentChange: onChange,
     currentContent: value
   });
 
+  // Use refs for stable function references to avoid memory leaks
+  const handleSmartPasteRef = useRef(handleSmartPaste);
+  handleSmartPasteRef.current = handleSmartPaste;
+
+  const handleCloseSelection = useCallback(() => {
+    setSelection(prev => ({ ...prev, visible: false }));
+  }, []);
+
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    const handlePaste = (e: ClipboardEvent) => handleSmartPaste(e);
+    const handlePaste = (e: ClipboardEvent) => handleSmartPasteRef.current(e);
+
     const handleSelection = () => {
       const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
-      
+
       if (selectedText.trim().length > 0) {
-        const rect = textarea.getBoundingClientRect();
-        const position = {
-          x: rect.left + (textarea.selectionStart * 8), // Approximate character width
-          y: rect.top - 10
-        };
-        
+        const position = getCaretPosition(textarea);
+
         setSelection({
           text: selectedText,
           position,
@@ -60,18 +114,18 @@ export function EnhancedEditor({ value, onChange, className, placeholder }: Enha
       textarea.removeEventListener('mouseup', handleSelection);
       textarea.removeEventListener('keyup', handleSelection);
     };
-  }, [handleSmartPaste]);
+  }, []); // Empty deps - only mount/unmount
 
-  const handleFormat = (format: string, selectedText?: string) => {
+  const handleFormat = useCallback((format: string, selectedText?: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const text = selectedText || textarea.value.substring(start, end);
-    
+
     let formattedText = '';
-    
+
     switch (format) {
       case 'bold':
         formattedText = `**${text}**`;
@@ -96,15 +150,16 @@ export function EnhancedEditor({ value, onChange, className, placeholder }: Enha
         formattedText = text;
     }
 
-    const newValue = value.substring(0, start) + formattedText + value.substring(end);
+    const currentValue = valueRef.current;
+    const newValue = currentValue.substring(0, start) + formattedText + currentValue.substring(end);
     onChange(newValue);
     setSelection(prev => ({ ...prev, visible: false }));
-  };
+  }, [onChange]);
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = autoCorrectSyntax(e.target.value);
     onChange(newContent);
-  };
+  }, [autoCorrectSyntax, onChange]);
 
   return (
     <div className={cn('relative flex flex-col h-full', className)}>
@@ -129,7 +184,9 @@ export function EnhancedEditor({ value, onChange, className, placeholder }: Enha
         selectedText={selection.text}
         position={selection.position}
         onFormat={handleFormat}
+        onClose={handleCloseSelection}
       />
     </div>
   );
 }
+

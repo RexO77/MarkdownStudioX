@@ -11,12 +11,7 @@ export default defineConfig(({ mode }) => ({
     target: 'esnext',
     minify: 'esbuild',
     rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'index.html'),
-        content: path.resolve(__dirname, 'src/content.ts'),
-      },
       output: {
-        entryFileNames: '[name].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
         // Aggressive code-splitting by vendor

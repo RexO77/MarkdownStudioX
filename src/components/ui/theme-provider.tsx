@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 type Theme = 'light' | 'dark' | 'system' | 'cyberpunk' | 'forest' | 'ocean' | 'sunset' | 'minimal' | 'high-contrast';
 
@@ -13,6 +13,7 @@ type ThemeProviderState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   themes: { name: Theme; label: string; description: string }[];
+  resolvedTheme: 'light' | 'dark'; // Actual light/dark value
 };
 
 const initialState: ThemeProviderState = {
@@ -29,9 +30,17 @@ const initialState: ThemeProviderState = {
     { name: 'minimal', label: 'Minimal', description: 'Ultra-clean interface' },
     { name: 'high-contrast', label: 'High Contrast', description: 'Accessibility-focused' },
   ],
+  resolvedTheme: 'light',
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+
+// Helper to determine if a theme is "dark" based
+function isDarkTheme(theme: Theme, systemIsDark: boolean): boolean {
+  if (theme === 'system') return systemIsDark;
+  if (theme === 'light' || theme === 'minimal') return false;
+  return true; // dark, cyberpunk, forest, ocean, sunset, high-contrast are dark
+}
 
 export function ThemeProvider({
   children,
@@ -39,12 +48,18 @@ export function ThemeProvider({
   storageKey = 'markdown-studio-theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
+  const [theme, setThemeState] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   );
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
-  useEffect(() => {
+  const applyTheme = useCallback((newTheme: Theme) => {
     const root = window.document.documentElement;
+    const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    // Disable transitions temporarily for instant theme switch
+    root.style.setProperty('--theme-transition', 'none');
+    root.classList.add('theme-switching');
 
     // Remove all theme classes
     root.classList.remove(
@@ -58,42 +73,56 @@ export function ThemeProvider({
       'high-contrast'
     );
 
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
-        .matches
-        ? 'dark'
-        : 'light';
+    // Determine resolved theme
+    const isDark = isDarkTheme(newTheme, systemIsDark);
+    setResolvedTheme(isDark ? 'dark' : 'light');
 
-      root.classList.add(systemTheme);
-      return;
+    // Set color-scheme for browser-native elements (scrollbars, form controls)
+    root.style.colorScheme = isDark ? 'dark' : 'light';
+
+    if (newTheme === 'system') {
+      root.classList.add(systemIsDark ? 'dark' : 'light');
+    } else {
+      root.classList.add(newTheme);
     }
 
-    root.classList.add(theme);
-  }, [theme]);
+    // Re-enable transitions after a frame
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        root.style.removeProperty('--theme-transition');
+        root.classList.remove('theme-switching');
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme, applyTheme]);
 
   // Listen for system theme changes when using system theme
   useEffect(() => {
     if (theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      
+
       const handleChange = () => {
-        const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
-        root.classList.add(mediaQuery.matches ? 'dark' : 'light');
+        applyTheme('system');
       };
 
       mediaQuery.addEventListener('change', handleChange);
       return () => mediaQuery.removeEventListener('change', handleChange);
     }
-  }, [theme]);
+  }, [theme, applyTheme]);
+
+  const setTheme = useCallback((newTheme: Theme) => {
+    localStorage.setItem(storageKey, newTheme);
+    setThemeState(newTheme);
+  }, [storageKey]);
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
-      setTheme(theme);
-    },
+    setTheme,
     themes: initialState.themes,
+    resolvedTheme,
   };
 
   return (
@@ -111,3 +140,4 @@ export const useTheme = () => {
 
   return context;
 };
+
