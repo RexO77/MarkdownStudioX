@@ -6,7 +6,6 @@ _A powerful, AI-enhanced markdown editor for modern content creation._
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![React](https://img.shields.io/badge/React-18-blue.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)
-![Supabase](https://img.shields.io/badge/Supabase-Backend-green.svg)
 
 <details>
 <summary>📖 Table of Contents</summary>
@@ -21,9 +20,8 @@ _A powerful, AI-enhanced markdown editor for modern content creation._
 8. [📤 Export Options](#export-options)
 9. [🔧 Development](#development)
 10. [🚀 Deployment](#deployment)
-11. [🏗️ Architecture](#architecture)
-12. [🤝 Contributing](#contributing)
-13. [📄 License](#license)
+11. [🤝 Contributing](#contributing)
+12. [📄 License](#license)
 
 </details>
 
@@ -32,10 +30,10 @@ _A powerful, AI-enhanced markdown editor for modern content creation._
 Markdown Studio is a next-generation markdown editor that combines the simplicity of markdown with the power of AI. Built for writers, developers, and content creators who demand a seamless, feature-rich editing experience.
 
 **Key Highlights:**
-- 🤖 AI-powered content formatting and enhancement
+- 🤖 AI-powered content formatting and enhancement (via Groq API)
 - 📱 Responsive design that works on all devices
 - 🔄 Real-time preview with synchronized scrolling
-- ☁️ Cloud-based document storage and sync
+- 💾 Auto-save to browser localStorage
 - 🎨 Multiple beautiful themes to choose from
 - 📊 Advanced export capabilities (PDF, DOCX, HTML, LaTeX)
 
@@ -50,19 +48,13 @@ Markdown Studio is a next-generation markdown editor that combines the simplicit
 - **Command Palette**: Quick access to all editor functions
 - **Focus Mode**: Distraction-free writing environment
 - **Mobile Support**: Adaptive UI for phones and tablets
+- **Auto-save**: Content automatically saved to browser localStorage
 
 ### 🤖 AI-Powered Enhancements
 - **AI Formatting**: Automatically enhance content structure and readability
 - **Smart Suggestions**: Context-aware formatting recommendations
 - **Content Enhancement**: Improve grammar, style, and presentation
 - **Template Generation**: AI-assisted content templates
-
-### 👥 Collaboration & Storage
-- **User Authentication**: Secure login with email/password
-- **Document Management**: Create, save, and organize documents
-- **Version History**: Track changes and restore previous versions
-- **Auto-save**: Never lose your work with automatic saving
-- **Cloud Sync**: Access your documents from anywhere
 
 ### 🎨 Customization
 - **8 Beautiful Themes**: Light, Dark, Cyberpunk, Forest, Ocean, Sunset, Minimal, High Contrast
@@ -85,16 +77,10 @@ Markdown Studio is a next-generation markdown editor that combines the simplicit
 - **Vite** - Fast build tool and development server
 - **Tailwind CSS** - Utility-first CSS framework
 - **Shadcn/ui** - High-quality component library
-- **React Query** - Data fetching and state management
 - **React Router** - Client-side routing
 
-### Backend & Services
-- **Supabase** - Backend-as-a-Service platform
-  - PostgreSQL database
-  - Real-time subscriptions
-  - Authentication
-  - Edge Functions
-- **Groq AI** - Fast AI inference for content formatting
+### AI & Processing
+- **Groq AI** - Fast AI inference for content formatting (user provides API key)
 - **Marked** - Markdown parsing and rendering
 
 ### Additional Libraries
@@ -103,20 +89,20 @@ Markdown Studio is a next-generation markdown editor that combines the simplicit
 - **html2canvas** - HTML to canvas conversion
 - **docx** - Word document generation
 - **file-saver** - File download utilities
+- **Framer Motion** - Smooth animations
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18+ 
 - npm or yarn package manager
-- A Supabase account (for backend features)
 
 ### Installation
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/markdown-studio.git
-cd markdown-studio
+git clone https://github.com/RexO77/MarkdownStudioX.git
+cd MarkdownStudioX
 ```
 
 2. **Install dependencies**
@@ -124,34 +110,27 @@ cd markdown-studio
 npm install
 ```
 
-3. **Set up environment**
-```bash
-# The app uses Supabase for backend services
-# Configure your Supabase project URL and keys in the Supabase client
-```
-
-4. **Start development server**
+3. **Start development server**
 ```bash
 npm run dev
 ```
 
-5. **Open in browser**
+4. **Open in browser**
 Navigate to `http://localhost:5173`
 
 ### First Time Setup
 
-1. **Create an account** - Sign up to access cloud features
+1. **Set your API Key** - Click the "Set API Key" button to configure your Groq API key for AI features
 2. **Explore themes** - Try different themes from the toolbar
-3. **Create your first document** - Start writing and see real-time preview
+3. **Start writing** - Your content auto-saves to localStorage
 4. **Try AI formatting** - Use the "AI Format" button to enhance your content
 
 ## 📝 Usage Guide
 
 ### Basic Editing
-1. **Creating Documents**: Click "New Document" or start typing
-2. **Markdown Syntax**: Use standard markdown syntax for formatting
-3. **Live Preview**: See your formatted content in real-time
-4. **Auto-save**: Your work is saved automatically
+1. **Start Typing**: Begin writing with standard markdown syntax
+2. **Live Preview**: See your formatted content in real-time on the right panel
+3. **Auto-save**: Your work is saved automatically to browser localStorage
 
 ### Advanced Features
 
@@ -172,20 +151,19 @@ Navigate to `http://localhost:5173`
 - Emoji and formatting additions
 
 #### Export Options
-- **PDF**: `File > Export > PDF` for print-ready documents
-- **Word**: `File > Export > DOCX` for Microsoft Word
-- **HTML**: `File > Export > HTML` for web publishing
-- **LaTeX**: `File > Export > LaTeX` for academic papers
+- **PDF**: Export menu > PDF for print-ready documents
+- **Word**: Export menu > DOCX for Microsoft Word
+- **HTML**: Export menu > HTML for web publishing
+- **LaTeX**: Export menu > LaTeX for academic papers
 
 ## 🤖 AI Integration
 
 ### Groq AI Setup
 The application uses Groq AI for fast, high-quality content formatting.
 
-1. **API Configuration**: AI features require a Groq API key
-2. **Content Enhancement**: Automatically improve structure and readability
-3. **Smart Suggestions**: Context-aware formatting recommendations
-4. **Template Generation**: AI-assisted content templates
+1. **Get API Key**: Create a free account at [Groq Console](https://console.groq.com)
+2. **Configure Key**: Click "Set API Key" button in the header
+3. **Start Using**: AI features are now enabled
 
 ### AI Features
 - **Smart Formatting**: Enhance content structure and presentation
@@ -242,13 +220,13 @@ Choose from 8 carefully crafted themes:
 src/
 ├── components/          # React components
 │   ├── editor/         # Editor-specific components
+│   ├── header/         # Header components
 │   ├── ui/             # Reusable UI components
 │   └── ...
 ├── hooks/              # Custom React hooks
 ├── pages/              # Page components
 ├── utils/              # Utility functions
-├── integrations/       # External service integrations
-└── types/              # TypeScript type definitions
+└── lib/                # Library utilities
 ```
 
 ### Key Components
@@ -256,28 +234,19 @@ src/
 - **EditorToolbar**: Toolbar with formatting options
 - **Preview**: Real-time markdown preview
 - **ThemeProvider**: Theme management system
-- **AuthProvider**: User authentication wrapper
+- **ExportMenu**: Export functionality
 
 ### Custom Hooks
 - **useSmartEditor**: AI-powered editing features
-- **useDocuments**: Document management
-- **useAuth**: Authentication state
-- **useTheme**: Theme switching
+- **useMobile**: Responsive design detection
+- **useToast**: Toast notification system
 
 ### Development Scripts
 ```bash
 npm run dev          # Start development server
 npm run build        # Build for production
 npm run preview      # Preview production build
-npm run type-check   # TypeScript type checking
 ```
-
-### Environment Setup
-Configure your development environment:
-
-1. **Supabase Project**: Set up database and authentication
-2. **API Keys**: Configure Groq AI for formatting features
-3. **Development Tools**: Install recommended VS Code extensions
 
 ## 🚀 Deployment
 
@@ -290,8 +259,7 @@ npm run build
 
 #### Vercel (Recommended)
 1. Connect your GitHub repository
-2. Configure environment variables
-3. Deploy automatically on push
+2. Deploy automatically on push
 
 #### Netlify
 1. Connect repository
@@ -301,30 +269,6 @@ npm run build
 #### Self-hosted
 1. Build the project: `npm run build`
 2. Serve the `dist` folder with any static file server
-
-### Environment Variables
-Configure these in your deployment platform:
-- Supabase URL and keys (configured in Supabase client)
-- Any additional API keys for extended features
-
-## 🏗️ Architecture
-
-### Component Architecture
-- **Modular Design**: Small, focused components
-- **Custom Hooks**: Reusable business logic
-- **Type Safety**: Full TypeScript coverage
-- **Performance**: Optimized rendering and state management
-
-### State Management
-- **React Query**: Server state and caching
-- **React Context**: Theme and authentication state
-- **Local State**: Component-specific state with hooks
-
-### Data Flow
-1. **Authentication**: Supabase Auth
-2. **Document Storage**: Supabase Database
-3. **Real-time Updates**: Supabase Realtime
-4. **AI Processing**: Groq API via Edge Functions
 
 ## 🤝 Contributing
 
@@ -361,7 +305,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Issues**: Report bugs and request features on GitHub
 - **Discussions**: Join community discussions
-- **Documentation**: Visit our docs for detailed guides
 - **Updates**: Follow the project for latest updates
 
 Built with ❤️ by the Markdown Studio team

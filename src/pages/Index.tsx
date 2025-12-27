@@ -59,10 +59,6 @@ const Index = () => {
     }, 500);
   };
 
-  const handleSave = () => {
-    localStorage.setItem('markdown-content', content);
-  };
-
   // Cleanup timeout and add beforeunload handler
   useEffect(() => {
     // Save content before page unload to prevent data loss
@@ -84,10 +80,7 @@ const Index = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
-      <ModernHeader
-        content={content}
-        onSave={handleSave}
-      />
+      <ModernHeader content={content} />
 
       <div className="flex-1">
         <UnifiedEditor
@@ -106,4 +99,5 @@ const Index = () => {
 };
 
 export default Index;
+
 

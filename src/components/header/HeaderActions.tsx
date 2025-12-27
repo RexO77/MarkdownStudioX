@@ -3,14 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import ExportMenu from '../ExportMenu';
 import { ApiKeyDialog, hasApiKey } from '@/components/ui/api-key-dialog';
-import { Github, Star, Save, Key } from 'lucide-react';
+import { Github, Star, Key } from 'lucide-react';
 
 interface HeaderActionsProps {
     content: string;
-    onSave: () => void;
 }
 
-const HeaderActions = ({ content, onSave }: HeaderActionsProps) => {
+const HeaderActions = ({ content }: HeaderActionsProps) => {
     const [hasKey, setHasKey] = useState(false);
 
     useEffect(() => {
@@ -50,16 +49,6 @@ const HeaderActions = ({ content, onSave }: HeaderActionsProps) => {
                 <Github className="h-4 w-4" />
                 <Star className="h-4 w-4" />
                 <span className="hidden md:inline">Star</span>
-            </Button>
-
-            <Button
-                onClick={onSave}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-            >
-                <Save className="h-4 w-4" />
-                <span className="hidden sm:inline">Save</span>
             </Button>
         </div>
     );
