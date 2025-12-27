@@ -12,15 +12,15 @@
   "action": {
     "default_popup": "index.html",
     "default_icon": {
-      "16": "lovable-uploads/40152067-ce5b-4ef4-9f7a-22e8150ff9f0.png",
-      "48": "lovable-uploads/40152067-ce5b-4ef4-9f7a-22e8150ff9f0.png",
-      "128": "lovable-uploads/40152067-ce5b-4ef4-9f7a-22e8150ff9f0.png"
+      "16": "assets/logo.png",
+      "48": "assets/logo.png",
+      "128": "assets/logo.png"
     }
   },
   "icons": {
-    "16": "lovable-uploads/40152067-ce5b-4ef4-9f7a-22e8150ff9f0.png",
-    "48": "lovable-uploads/40152067-ce5b-4ef4-9f7a-22e8150ff9f0.png",
-    "128": "lovable-uploads/40152067-ce5b-4ef4-9f7a-22e8150ff9f0.png"
+    "16": "assets/logo.png",
+    "48": "assets/logo.png",
+    "128": "assets/logo.png"
   },
   "content_scripts": [
     {
