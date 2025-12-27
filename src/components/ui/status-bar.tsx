@@ -1,10 +1,9 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
 import { useFocusMode } from '@/components/layout/FocusMode';
 import { Badge } from '@/components/ui/badge';
-import { Wifi, Save, Users, Eye } from 'lucide-react';
+import { Wifi, Save, Eye } from 'lucide-react';
 
 interface StatusBarProps {
   className?: string;
@@ -14,16 +13,13 @@ interface StatusBarProps {
     readingTime: number;
   };
   savingStatus?: 'saved' | 'saving' | 'error';
-  onlineUsers?: number;
 }
 
-export function StatusBar({ 
-  className, 
+export function StatusBar({
+  className,
   documentStats,
-  savingStatus = 'saved',
-  onlineUsers = 0
+  savingStatus = 'saved'
 }: StatusBarProps) {
-  const { user } = useAuth();
   const { mode } = useFocusMode();
 
   if (mode === 'zen' || mode === 'distraction-free') {
@@ -61,8 +57,8 @@ export function StatusBar({
             savingStatus === 'saved' && 'text-green-500',
             savingStatus === 'error' && 'text-red-500'
           )}>
-            {savingStatus === 'saving' ? 'Saving...' : 
-             savingStatus === 'saved' ? 'Saved' : 'Error saving'}
+            {savingStatus === 'saving' ? 'Saving...' :
+              savingStatus === 'saved' ? 'Saved' : 'Error saving'}
           </span>
         </div>
 
@@ -71,14 +67,6 @@ export function StatusBar({
           <Wifi className="h-3 w-3 text-green-500" />
           <span>Online</span>
         </div>
-
-        {/* Collaboration */}
-        {user && onlineUsers > 0 && (
-          <div className="flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            <span>{onlineUsers} online</span>
-          </div>
-        )}
       </div>
 
       <div className="flex items-center gap-4">
@@ -97,13 +85,6 @@ export function StatusBar({
               <span>{documentStats.readingTime}m read</span>
             </div>
           </div>
-        )}
-
-        {/* User Info */}
-        {user && (
-          <span>
-            {user.email || 'Signed in'}
-          </span>
         )}
       </div>
     </div>

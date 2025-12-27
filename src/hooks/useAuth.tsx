@@ -1,6 +1,5 @@
 
-import { useMemo, createContext, useContext, ReactNode } from 'react';
-import { useUser, useAuth as useClerkAuth } from '@clerk/clerk-react';
+import { createContext, useContext, ReactNode } from 'react';
 
 interface AuthUserShape {
   id: string;
@@ -18,40 +17,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { isLoaded: isUserLoaded, user } = useUser();
-  const { isLoaded: isAuthLoaded, signOut } = useClerkAuth();
-
-  const loading = !(isUserLoaded && isAuthLoaded);
-
-  const mappedUser: AuthUserShape | null = useMemo(() => {
-    if (!user) return null;
-    return {
-      id: user.id,
-      email: user.primaryEmailAddress?.emailAddress,
-    };
-  }, [user]);
-
-  const signUp = async () => {
-    // Defer to Clerk's hosted widget/page
-    window.location.href = '/auth';
-    return { error: null } as { error: any };
-  };
-
-  const signIn = async () => {
-    // Defer to Clerk's hosted widget/page
-    window.location.href = '/auth';
-    return { error: null } as { error: any };
-  };
-
+  // Auth disabled - always return null user
   const value: AuthContextType = {
-    user: mappedUser,
-    loading,
-    signUp,
-    signIn,
-    signOut: async () => {
-      await signOut();
-      window.location.href = '/';
-    },
+    user: null,
+    loading: false,
+    signUp: async () => ({ error: null }),
+    signIn: async () => ({ error: null }),
+    signOut: async () => { },
   };
 
   return (
@@ -64,7 +36,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    // Return a default value if not in provider (for backwards compatibility)
+    return {
+      user: null,
+      loading: false,
+      signUp: async () => ({ error: null }),
+      signIn: async () => ({ error: null }),
+      signOut: async () => { },
+    };
   }
   return context;
 };

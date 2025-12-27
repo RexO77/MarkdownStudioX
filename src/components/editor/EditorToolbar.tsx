@@ -42,7 +42,7 @@ export const EditorToolbar = ({
           <Sparkles className="h-4 w-4 mr-1" />
           {isProcessing ? 'Formatting...' : 'AI Format'}
         </Button>
-        
+
         <Button
           variant="ghost"
           size="sm"

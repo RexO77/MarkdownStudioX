@@ -2,9 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import Preview from './Preview';
-import { RestrictedEditorToolbar } from './editor/RestrictedEditorToolbar';
-import { useAuth } from '@/hooks/useAuth';
-import { AIFeatureGate } from './auth/AIFeatureGate';
+import { EditorToolbar } from './editor/EditorToolbar';
 import { EnhancedEditor } from './editor/EnhancedEditor';
 import { TemplatePanel } from './editor/TemplatePanel';
 import { useSmartEditor } from '@/hooks/useSmartEditor';
@@ -17,12 +15,11 @@ interface UnifiedEditorProps {
 }
 
 const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
-  const { user } = useAuth();
   const isMobile = useIsMobile();
   const [activeView, setActiveView] = useState<'edit' | 'preview' | 'split'>('split');
   const [showTemplates, setShowTemplates] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
+
   const { smartFormat, isProcessing } = useSmartEditor({
     onContentChange: onChange,
     currentContent: value
@@ -36,12 +33,10 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
   }, [isMobile, activeView]);
 
   const handleSmartFormat = () => {
-    if (!user) return;
     smartFormat();
   };
 
   const handleToggleTemplates = () => {
-    if (!user) return;
     setShowTemplates(!showTemplates);
   };
 
@@ -53,43 +48,12 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
     setActiveView(view);
   };
 
-  const renderEditor = () => {
-    if (user) {
-      return (
-        <EnhancedEditor
-          value={value}
-          onChange={onChange}
-          className="h-full"
-          placeholder="Start writing your markdown..."
-        />
-      );
-    }
-
-    return (
-      <div className="h-full flex flex-col">
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Start writing your markdown... (Sign in to unlock AI features)"
-          className={cn(
-            'flex-1 w-full resize-none border-0 bg-transparent px-4 py-4',
-            'text-sm leading-relaxed',
-            'focus:outline-none focus:ring-0',
-            'font-mono'
-          )}
-          spellCheck={false}
-        />
-      </div>
-    );
-  };
-
   const showEdit = activeView === 'edit' || activeView === 'split';
   const showPreview = activeView === 'preview' || activeView === 'split';
 
   return (
     <div className={cn('flex flex-col h-full bg-background', className)}>
-      <RestrictedEditorToolbar
+      <EditorToolbar
         onSmartFormat={handleSmartFormat}
         isProcessing={isProcessing}
         showTemplates={showTemplates}
@@ -98,9 +62,9 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
         onViewChange={handleViewChange}
       />
 
-      {/* Template Panel - Only for authenticated users */}
-      {user && showTemplates && (
-        <TemplatePanel 
+      {/* Template Panel */}
+      {showTemplates && (
+        <TemplatePanel
           visible={showTemplates}
           onInsertTemplate={(template) => {
             const textarea = textareaRef.current;
@@ -125,25 +89,12 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
             'border-r border-border bg-background',
             showPreview ? 'w-1/2' : 'w-full'
           )}>
-            {user ? (
-              renderEditor()
-            ) : (
-              <div className="h-full flex flex-col">
-                {renderEditor()}
-                
-                {/* Non-authenticated user AI features showcase */}
-                <div className="border-t p-4 bg-muted/30">
-                  <div className="max-w-md mx-auto">
-                    <AIFeatureGate 
-                      feature="AI Format & Enhancement"
-                      description="Get intelligent formatting, grammar improvements, and content enhancement powered by AI."
-                    >
-                      <div />
-                    </AIFeatureGate>
-                  </div>
-                </div>
-              </div>
-            )}
+            <EnhancedEditor
+              value={value}
+              onChange={onChange}
+              className="h-full"
+              placeholder="Start writing your markdown..."
+            />
           </div>
         )}
 
@@ -157,20 +108,6 @@ const UnifiedEditor = ({ value, onChange, className }: UnifiedEditorProps) => {
           </div>
         )}
       </div>
-
-      {/* AI Features Showcase for non-authenticated users */}
-      {!user && !showEdit && activeView === 'preview' && (
-        <div className="border-t p-4 bg-muted/30">
-          <div className="max-w-md mx-auto">
-            <AIFeatureGate 
-              feature="Smart Templates & AI Tools"
-              description="Access pre-built templates, smart text selection, and AI-powered content generation."
-            >
-              <div />
-            </AIFeatureGate>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
