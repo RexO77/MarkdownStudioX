@@ -86,7 +86,6 @@ const Index = () => {
     <div className="h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
       <ModernHeader
         content={content}
-        onFormat={setContent}
         onSave={handleSave}
       />
 
