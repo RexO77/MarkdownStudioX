@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import ExportMenu from './ExportMenu';
 import { toast } from 'sonner';
 import { saveMarkdown } from '@/utils/markdownUtils';
-import { supabase } from '@/integrations/supabase/client';
+import { formatContentWithAI } from '@/utils/aiUtils';
 import { Star, Github, Sparkles } from 'lucide-react';
 
 interface ToolbarProps {
@@ -20,13 +20,8 @@ const Toolbar = ({ content, onFormat }: ToolbarProps) => {
 
   const handleFormat = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('format', {
-        body: { content }
-      });
-
-      if (error) throw error;
-
-      onFormat(data.formattedContent);
+      const formatted = await formatContentWithAI(content);
+      onFormat(formatted);
       toast.success('Content formatted successfully!');
     } catch (error) {
       console.error('Format error:', error);

@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { formatMarkdownWithAI } from '@/utils/aiUtils';
+import { formatContentWithAI } from '@/utils/aiUtils';
 import { toast } from 'sonner';
 
 interface SmartEditorOptions {
@@ -19,7 +19,7 @@ export const useSmartEditor = ({ onContentChange, currentContent }: SmartEditorO
 
     setIsProcessing(true);
     try {
-      const formattedContent = await formatMarkdownWithAI(currentContent);
+      const formattedContent = await formatContentWithAI(currentContent);
       onContentChange(formattedContent);
       toast.success('Content formatted with AI!');
     } catch (error) {

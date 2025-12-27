@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { formatContentWithAI } from '@/utils/aiUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocuments } from '@/hooks/useDocuments';
 import DocumentSidebar from './DocumentSidebar';
@@ -61,20 +61,9 @@ const ModernHeader = ({ content, onFormat, onNewDocument }: ModernHeaderProps) =
 
     setIsFormatting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('format', {
-        body: { content }
-      });
-
-      if (error) {
-        console.error('Format error:', error);
-        toast.error('AI formatting failed');
-        return;
-      }
-
-      if (data?.formattedContent) {
-        onFormat(data.formattedContent);
-        toast.success('Content formatted successfully!');
-      }
+      const formatted = await formatContentWithAI(content);
+      onFormat(formatted);
+      toast.success('Content formatted successfully!');
     } catch (error) {
       console.error('Format error:', error);
       toast.error('AI formatting failed');

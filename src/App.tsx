@@ -1,5 +1,4 @@
 
-import { createRoot } from 'react-dom/client'
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { FocusModeProvider } from "@/components/layout/FocusMode";
 import { CommandPalette } from "@/components/ui/command-palette";
 import { Analytics } from "@vercel/analytics/react";
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 
@@ -25,6 +25,15 @@ const App = () => (
             <Sonner />
             <CommandPalette />
             <Analytics />
+            <header style={{ display: "flex", gap: 8, alignItems: "center", padding: 8 }}>
+              <SignedOut>
+                <SignInButton />
+                <SignUpButton />
+              </SignedOut>
+              <SignedIn>
+                <UserButton />
+              </SignedIn>
+            </header>
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />

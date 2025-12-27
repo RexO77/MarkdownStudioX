@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Document } from '@/types/document';
@@ -12,30 +11,32 @@ export const useDocumentOperations = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const fetchDocuments = async () => {
-    if (!user) {
-      console.log('No user found for fetching documents');
-      setDocuments([]);
-      return;
+  const getStorageKey = () => {
+    const userId = user?.id || 'guest';
+    return `msx_docs_${userId}`;
+  };
+
+  const readFromStorage = (): Document[] => {
+    try {
+      const raw = localStorage.getItem(getStorageKey());
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed as Document[];
+    } catch {
+      return [];
     }
-    
+  };
+
+  const writeToStorage = (docs: Document[]) => {
+    localStorage.setItem(getStorageKey(), JSON.stringify(docs));
+  };
+
+  const fetchDocuments = async () => {
     setLoading(true);
     try {
-      console.log('Fetching documents for user:', user.id);
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .order('updated_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching documents:', error);
-        throw error;
-      }
-      
-      console.log('Fetched documents:', data?.length || 0);
-      setDocuments(data || []);
+      const data = readFromStorage();
+      setDocuments(data);
     } catch (error) {
       console.error('Error in fetchDocuments:', error);
       toast.error('Failed to load documents');
@@ -54,27 +55,18 @@ export const useDocumentOperations = () => {
     setSaving(true);
     try {
       console.log('Creating document:', { title, contentLength: content.length });
-      const { data, error } = await supabase
-        .from('documents')
-        .insert({
-          user_id: user.id,
-          title,
-          content
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating document:', error);
-        throw error;
-      }
-      
-      console.log('Created document:', data.id);
-      
-      // Add to local state immediately
-      setDocuments(prev => [data, ...prev]);
-      
-      return data;
+      const newDoc: Document = {
+        id: crypto.randomUUID(),
+        title,
+        content,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      const current = readFromStorage();
+      const next = [newDoc, ...current];
+      writeToStorage(next);
+      setDocuments(next);
+      return newDoc;
     } catch (error) {
       console.error('Error creating document:', error);
       toast.error('Failed to create document');
@@ -93,39 +85,22 @@ export const useDocumentOperations = () => {
     setSaving(true);
     try {
       console.log('Updating document:', { id, title, contentLength: content.length });
-      const { error } = await supabase
-        .from('documents')
-        .update({ 
-          title, 
-          content, 
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', id)
-        .eq('user_id', user.id);
+      const current = readFromStorage();
+      const updatedAt = new Date().toISOString();
+      let updated: Document | null = null;
+      const next = current.map(doc => {
+        if (doc.id === id) {
+          updated = { ...doc, title, content, updated_at: updatedAt };
+          return updated;
+        }
+        return doc;
+      });
+      writeToStorage(next);
 
-      if (error) {
-        console.error('Error updating document:', error);
-        throw error;
+      if (currentDocument?.id === id && updated) {
+        setCurrentDocument(updated);
       }
-
-      console.log('Document updated successfully');
-      
-      // Update current document if it's the one being updated
-      if (currentDocument?.id === id) {
-        const updatedDoc = { 
-          ...currentDocument, 
-          title, 
-          content, 
-          updated_at: new Date().toISOString() 
-        };
-        setCurrentDocument(updatedDoc);
-        
-        // Update in documents list
-        setDocuments(prev => prev.map(doc => 
-          doc.id === id ? updatedDoc : doc
-        ));
-      }
-
+      setDocuments(next);
       return true;
     } catch (error) {
       console.error('Error updating document:', error);

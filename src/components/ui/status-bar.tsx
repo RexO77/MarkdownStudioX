@@ -102,7 +102,7 @@ export function StatusBar({
         {/* User Info */}
         {user && (
           <span>
-            {user.email}
+            {user.email || 'Signed in'}
           </span>
         )}
       </div>

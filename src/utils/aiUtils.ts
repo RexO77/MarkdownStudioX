@@ -1,21 +1,9 @@
-import { supabase } from "@/integrations/supabase/client";
-
-export const formatMarkdownWithAI = async (content: string): Promise<string> => {
+export const formatContentWithAI = async (content: string): Promise<string> => {
   try {
-    // Get the GROQ API key from Supabase
-    const { data: { secret: GROQ_API_KEY }, error } = await supabase.functions.invoke('get-secret', {
-      body: { name: 'GROQ_API_KEY' }
-    });
-
-    if (error || !GROQ_API_KEY) {
-      console.error('Failed to get GROQ API key:', error);
-      throw new Error('Failed to get GROQ API key');
-    }
-
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY || ''}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -74,7 +62,7 @@ export const setupChromeExtension = (): void => {
       sendResponse: (response: { success: boolean; content?: string; error?: string }) => void
     ) => {
       if (request.action === 'formatMarkdown') {
-        formatMarkdownWithAI(request.content)
+        formatContentWithAI(request.content)
           .then(formattedContent => {
             sendResponse({ success: true, content: formattedContent });
           })
