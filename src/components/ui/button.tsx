@@ -12,7 +12,7 @@ const buttonVariants = cva(
     "disabled:pointer-events-none disabled:opacity-50",
     "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
     // Refined transitions - spring-like easing
-    "transition-all duration-200 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]",
+    "transition-all duration-200 ease-out",
     // Subtle lift on hover
     "hover:-translate-y-[1px]",
     // Active press state
