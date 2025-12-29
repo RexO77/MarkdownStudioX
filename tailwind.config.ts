@@ -43,28 +43,33 @@ export default {
         }
       },
       keyframes: {
+        'rainbow': {
+          '0%': { 'background-position': '0%' },
+          '100%': { 'background-position': '200%' },
+        },
         'rainbow-border': {
-          '0%, 100%': { 
+          '0%, 100%': {
             'background-position': '0% 50%',
             'transform': 'scale(1.02)'
           },
-          '50%': { 
+          '50%': {
             'background-position': '100% 50%',
             'transform': 'scale(1)'
           },
         },
         'magical-glow': {
-          '0%, 100%': { 
+          '0%, 100%': {
             'box-shadow': '0 0 1em 0.5em oklch(0.71 0.12 280)',
             'opacity': '0.6'
           },
-          '50%': { 
+          '50%': {
             'box-shadow': '0 0 1.5em 0.75em oklch(0.71 0.12 280)',
             'opacity': '0.8'
           },
         }
       },
       animation: {
+        'rainbow': 'rainbow 60s linear infinite',
         'rainbow-border': 'rainbow-border 3s ease-in-out infinite',
         'rainbow-border-fast': 'rainbow-border 2s ease-in-out infinite',
         'magical-glow': 'magical-glow 3s ease-in-out infinite',
