@@ -31,28 +31,9 @@ export const useSmartEditor = ({ onContentChange, currentContent }: SmartEditorO
   }, [currentContent, onContentChange]);
 
   const autoCorrectSyntax = useCallback((text: string): string => {
-    // Auto-correct common markdown syntax issues
     let corrected = text;
-
-    // Fix unmatched bold/italic markers
-    corrected = corrected.replace(/\*{3,}/g, '***'); // Limit to max 3 asterisks
-    corrected = corrected.replace(/_{3,}/g, '___'); // Limit to max 3 underscores
-
-    // Auto-format tables
-    corrected = corrected.replace(/\|([^|\n]+)\|([^|\n]+)\|/g, (match, col1, col2) => {
-      return `| ${col1.trim()} | ${col2.trim()} |`;
-    });
-
-    // Auto-format lists with proper spacing
-    corrected = corrected.replace(/^(\d+\.|\*|\-)\s*/gm, (match, marker) => {
-      return `${marker} `;
-    });
-
-    // Auto-format headers with proper spacing
-    corrected = corrected.replace(/^(#{1,6})\s*/gm, (match, hashes) => {
-      return `${hashes} `;
-    });
-
+    corrected = corrected.replace(/\*{4,}/g, '***');
+    corrected = corrected.replace(/_{4,}/g, '___');
     return corrected;
   }, []);
 
