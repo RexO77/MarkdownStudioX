@@ -1,5 +1,64 @@
 import { convertMarkdownToHtml } from './markdownUtils';
 
+// Helper to download a blob
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Export as Markdown file
+export const exportToMarkdown = async (content: string, filename: string = 'document') => {
+  const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+  downloadBlob(blob, `${filename}.md`);
+};
+
+// Export as HTML file
+export const exportToHtml = async (content: string, filename: string = 'document') => {
+  const html = convertMarkdownToHtml(content);
+
+  const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${filename}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+      color: #333;
+    }
+    h1, h2, h3, h4, h5, h6 { margin-top: 1.5em; margin-bottom: 0.5em; }
+    h1 { font-size: 2em; border-bottom: 1px solid #eee; padding-bottom: 0.3em; }
+    h2 { font-size: 1.5em; border-bottom: 1px solid #eee; padding-bottom: 0.3em; }
+    code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+    pre { background: #f5f5f5; padding: 16px; border-radius: 6px; overflow-x: auto; }
+    pre code { background: none; padding: 0; }
+    blockquote { border-left: 4px solid #ddd; margin: 0; padding-left: 16px; color: #666; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f5f5f5; }
+    img { max-width: 100%; }
+  </style>
+</head>
+<body>
+${html}
+</body>
+</html>`;
+
+  const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+  downloadBlob(blob, `${filename}.html`);
+};
+
 // Use browser's native print-to-PDF (no library needed!)
 export const exportToPdf = async (content: string) => {
   const html = convertMarkdownToHtml(content);
@@ -172,14 +231,3 @@ ${latexContent}
   downloadBlob(blob, `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.tex`);
 };
 
-// Simple download helper (no file-saver needed!)
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
