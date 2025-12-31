@@ -59,58 +59,48 @@ ${html}
   downloadBlob(blob, `${filename}.html`);
 };
 
-// Use browser's native print-to-PDF (no library needed!)
 export const exportToPdf = async (content: string) => {
+  const html2pdf = (await import('html2pdf.js')).default;
   const html = convertMarkdownToHtml(content);
 
-  // Create a new window for printing
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) {
-    throw new Error('Could not open print window');
-  }
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  container.style.cssText = `
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    max-width: 800px;
+    padding: 40px;
+    color: #333;
+  `;
 
-  printWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Document Export</title>
-      <style>
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          line-height: 1.6;
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 40px;
-          color: #333;
-        }
-        h1, h2, h3, h4, h5, h6 { margin-top: 1.5em; margin-bottom: 0.5em; }
-        h1 { font-size: 2em; border-bottom: 1px solid #eee; padding-bottom: 0.3em; }
-        h2 { font-size: 1.5em; border-bottom: 1px solid #eee; padding-bottom: 0.3em; }
-        code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
-        pre { background: #f5f5f5; padding: 16px; border-radius: 6px; overflow-x: auto; }
-        pre code { background: none; padding: 0; }
-        blockquote { border-left: 4px solid #ddd; margin: 0; padding-left: 16px; color: #666; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #f5f5f5; }
-        img { max-width: 100%; }
-        @media print {
-          body { padding: 0; }
-        }
-      </style>
-    </head>
-    <body>${html}</body>
-    </html>
-  `);
+  const style = document.createElement('style');
+  style.textContent = `
+    h1, h2, h3, h4, h5, h6 { margin-top: 1.5em; margin-bottom: 0.5em; }
+    h1 { font-size: 2em; border-bottom: 1px solid #eee; padding-bottom: 0.3em; }
+    h2 { font-size: 1.5em; border-bottom: 1px solid #eee; padding-bottom: 0.3em; }
+    code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+    pre { background: #f5f5f5; padding: 16px; border-radius: 6px; overflow-x: auto; }
+    pre code { background: none; padding: 0; }
+    blockquote { border-left: 4px solid #ddd; margin: 0; padding-left: 16px; color: #666; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f5f5f5; }
+    img { max-width: 100%; }
+  `;
+  container.prepend(style);
 
-  printWindow.document.close();
-  printWindow.focus();
+  document.body.appendChild(container);
 
-  // Wait for content to load, then print
-  setTimeout(() => {
-    printWindow.print();
-    printWindow.close();
-  }, 250);
+  const options = {
+    margin: 10,
+    filename: 'document.pdf',
+    image: { type: 'jpeg' as const, quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+  };
+
+  await html2pdf().set(options).from(container).save();
+  document.body.removeChild(container);
 };
 
 // Simple HTML-based Word export (no docx library needed!)

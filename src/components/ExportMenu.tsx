@@ -1,8 +1,7 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Download, FileText, FileDown, ChevronDown, Check } from 'lucide-react';
+import { Download, FileText, FileDown, ChevronDown, Check, Loader2 } from 'lucide-react';
 import { exportToPdf, exportToWord, exportToText, exportToLatex } from '@/utils/exportUtils';
 import { toast } from 'sonner';
 
@@ -11,15 +10,15 @@ interface ExportMenuProps {
 }
 
 const exportOptions = [
-  { id: 'pdf', label: 'Export as PDF', icon: FileText, format: 'pdf' as const },
-  { id: 'word', label: 'Export as Word', icon: FileDown, format: 'word' as const },
-  { id: 'divider', label: '', icon: null, format: null },
-  { id: 'text', label: 'Export as Text', icon: FileText, format: 'text' as const },
-  { id: 'latex', label: 'Export as LaTeX', icon: FileDown, format: 'latex' as const },
+  { id: 'pdf', label: 'PDF', icon: FileText, format: 'pdf' as const },
+  { id: 'word', label: 'Word', icon: FileDown, format: 'word' as const },
+  { id: 'text', label: 'Text', icon: FileText, format: 'text' as const },
+  { id: 'latex', label: 'LaTeX', icon: FileDown, format: 'latex' as const },
 ];
 
 const ExportMenu = ({ content }: ExportMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [recentExport, setRecentExport] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -29,7 +28,6 @@ const ExportMenu = ({ content }: ExportMenuProps) => {
     return title || 'Untitled Document';
   };
 
-  // Close on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -43,7 +41,6 @@ const ExportMenu = ({ content }: ExportMenuProps) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Close on escape
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setIsOpen(false);
@@ -56,6 +53,7 @@ const ExportMenu = ({ content }: ExportMenuProps) => {
   }, [isOpen]);
 
   const handleExport = async (format: 'pdf' | 'word' | 'text' | 'latex') => {
+    setIsExporting(true);
     try {
       if (format === 'pdf') {
         await exportToPdf(content);
@@ -70,101 +68,81 @@ const ExportMenu = ({ content }: ExportMenuProps) => {
 
       setRecentExport(format);
       setTimeout(() => setRecentExport(null), 2000);
-      toast.success(`Successfully exported to ${format.toUpperCase()}`);
+      toast.success(`Exported to ${format.toUpperCase()}`);
       setIsOpen(false);
     } catch (error) {
-      toast.error(`Failed to export to ${format.toUpperCase()}`);
+      toast.error(`Export failed`);
+    } finally {
+      setIsExporting(false);
     }
   };
 
   return (
     <div className="relative" ref={menuRef}>
-      <Button
-        variant="outline"
-        size="sm"
-        className="flex items-center gap-2"
+      <motion.button
         onClick={() => setIsOpen(!isOpen)}
+        disabled={isExporting}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg
+          bg-gradient-to-b from-primary/90 to-primary text-primary-foreground
+          shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.1)]
+          hover:shadow-[0_4px_12px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.2)]
+          disabled:opacity-50 transition-shadow duration-200"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <Download className="h-4 w-4" />
+        {isExporting ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Download className="h-4 w-4" />
+        )}
         <span>Export</span>
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{
-            type: "spring",
-            stiffness: 300,
-            damping: 20,
-          }}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
         >
-          <ChevronDown className="h-3 w-3 opacity-60" />
+          <ChevronDown className="h-3 w-3 opacity-70" />
         </motion.div>
-      </Button>
+      </motion.button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{
-              type: "spring",
-              stiffness: 400,
-              damping: 25,
-            }}
-            className="absolute top-full left-0 mt-2 w-48 rounded-lg border border-border bg-background p-1 shadow-lg z-50"
-            style={{ backgroundColor: 'hsl(var(--background))' }}
+            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            className="absolute top-full right-0 mt-2 w-40 rounded-xl border border-border 
+              bg-background/95 backdrop-blur-md p-1.5 shadow-xl z-50"
           >
             {exportOptions.map((option, index) => {
-              if (option.id === 'divider') {
-                return (
-                  <motion.div
-                    key={option.id}
-                    initial={{ opacity: 0, scaleX: 0 }}
-                    animate={{ opacity: 1, scaleX: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="my-1 h-px bg-border"
-                  />
-                );
-              }
-
-              const Icon = option.icon!;
+              const Icon = option.icon;
               const isRecent = recentExport === option.format;
 
               return (
                 <motion.button
                   key={option.id}
-                  initial={{ opacity: 0, x: 10 }}
+                  initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  whileHover={{
-                    backgroundColor: 'hsl(var(--accent))',
-                    transition: { duration: 0.15 }
-                  }}
+                  transition={{ delay: index * 0.03, duration: 0.15 }}
+                  whileHover={{ backgroundColor: 'hsl(var(--accent))' }}
                   whileTap={{ scale: 0.98 }}
-                  transition={{
-                    delay: index * 0.05,
-                    type: "spring",
-                    stiffness: 400,
-                    damping: 25,
-                  }}
-                  onClick={() => handleExport(option.format!)}
-                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground cursor-pointer focus:outline-none"
-                  style={{ backgroundColor: 'transparent' }}
+                  onClick={() => handleExport(option.format)}
+                  disabled={isExporting}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm 
+                    text-foreground cursor-pointer focus:outline-none disabled:opacity-50
+                    transition-colors duration-100"
                 >
                   <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
+                    initial={false}
+                    animate={isRecent ? { scale: [1, 1.2, 1] } : {}}
+                    transition={{ duration: 0.3 }}
                   >
                     {isRecent ? (
-                      <motion.div
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                      >
-                        <Check className="h-4 w-4 text-green-500" />
-                      </motion.div>
+                      <Check className="h-4 w-4 text-green-500" />
                     ) : (
-                      <Icon className="h-4 w-4" />
+                      <Icon className="h-4 w-4 opacity-60" />
                     )}
                   </motion.div>
                   <span>{option.label}</span>
@@ -179,4 +157,3 @@ const ExportMenu = ({ content }: ExportMenuProps) => {
 };
 
 export default ExportMenu;
-
