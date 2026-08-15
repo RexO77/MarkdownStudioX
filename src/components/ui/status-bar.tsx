@@ -1,12 +1,12 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { useFocusMode } from '@/components/layout/FocusMode';
-import { Badge } from '@/components/ui/badge';
-import { Wifi, Save, Eye } from 'lucide-react';
+import type { EditorView } from '@/components/UnifiedEditor';
 
 interface StatusBarProps {
   className?: string;
+  documentName?: string;
+  view?: EditorView;
+  cursor?: { line: number; column: number };
   documentStats?: {
     words: number;
     characters: number;
@@ -15,77 +15,77 @@ interface StatusBarProps {
   savingStatus?: 'saved' | 'saving' | 'error';
 }
 
+const VIEW_LABEL: Record<EditorView, string> = {
+  edit: 'SOURCE',
+  split: 'SPLIT',
+  read: 'GALLEY',
+};
+
 export function StatusBar({
   className,
+  documentName,
+  view = 'split',
+  cursor,
   documentStats,
-  savingStatus = 'saved'
+  savingStatus = 'saved',
 }: StatusBarProps) {
-  const { mode } = useFocusMode();
-
-  if (mode === 'zen' || mode === 'distraction-free') {
-    return null;
-  }
-
-  const getFocusModeLabel = (mode: string) => {
-    switch (mode) {
-      case 'zen':
-        return 'Zen Mode';
-      case 'distraction-free':
-        return 'Focus';
-      case 'presentation':
-        return 'Presentation';
-      default:
-        return 'Default';
-    }
-  };
-
   return (
-    <div className={cn(
-      'flex items-center justify-between px-4 py-2 border-t bg-background/80 backdrop-blur-sm text-xs text-muted-foreground',
-      className
-    )}>
-      <div className="flex items-center gap-4">
-        {/* Save Status */}
-        <div className="flex items-center gap-1">
-          <Save className={cn(
-            'h-3 w-3',
-            savingStatus === 'saving' && 'animate-spin',
-            savingStatus === 'saved' && 'text-green-500',
-            savingStatus === 'error' && 'text-red-500'
-          )} />
-          <span className={cn(
-            savingStatus === 'saved' && 'text-green-500',
-            savingStatus === 'error' && 'text-red-500'
-          )}>
-            {savingStatus === 'saving' ? 'Saving...' :
-              savingStatus === 'saved' ? 'Saved' : 'Error saving'}
-          </span>
-        </div>
+    <div
+      className={cn(
+        'flex h-[26px] shrink-0 items-stretch justify-between overflow-hidden',
+        'border-t border-border bg-background font-mono text-muted-foreground',
+        className
+      )}
+    >
+      <div className="flex min-w-0 items-stretch">
+        {/* Mode segment: inverse video, the Bell blue block */}
+        <span className="statusline-segment bg-primary font-bold text-primary-foreground">
+          {VIEW_LABEL[view]}
+        </span>
 
-        {/* Online Status */}
-        <div className="flex items-center gap-1">
-          <Wifi className="h-3 w-3 text-green-500" />
-          <span>Online</span>
-        </div>
+        {documentName && (
+          <span className="statusline-segment min-w-0 border-r border-border bg-secondary text-foreground">
+            <span className="truncate normal-case">{documentName}</span>
+          </span>
+        )}
+
+        <span className="statusline-segment" aria-hidden="true">
+          <span className="statusline-caret" />
+        </span>
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* Focus Mode */}
-        <Badge variant="outline" className="text-xs">
-          {getFocusModeLabel(mode)}
-        </Badge>
-
-        {/* Document Stats */}
-        {documentStats && (
-          <div className="flex items-center gap-4">
-            <span>{documentStats.words} words</span>
-            <span>{documentStats.characters} chars</span>
-            <div className="flex items-center gap-1">
-              <Eye className="h-3 w-3" />
-              <span>{documentStats.readingTime}m read</span>
-            </div>
-          </div>
+      <div className="flex items-stretch">
+        {cursor && (
+          <span className="statusline-segment hidden border-l border-border sm:inline-flex">
+            LN {cursor.line}, COL {cursor.column}
+          </span>
         )}
+
+        {documentStats && (
+          <>
+            <span className="statusline-segment hidden border-l border-border md:inline-flex">
+              {documentStats.words} words
+            </span>
+            <span className="statusline-segment hidden border-l border-border lg:inline-flex">
+              {documentStats.characters} chars
+            </span>
+            <span className="statusline-segment hidden border-l border-border sm:inline-flex">
+              {documentStats.readingTime} min read
+            </span>
+          </>
+        )}
+
+        <span
+          className={cn(
+            'statusline-segment min-w-[13ch] justify-center border-l border-border',
+            savingStatus === 'saved' && 'text-muted-foreground',
+            savingStatus === 'saving' && 'text-primary',
+            savingStatus === 'error' && 'text-destructive'
+          )}
+          role="status"
+        >
+          {savingStatus === 'saving' ? 'saving…' : savingStatus === 'saved' ? 'saved' : 'save failed'}
+        </span>
       </div>
     </div>
   );
