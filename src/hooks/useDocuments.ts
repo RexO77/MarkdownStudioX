@@ -15,6 +15,7 @@ const ACTIVE_DOC_KEY = 'markdown-studio-active-doc';
 export interface UseDocumentsReturn {
     documents: Document[];
     activeDocument: Document | null;
+    saveFailed: boolean;
     createDocument: (name?: string) => Document;
     updateDocument: (id: string, updates: Partial<Document>) => void;
     deleteDocument: (id: string) => void;
@@ -41,11 +42,13 @@ const loadDocuments = (): Document[] => {
     return [];
 };
 
-const saveDocuments = (documents: Document[]) => {
+const saveDocuments = (documents: Document[]): boolean => {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(documents));
+        return true;
     } catch (error) {
         console.error('Failed to save documents:', error);
+        return false;
     }
 };
 
@@ -72,6 +75,7 @@ const saveActiveDocId = (id: string | null) => {
 export const useDocuments = (): UseDocumentsReturn => {
     const [documents, setDocuments] = useState<Document[]>(() => loadDocuments());
     const [activeDocId, setActiveDocId] = useState<string | null>(() => loadActiveDocId());
+    const [saveFailed, setSaveFailed] = useState(false);
 
     // Migrate existing content if no documents exist
     useEffect(() => {
@@ -93,9 +97,9 @@ export const useDocuments = (): UseDocumentsReturn => {
         }
     }, [documents.length]);
 
-    // Persist documents whenever they change
+    // Persist documents whenever they change; the statusline reports this write
     useEffect(() => {
-        saveDocuments(documents);
+        setSaveFailed(!saveDocuments(documents));
     }, [documents]);
 
     // Persist active document ID
@@ -180,6 +184,7 @@ export const useDocuments = (): UseDocumentsReturn => {
     return {
         documents,
         activeDocument,
+        saveFailed,
         createDocument,
         updateDocument,
         deleteDocument,
