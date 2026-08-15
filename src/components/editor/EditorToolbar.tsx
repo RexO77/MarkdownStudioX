@@ -58,10 +58,15 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({ icon, label, shortcut, on
   </Tooltip>
 );
 
-const VIEWS: { id: EditorView; label: string; icon: React.ReactNode; mobileHidden?: boolean }[] = [
-  { id: 'edit', label: 'SOURCE', icon: <CodeXml className="h-3 w-3" /> },
-  { id: 'split', label: 'SPLIT', icon: <Columns2 className="h-3 w-3" />, mobileHidden: true },
-  { id: 'read', label: 'GALLEY', icon: <Feather className="h-3 w-3" /> },
+const VIEWS: {
+  id: EditorView;
+  label: string;
+  Icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  mobileHidden?: boolean;
+}[] = [
+  { id: 'edit', label: 'SOURCE', Icon: CodeXml },
+  { id: 'split', label: 'SPLIT', Icon: Columns2, mobileHidden: true },
+  { id: 'read', label: 'GALLEY', Icon: Feather },
 ];
 
 export const EditorToolbar = ({
@@ -126,29 +131,33 @@ export const EditorToolbar = ({
         )}
       </div>
 
-      {/* View switcher: which half of the pipeline is on screen */}
+      {/* View switcher: a 3-cell group. Inverse fill is the active cell. */}
       <div
         role="group"
         aria-label="Editor view"
-        className="flex h-7 shrink-0 items-stretch border border-border font-mono text-[11px] tracking-[0.04em] md:h-6"
+        className="flex h-7 shrink-0 items-stretch border border-border font-mono text-[11px] leading-none tracking-[0.04em] md:h-6"
       >
-        {VIEWS.filter((v) => !(isMobile && v.mobileHidden)).map((view) => (
-          <button
-            key={view.id}
-            type="button"
-            aria-pressed={activeView === view.id}
-            onClick={() => onViewChange(view.id)}
-            className={cn(
-              'inline-flex items-center gap-1.5 px-2.5',
-              activeView === view.id
-                ? 'bg-foreground text-background'
-                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-            )}
-          >
-            {view.icon}
-            <span className="hidden sm:inline">{view.label}</span>
-          </button>
-        ))}
+        {VIEWS.filter((v) => !(isMobile && v.mobileHidden)).map((view, index) => {
+          const selected = activeView === view.id;
+          return (
+            <button
+              key={view.id}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => onViewChange(view.id)}
+              className={cn(
+                'inline-flex h-full items-center gap-1.5 px-2.5',
+                index > 0 && 'border-l border-border',
+                selected
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+              )}
+            >
+              <view.Icon className="size-3 shrink-0" strokeWidth={1.75} />
+              <span className="hidden leading-none sm:inline">{view.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
