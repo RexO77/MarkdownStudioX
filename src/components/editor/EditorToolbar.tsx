@@ -1,24 +1,24 @@
-
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import {
-  Eye, Edit, Moon, Sun, Sparkles, Wand2,
-  Bold, Italic, Code, Heading1, List, Quote, Link, Search
+  CodeXml, Feather, Columns2, Sparkles, LayoutTemplate,
+  Bold, Italic, Code, Heading1, List, Quote, Link, Search, SquareCode,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Separator } from '@/components/ui/separator';
-import { useTheme } from '@/components/ui/theme-provider';
+import { Kbd } from '@/components/ui/kbd';
+import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import type { EditorView } from '../UnifiedEditor';
 
 interface EditorToolbarProps {
-  onSmartFormat: () => void;
-  isProcessing: boolean;
+  onSmartFormat?: () => void;
+  isProcessing?: boolean;
   showTemplates: boolean;
   onToggleTemplates: () => void;
-  activeView: 'edit' | 'preview' | 'split';
-  onViewChange: (view: 'edit' | 'preview' | 'split') => void;
+  activeView: EditorView;
+  onViewChange: (view: EditorView) => void;
   onFormat?: (format: string) => void;
   onSearch?: () => void;
+  onOpenAIPanel?: () => void;
 }
 
 interface ToolbarButtonProps {
@@ -27,179 +27,128 @@ interface ToolbarButtonProps {
   shortcut?: string;
   onClick: () => void;
   disabled?: boolean;
+  active?: boolean;
 }
 
-const ToolbarButton: React.FC<ToolbarButtonProps> = ({ icon, label, shortcut, onClick, disabled }) => (
+const ToolbarButton: React.FC<ToolbarButtonProps> = ({ icon, label, shortcut, onClick, disabled, active }) => (
   <Tooltip>
     <TooltipTrigger asChild>
-      <Button
-        variant="ghost"
-        size="sm"
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
         onClick={onClick}
         disabled={disabled}
-        className="h-8 w-8 p-0"
+        aria-label={shortcut ? `${label} (${shortcut})` : label}
+        aria-pressed={active}
+        className={cn(
+          'inline-flex h-9 w-9 items-center justify-center text-muted-foreground md:h-7 md:w-7',
+          'hover:bg-secondary hover:text-foreground',
+          'active:bg-foreground active:text-background',
+          'disabled:pointer-events-none disabled:opacity-40',
+          active && 'bg-secondary text-foreground'
+        )}
       >
         {icon}
-      </Button>
+      </button>
     </TooltipTrigger>
-    <TooltipContent side="bottom" className="flex items-center gap-2">
+    <TooltipContent side="bottom" className="flex items-center gap-2.5 font-mono text-[11px]">
       <span>{label}</span>
-      {shortcut && (
-        <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded font-mono">
-          {shortcut}
-        </kbd>
-      )}
+      {shortcut && <Kbd keys={shortcut} />}
     </TooltipContent>
   </Tooltip>
 );
 
+const VIEWS: { id: EditorView; label: string; icon: React.ReactNode; mobileHidden?: boolean }[] = [
+  { id: 'edit', label: 'SOURCE', icon: <CodeXml className="h-3 w-3" /> },
+  { id: 'split', label: 'SPLIT', icon: <Columns2 className="h-3 w-3" />, mobileHidden: true },
+  { id: 'read', label: 'GALLEY', icon: <Feather className="h-3 w-3" /> },
+];
+
 export const EditorToolbar = ({
-  onSmartFormat,
-  isProcessing,
   showTemplates,
   onToggleTemplates,
   activeView,
   onViewChange,
   onFormat,
-  onSearch
+  onSearch,
+  onOpenAIPanel,
 }: EditorToolbarProps) => {
-  const { theme, setTheme } = useTheme();
   const isMobile = useIsMobile();
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
-  const handleFormat = (format: string) => {
-    if (onFormat) {
-      onFormat(format);
-    }
-  };
+  const formatButtons = [
+    { icon: <Bold className="h-3.5 w-3.5" />, label: 'Bold', shortcut: '⌘B', format: 'bold' },
+    { icon: <Italic className="h-3.5 w-3.5" />, label: 'Italic', shortcut: '⌘I', format: 'italic' },
+    { icon: <Code className="h-3.5 w-3.5" />, label: 'Inline code', shortcut: '⌘`', format: 'code' },
+    { icon: <Heading1 className="h-3.5 w-3.5" />, label: 'Heading', shortcut: '⌘⇧H', format: 'heading' },
+    { icon: <List className="h-3.5 w-3.5" />, label: 'List', shortcut: '⌘⇧L', format: 'list' },
+    { icon: <Quote className="h-3.5 w-3.5" />, label: 'Quote', shortcut: '⌘⇧Q', format: 'quote' },
+    { icon: <SquareCode className="h-3.5 w-3.5" />, label: 'Code block', shortcut: '⌘⇧C', format: 'codeblock' },
+    { icon: <Link className="h-3.5 w-3.5" />, label: 'Link', shortcut: '⌘K', format: 'link' },
+  ];
 
   return (
-    <div className="flex items-center justify-between p-2 border-b bg-background/80 backdrop-blur-sm">
-      <div className="flex items-center gap-1">
-        {/* Formatting Buttons */}
-        <ToolbarButton
-          icon={<Bold className="h-4 w-4" />}
-          label="Bold"
-          shortcut="⌘B"
-          onClick={() => handleFormat('bold')}
-        />
-        <ToolbarButton
-          icon={<Italic className="h-4 w-4" />}
-          label="Italic"
-          shortcut="⌘I"
-          onClick={() => handleFormat('italic')}
-        />
-        <ToolbarButton
-          icon={<Code className="h-4 w-4" />}
-          label="Inline Code"
-          shortcut="⌘`"
-          onClick={() => handleFormat('code')}
-        />
-        <ToolbarButton
-          icon={<Heading1 className="h-4 w-4" />}
-          label="Heading"
-          shortcut="⌘⇧H"
-          onClick={() => handleFormat('heading')}
-        />
-        <ToolbarButton
-          icon={<List className="h-4 w-4" />}
-          label="List"
-          shortcut="⌘⇧L"
-          onClick={() => handleFormat('list')}
-        />
-        <ToolbarButton
-          icon={<Quote className="h-4 w-4" />}
-          label="Quote"
-          shortcut="⌘⇧Q"
-          onClick={() => handleFormat('quote')}
-        />
-        <ToolbarButton
-          icon={<Link className="h-4 w-4" />}
-          label="Link"
-          shortcut="⌘K"
-          onClick={() => handleFormat('link')}
-        />
+    <div className="flex h-9 shrink-0 items-center justify-between border-b border-border bg-background px-2">
+      <div className="flex min-w-0 items-center gap-0.5">
+        {formatButtons.map((btn) => (
+          <ToolbarButton
+            key={btn.format}
+            icon={btn.icon}
+            label={btn.label}
+            shortcut={btn.shortcut}
+            onClick={() => onFormat?.(btn.format)}
+          />
+        ))}
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <div className="mx-1.5 h-4 w-px bg-border" aria-hidden="true" />
 
-        {/* Search Button */}
         <ToolbarButton
-          icon={<Search className="h-4 w-4" />}
-          label="Find & Replace"
+          icon={<Search className="h-3.5 w-3.5" />}
+          label="Find & replace"
           shortcut="⌘F"
           onClick={() => onSearch?.()}
         />
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <div className="mx-1.5 h-4 w-px bg-border" aria-hidden="true" />
 
-        {/* AI & Templates */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onSmartFormat}
-          disabled={isProcessing}
-          className="h-8"
-        >
-          <Sparkles className="h-4 w-4 mr-1" />
-          {isProcessing ? 'Formatting...' : 'AI Format'}
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="sm"
+        <ToolbarButton
+          icon={<LayoutTemplate className="h-3.5 w-3.5" />}
+          label="Insert template"
           onClick={onToggleTemplates}
-          className="h-8"
-        >
-          <Wand2 className="h-4 w-4 mr-1" />
-          Templates
-        </Button>
+          active={showTemplates}
+        />
 
-        <Separator orientation="vertical" className="h-6 mx-1" />
-
-        {/* View Toggle */}
-        {isMobile ? (
-          <div className="flex gap-1">
-            <Button
-              variant={activeView === 'edit' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onViewChange('edit')}
-              className="h-8"
-            >
-              <Edit className="h-4 w-4 mr-1" />
-              Edit
-            </Button>
-            <Button
-              variant={activeView === 'preview' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onViewChange('preview')}
-              className="h-8"
-            >
-              <Eye className="h-4 w-4 mr-1" />
-              Preview
-            </Button>
-          </div>
-        ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onViewChange(activeView === 'split' ? 'edit' : 'split')}
-            className="h-8"
-          >
-            <Eye className="h-4 w-4 mr-1" />
-            {activeView === 'split' ? 'Hide Preview' : 'Show Preview'}
-          </Button>
+        {onOpenAIPanel && (
+          <ToolbarButton
+            icon={<Sparkles className="h-3.5 w-3.5" />}
+            label="AI formatting"
+            onClick={onOpenAIPanel}
+          />
         )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <ToolbarButton
-          icon={theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          label={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-          onClick={toggleTheme}
-        />
+      {/* View switcher: which half of the pipeline is on screen */}
+      <div
+        role="group"
+        aria-label="Editor view"
+        className="flex h-7 shrink-0 items-stretch border border-border font-mono text-[11px] tracking-[0.04em] md:h-6"
+      >
+        {VIEWS.filter((v) => !(isMobile && v.mobileHidden)).map((view) => (
+          <button
+            key={view.id}
+            type="button"
+            aria-pressed={activeView === view.id}
+            onClick={() => onViewChange(view.id)}
+            className={cn(
+              'inline-flex items-center gap-1.5 px-2.5',
+              activeView === view.id
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+            )}
+          >
+            {view.icon}
+            <span className="hidden sm:inline">{view.label}</span>
+          </button>
+        ))}
       </div>
     </div>
   );
