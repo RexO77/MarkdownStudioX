@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { cn } from '@/lib/utils';
 import { useSmartEditor } from '@/hooks/useSmartEditor';
@@ -8,17 +7,18 @@ import { SmartTextSelection } from './SmartTextSelection';
 interface EnhancedEditorProps {
   value: string;
   onChange: (value: string) => void;
+  onScroll?: () => void;
+  onCursorChange?: (position: { line: number; column: number }) => void;
   className?: string;
   placeholder?: string;
 }
 
-// Helper to get approximate caret position
+// Helper to get approximate caret position for the selection toolbar
 function getCaretPosition(textarea: HTMLTextAreaElement): { x: number; y: number } {
   const { selectionStart, selectionEnd } = textarea;
   const rect = textarea.getBoundingClientRect();
   const style = getComputedStyle(textarea);
 
-  // Create a hidden div to mirror textarea content
   const div = document.createElement('div');
   div.style.cssText = `
     position: absolute;
@@ -31,11 +31,9 @@ function getCaretPosition(textarea: HTMLTextAreaElement): { x: number; y: number
     line-height: ${style.lineHeight};
   `;
 
-  // Get text before selection
   const textBeforeSelection = textarea.value.substring(0, selectionStart);
   div.textContent = textBeforeSelection;
 
-  // Add a span to mark the caret position
   const span = document.createElement('span');
   span.textContent = textarea.value.substring(selectionStart, selectionEnd) || '|';
   div.appendChild(span);
@@ -47,45 +45,52 @@ function getCaretPosition(textarea: HTMLTextAreaElement): { x: number; y: number
 
   document.body.removeChild(div);
 
-  // Calculate position relative to viewport
   const x = rect.left + (spanRect.left - divRect.left) + span.offsetWidth / 2;
-  const y = rect.top + (spanRect.top - divRect.top) - 10;
+  const y = rect.top + (spanRect.top - divRect.top) - textarea.scrollTop - 10;
 
   return {
     x: Math.max(100, Math.min(window.innerWidth - 200, x)),
-    y: Math.max(60, y)
+    y: Math.max(60, y),
   };
 }
 
+// Line patterns that continue on Enter: bullets, numbered items, task items, quotes
+const LIST_PATTERN = /^(\s*)((?:[-*+]|\d+\.)\s+(?:\[[ xX]\]\s+)?|>\s+)(.*)$/;
+
 export const EnhancedEditor = forwardRef<HTMLTextAreaElement, EnhancedEditorProps>(
-  function EnhancedEditor({ value, onChange, className, placeholder }, ref) {
+  function EnhancedEditor({ value, onChange, onScroll, onCursorChange, className, placeholder }, ref) {
     const [selection, setSelection] = useState({ text: '', position: { x: 0, y: 0 }, visible: false });
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const valueRef = useRef(value);
 
-    // Forward the ref to parent
     useImperativeHandle(ref, () => textareaRef.current as HTMLTextAreaElement);
 
-    // Keep value ref updated for use in callbacks
     valueRef.current = value;
 
     const { autoCorrectSyntax } = useSmartEditor({
       onContentChange: onChange,
-      currentContent: value
+      currentContent: value,
     });
 
     const { handleSmartPaste } = useSmartPaste({
       onContentChange: onChange,
-      currentContent: value
+      currentContent: value,
     });
 
-    // Use refs for stable function references to avoid memory leaks
     const handleSmartPasteRef = useRef(handleSmartPaste);
     handleSmartPasteRef.current = handleSmartPaste;
 
     const handleCloseSelection = useCallback(() => {
-      setSelection(prev => ({ ...prev, visible: false }));
+      setSelection((prev) => ({ ...prev, visible: false }));
     }, []);
+
+    const reportCursor = useCallback(() => {
+      const textarea = textareaRef.current;
+      if (!textarea || !onCursorChange) return;
+      const upToCaret = textarea.value.substring(0, textarea.selectionStart);
+      const lines = upToCaret.split('\n');
+      onCursorChange({ line: lines.length, column: lines[lines.length - 1].length + 1 });
+    }, [onCursorChange]);
 
     useEffect(() => {
       const textarea = textareaRef.current;
@@ -98,14 +103,9 @@ export const EnhancedEditor = forwardRef<HTMLTextAreaElement, EnhancedEditorProp
 
         if (selectedText.trim().length > 0) {
           const position = getCaretPosition(textarea);
-
-          setSelection({
-            text: selectedText,
-            position,
-            visible: true
-          });
+          setSelection({ text: selectedText, position, visible: true });
         } else {
-          setSelection(prev => ({ ...prev, visible: false }));
+          setSelection((prev) => (prev.visible ? { ...prev, visible: false } : prev));
         }
       };
 
@@ -118,71 +118,149 @@ export const EnhancedEditor = forwardRef<HTMLTextAreaElement, EnhancedEditorProp
         textarea.removeEventListener('mouseup', handleSelection);
         textarea.removeEventListener('keyup', handleSelection);
       };
-    }, []); // Empty deps - only mount/unmount
+    }, []);
 
-    const handleFormat = useCallback((format: string, selectedText?: string) => {
-      const textarea = textareaRef.current;
-      if (!textarea) return;
+    const handleFormat = useCallback(
+      (format: string, selectedText?: string) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
 
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const text = selectedText || textarea.value.substring(start, end);
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = selectedText || textarea.value.substring(start, end);
 
-      let formattedText = '';
+        let formattedText = '';
 
-      switch (format) {
-        case 'bold':
-          formattedText = `**${text}**`;
-          break;
-        case 'italic':
-          formattedText = `*${text}*`;
-          break;
-        case 'code':
-          formattedText = `\`${text}\``;
-          break;
-        case 'link':
-          formattedText = `[${text}](url)`;
-          break;
-        case 'heading':
-          formattedText = `# ${text}`;
-          break;
-        case 'ai-improve':
-          // This would call AI to improve the selected text
-          formattedText = text; // Placeholder
-          break;
-        default:
-          formattedText = text;
-      }
+        switch (format) {
+          case 'bold':
+            formattedText = `**${text}**`;
+            break;
+          case 'italic':
+            formattedText = `*${text}*`;
+            break;
+          case 'code':
+            formattedText = `\`${text}\``;
+            break;
+          case 'link':
+            formattedText = `[${text}](url)`;
+            break;
+          case 'heading':
+            formattedText = `# ${text}`;
+            break;
+          default:
+            formattedText = text;
+        }
 
-      const currentValue = valueRef.current;
-      const newValue = currentValue.substring(0, start) + formattedText + currentValue.substring(end);
-      onChange(newValue);
-      setSelection(prev => ({ ...prev, visible: false }));
-    }, [onChange]);
+        const currentValue = valueRef.current;
+        const newValue = currentValue.substring(0, start) + formattedText + currentValue.substring(end);
+        onChange(newValue);
+        setSelection((prev) => ({ ...prev, visible: false }));
+      },
+      [onChange]
+    );
 
-    const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const newContent = autoCorrectSyntax(e.target.value);
-      onChange(newContent);
-    }, [autoCorrectSyntax, onChange]);
+    // Enter continues lists and quotes; Enter on an empty marker exits the list.
+    // Tab indents (two spaces) instead of leaving the editor.
+    const handleKeyDown = useCallback(
+      (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        const textarea = e.currentTarget;
+
+        if (e.key === 'Tab' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+          e.preventDefault();
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const current = valueRef.current;
+          if (e.shiftKey) {
+            const lineStart = current.lastIndexOf('\n', start - 1) + 1;
+            if (current.startsWith('  ', lineStart)) {
+              const newValue = current.slice(0, lineStart) + current.slice(lineStart + 2);
+              onChange(newValue);
+              requestAnimationFrame(() => {
+                textarea.setSelectionRange(Math.max(lineStart, start - 2), Math.max(lineStart, end - 2));
+              });
+            }
+          } else {
+            const newValue = current.substring(0, start) + '  ' + current.substring(end);
+            onChange(newValue);
+            requestAnimationFrame(() => {
+              textarea.setSelectionRange(start + 2, start + 2);
+            });
+          }
+          return;
+        }
+
+        if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
+          const start = textarea.selectionStart;
+          if (start !== textarea.selectionEnd) return;
+
+          const current = valueRef.current;
+          const lineStart = current.lastIndexOf('\n', start - 1) + 1;
+          const line = current.substring(lineStart, start);
+          const match = line.match(LIST_PATTERN);
+          if (!match) return;
+
+          const [, indent, marker, rest] = match;
+
+          e.preventDefault();
+
+          if (!rest.trim()) {
+            // Empty item: exit the list
+            const newValue = current.substring(0, lineStart) + current.substring(start);
+            onChange(newValue);
+            requestAnimationFrame(() => {
+              textarea.setSelectionRange(lineStart, lineStart);
+            });
+            return;
+          }
+
+          let nextMarker = marker;
+          const numbered = marker.match(/^(\d+)\.(\s+)$/);
+          if (numbered) {
+            nextMarker = `${parseInt(numbered[1], 10) + 1}.${numbered[2]}`;
+          }
+          // Fresh task items start unchecked
+          nextMarker = nextMarker.replace(/\[[xX]\]/, '[ ]');
+
+          const insertion = '\n' + indent + nextMarker;
+          const newValue = current.substring(0, start) + insertion + current.substring(start);
+          onChange(newValue);
+          requestAnimationFrame(() => {
+            const pos = start + insertion.length;
+            textarea.setSelectionRange(pos, pos);
+          });
+        }
+      },
+      [onChange]
+    );
+
+    const handleContentChange = useCallback(
+      (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const newContent = autoCorrectSyntax(e.target.value);
+        onChange(newContent);
+        reportCursor();
+      },
+      [autoCorrectSyntax, onChange, reportCursor]
+    );
 
     return (
       <div className={cn('relative flex flex-col h-full', className)} data-editor>
-        {/* Editor Textarea */}
         <textarea
           ref={textareaRef}
           value={value}
           onChange={handleContentChange}
-          placeholder={placeholder || "Start writing your markdown..."}
+          onKeyDown={handleKeyDown}
+          onScroll={onScroll}
+          onSelect={reportCursor}
+          placeholder={placeholder || 'Start writing. The galley typesets as you go.'}
           className={cn(
-            'flex-1 w-full resize-none border-0 bg-transparent px-4 py-4',
-            'text-sm leading-relaxed',
-            'focus:outline-none focus:ring-0',
-            'font-mono'
+            'flex-1 w-full resize-none border-0 bg-transparent px-6 py-8',
+            'manuscript text-[14px] leading-[24px]',
+            'placeholder:text-muted-foreground/70',
+            'focus:outline-none focus:ring-0'
           )}
           spellCheck={false}
         />
 
-        {/* Smart Text Selection Toolbar */}
         <SmartTextSelection
           visible={selection.visible}
           selectedText={selection.text}
