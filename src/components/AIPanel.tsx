@@ -1,11 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-    X, Sparkles, RefreshCw, Undo2, Volume2,
-    FileText, Maximize2, Minimize2, RotateCw
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { X, Sparkles, Undo2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { getStoredApiKey } from '@/components/ui/api-key-dialog';
@@ -26,38 +21,69 @@ interface AIHistoryEntry {
     timestamp: number;
 }
 
-const toneOptions: { value: Tone; label: string; description: string }[] = [
-    { value: 'formal', label: 'Formal', description: 'Professional and polished' },
-    { value: 'casual', label: 'Casual', description: 'Relaxed and conversational' },
-    { value: 'creative', label: 'Creative', description: 'Imaginative and engaging' },
-    { value: 'professional', label: 'Professional', description: 'Business-appropriate' },
+const toneOptions: { value: Tone; label: string }[] = [
+    { value: 'professional', label: 'Professional' },
+    { value: 'formal', label: 'Formal' },
+    { value: 'casual', label: 'Casual' },
+    { value: 'creative', label: 'Creative' },
 ];
 
 const contentTypeOptions: { value: ContentType; label: string }[] = [
     { value: 'article', label: 'Article' },
-    { value: 'blog', label: 'Blog Post' },
-    { value: 'documentation', label: 'Documentation' },
+    { value: 'blog', label: 'Blog post' },
+    { value: 'documentation', label: 'Docs' },
     { value: 'academic', label: 'Academic' },
-    { value: 'social', label: 'Social Media' },
+    { value: 'social', label: 'Social' },
 ];
 
-const lengthOptions: { value: LengthAction; label: string; icon: React.ReactNode }[] = [
-    { value: 'expand', label: 'Expand', icon: <Maximize2 className="h-4 w-4" /> },
-    { value: 'condense', label: 'Condense', icon: <Minimize2 className="h-4 w-4" /> },
-    { value: 'rephrase', label: 'Rephrase', icon: <RotateCw className="h-4 w-4" /> },
+const lengthOptions: { value: LengthAction; label: string }[] = [
+    { value: 'expand', label: 'Expand' },
+    { value: 'condense', label: 'Condense' },
+    { value: 'rephrase', label: 'Rephrase' },
 ];
 
-export const AIPanel: React.FC<AIPanelProps> = ({
-    isOpen,
-    onClose,
-    content,
-    onContentChange,
-}) => {
+const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+        {children}
+    </div>
+);
+
+const OptionButton: React.FC<{
+    selected: boolean;
+    onClick: () => void;
+    children: React.ReactNode;
+}> = ({ selected, onClick, children }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={selected}
+        className={cn(
+            'border px-2 py-1.5 text-left font-mono text-[11px] tracking-[0.02em]',
+            selected
+                ? 'border-foreground bg-foreground text-background'
+                : 'border-border text-foreground hover:bg-secondary'
+        )}
+    >
+        {children}
+    </button>
+);
+
+export const AIPanel: React.FC<AIPanelProps> = ({ isOpen, onClose, content, onContentChange }) => {
     const [tone, setTone] = useState<Tone>('professional');
     const [contentType, setContentType] = useState<ContentType>('article');
     const [lengthAction, setLengthAction] = useState<LengthAction | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [history, setHistory] = useState<AIHistoryEntry[]>([]);
+
+    // Escape closes the panel, like every other overlay
+    useEffect(() => {
+        if (!isOpen) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        document.addEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey);
+    }, [isOpen, onClose]);
 
     const addToHistory = useCallback((newContent: string) => {
         setHistory((prev) => [...prev.slice(-2), { content: newContent, timestamp: Date.now() }]);
@@ -74,13 +100,15 @@ export const AIPanel: React.FC<AIPanelProps> = ({
 
     const handleFormat = async () => {
         if (!content.trim()) {
-            toast.error('No content to format');
+            toast.error('Nothing to format yet');
             return;
         }
 
         const apiKey = getStoredApiKey();
         if (!apiKey) {
-            toast.error('Please set your Groq API key in settings');
+            toast.error('Add your Groq API key first', {
+                description: 'Use the key button in the header. Keys stay in your browser.',
+            });
             return;
         }
 
@@ -91,10 +119,12 @@ export const AIPanel: React.FC<AIPanelProps> = ({
             const customPrompt = buildPrompt(tone, contentType, lengthAction);
             const formatted = await formatWithCustomPrompt(content, customPrompt, apiKey);
             onContentChange(formatted);
-            toast.success('Content formatted successfully!');
+            toast.success('Manuscript reformatted');
         } catch (error) {
             console.error('AI Format error:', error);
-            toast.error('Failed to format content');
+            toast.error('Formatting failed', {
+                description: error instanceof Error ? error.message : 'Check your key and try again.',
+            });
         } finally {
             setIsProcessing(false);
         }
@@ -104,140 +134,121 @@ export const AIPanel: React.FC<AIPanelProps> = ({
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    initial={{ x: 300, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    exit={{ x: 300, opacity: 0 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="fixed right-0 top-16 bottom-0 z-40 w-80 bg-background border-l flex flex-col shadow-lg"
+                    initial={{ width: 0 }}
+                    animate={{ width: 288 }}
+                    exit={{ width: 0, transition: { duration: 0.15, ease: [0.16, 1, 0.3, 1] } }}
+                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                    className="h-full shrink-0 overflow-hidden border-l border-border bg-background"
+                    role="complementary"
+                    aria-label="AI formatting"
                 >
-                    <div className="flex items-center justify-between p-4 border-b">
-                        <div className="flex items-center gap-2">
-                            <Sparkles className="h-5 w-5 text-primary" />
-                            <h2 className="font-semibold">AI Enhancement</h2>
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
-                            <X className="h-4 w-4" />
-                        </Button>
+                <div className="flex h-full w-72 flex-col">
+                    <div className="flex h-8 shrink-0 items-center justify-between border-b border-border pl-3 pr-1">
+                        <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+                            <Sparkles className="h-3 w-3 text-primary" />
+                            AI Format
+                        </span>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            aria-label="Close AI panel"
+                            className="inline-flex h-6 w-6 items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        >
+                            <X className="h-3.5 w-3.5" />
+                        </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                    <div className="flex-1 space-y-5 overflow-y-auto p-3">
                         <div>
-                            <Label className="text-sm font-medium flex items-center gap-2 mb-3">
-                                <Volume2 className="h-4 w-4" />
-                                Tone
-                            </Label>
-                            <div className="grid grid-cols-2 gap-2">
+                            <SectionLabel>Tone</SectionLabel>
+                            <div className="grid grid-cols-2 gap-1">
                                 {toneOptions.map((option) => (
-                                    <button
+                                    <OptionButton
                                         key={option.value}
+                                        selected={tone === option.value}
                                         onClick={() => setTone(option.value)}
-                                        className={cn(
-                                            'p-3 rounded-lg border text-left transition-all',
-                                            tone === option.value
-                                                ? 'border-primary bg-primary/10 text-primary'
-                                                : 'border-border hover:border-primary/50'
-                                        )}
-                                    >
-                                        <div className="text-sm font-medium">{option.label}</div>
-                                        <div className="text-xs text-muted-foreground mt-0.5">
-                                            {option.description}
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <Label className="text-sm font-medium flex items-center gap-2 mb-3">
-                                <FileText className="h-4 w-4" />
-                                Content Type
-                            </Label>
-                            <div className="flex flex-wrap gap-2">
-                                {contentTypeOptions.map((option) => (
-                                    <button
-                                        key={option.value}
-                                        onClick={() => setContentType(option.value)}
-                                        className={cn(
-                                            'px-3 py-1.5 rounded-full text-sm border transition-all',
-                                            contentType === option.value
-                                                ? 'border-primary bg-primary/10 text-primary'
-                                                : 'border-border hover:border-primary/50'
-                                        )}
                                     >
                                         {option.label}
-                                    </button>
+                                    </OptionButton>
                                 ))}
                             </div>
                         </div>
 
                         <div>
-                            <Label className="text-sm font-medium flex items-center gap-2 mb-3">
-                                <RefreshCw className="h-4 w-4" />
-                                Adjust Length
-                            </Label>
-                            <div className="flex gap-2">
-                                {lengthOptions.map((option) => (
-                                    <button
+                            <SectionLabel>Content type</SectionLabel>
+                            <div className="grid grid-cols-2 gap-1">
+                                {contentTypeOptions.map((option) => (
+                                    <OptionButton
                                         key={option.value}
-                                        onClick={() => setLengthAction(
-                                            lengthAction === option.value ? null : option.value
-                                        )}
-                                        className={cn(
-                                            'flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition-all',
-                                            lengthAction === option.value
-                                                ? 'border-primary bg-primary/10 text-primary'
-                                                : 'border-border hover:border-primary/50'
-                                        )}
+                                        selected={contentType === option.value}
+                                        onClick={() => setContentType(option.value)}
                                     >
-                                        {option.icon}
-                                        <span className="text-sm">{option.label}</span>
-                                    </button>
+                                        {option.label}
+                                    </OptionButton>
                                 ))}
                             </div>
                         </div>
 
-                        {isProcessing && (
-                            <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                <RefreshCw className="h-4 w-4 animate-spin text-primary" />
-                                <span className="text-sm text-primary">Processing with AI...</span>
+                        <div>
+                            <SectionLabel>Length</SectionLabel>
+                            <div className="grid grid-cols-3 gap-1">
+                                {lengthOptions.map((option) => (
+                                    <OptionButton
+                                        key={option.value}
+                                        selected={lengthAction === option.value}
+                                        onClick={() =>
+                                            setLengthAction(lengthAction === option.value ? null : option.value)
+                                        }
+                                    >
+                                        {option.label}
+                                    </OptionButton>
+                                ))}
                             </div>
-                        )}
+                            <p className="mt-1.5 font-mono text-[11px] text-muted-foreground">
+                                Optional. Leave off to keep the current length.
+                            </p>
+                        </div>
                     </div>
 
-                    <div className="p-4 border-t space-y-2">
-                        <Button
+                    <div className="shrink-0 space-y-1.5 border-t border-border p-3">
+                        <button
+                            type="button"
                             onClick={handleFormat}
                             disabled={isProcessing || !content.trim()}
-                            className="w-full"
+                            className={cn(
+                                'flex h-8 w-full items-center justify-center gap-2',
+                                'bg-primary font-mono text-[11px] font-bold uppercase tracking-[0.04em] text-primary-foreground',
+                                'hover:opacity-90 disabled:opacity-50'
+                            )}
                         >
                             {isProcessing ? (
                                 <>
-                                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                    Processing...
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin [animation-duration:600ms]" />
+                                    Formatting…
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles className="h-4 w-4 mr-2" />
-                                    Format Now
+                                    <Sparkles className="h-3.5 w-3.5" />
+                                    Format manuscript
                                 </>
                             )}
-                        </Button>
+                        </button>
 
-                        <Button
-                            variant="outline"
+                        <button
+                            type="button"
                             onClick={handleUndo}
                             disabled={history.length === 0}
-                            className="w-full"
-                        >
-                            <Undo2 className="h-4 w-4 mr-2" />
-                            Undo Last Change
-                            {history.length > 0 && (
-                                <span className="ml-2 text-xs text-muted-foreground">
-                                    ({history.length} saved)
-                                </span>
+                            className={cn(
+                                'flex h-8 w-full items-center justify-center gap-2 border border-border',
+                                'font-mono text-[11px] uppercase tracking-[0.04em] text-foreground',
+                                'hover:bg-secondary disabled:opacity-40'
                             )}
-                        </Button>
+                        >
+                            <Undo2 className="h-3.5 w-3.5" />
+                            Undo{history.length > 0 ? ` (${history.length})` : ''}
+                        </button>
                     </div>
+                </div>
                 </motion.div>
             )}
         </AnimatePresence>
@@ -267,7 +278,7 @@ function buildPrompt(tone: Tone, contentType: ContentType, lengthAction: LengthA
     };
 
     let prompt = `Format this Markdown content with these specifications:
-  
+
 TONE: ${toneInstructions[tone]}
 
 CONTENT TYPE: ${contentInstructions[contentType]}`;
@@ -280,11 +291,11 @@ LENGTH: ${lengthInstructions[lengthAction]}`;
 
     prompt += `
 
-Also apply these styling rules:
-- Add relevant emojis to headers and key points
+Also apply these rules:
 - Fix any spelling or grammar issues
-- Ensure proper markdown formatting
-- Structure content with clear hierarchy`;
+- Ensure proper markdown formatting (headings, lists, code fences)
+- Structure content with clear hierarchy
+- Return only the markdown document, no commentary`;
 
     return prompt;
 }
