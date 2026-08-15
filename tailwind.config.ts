@@ -1,80 +1,73 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
-  content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{ts,tsx}"],
   prefix: "",
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
     extend: {
+      fontFamily: {
+        mono: ["'Courier Prime'", "'Courier New'", "ui-monospace", "monospace"],
+        serif: ["'STIX Two Text'", "'Times New Roman'", "Georgia", "serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        editor: {
-          bg: "#f8f9fa",
-          border: "#e9ecef",
-          text: "#212529",
+        panel: "hsl(var(--panel))",
+        listing: "hsl(var(--listing))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
-        preview: {
-          bg: "#ffffff",
-          border: "#e9ecef",
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
-        magical: {
-          100: 'oklch(0.86 0.08 280)',
-          200: 'oklch(0.82 0.06 280)',
-          300: 'oklch(0.71 0.12 280)',
-          400: 'oklch(0.61 0.18 280)',
-          500: 'oklch(0.5 0.21 280)',
-          600: 'oklch(0.42 0.18 280)',
-          800: 'oklch(0.25 0.15 280)',
-          900: 'oklch(0.13 0.06 280)',
-        }
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "var(--radius)",
+        sm: "var(--radius)",
       },
       keyframes: {
-        'rainbow': {
-          '0%': { 'background-position': '0%' },
-          '100%': { 'background-position': '200%' },
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
-        'rainbow-border': {
-          '0%, 100%': {
-            'background-position': '0% 50%',
-            'transform': 'scale(1.02)'
-          },
-          '50%': {
-            'background-position': '100% 50%',
-            'transform': 'scale(1)'
-          },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
-        'magical-glow': {
-          '0%, 100%': {
-            'box-shadow': '0 0 1em 0.5em oklch(0.71 0.12 280)',
-            'opacity': '0.6'
-          },
-          '50%': {
-            'box-shadow': '0 0 1.5em 0.75em oklch(0.71 0.12 280)',
-            'opacity': '0.8'
-          },
-        }
       },
       animation: {
-        'rainbow': 'rainbow 60s linear infinite',
-        'rainbow-border': 'rainbow-border 3s ease-in-out infinite',
-        'rainbow-border-fast': 'rainbow-border 2s ease-in-out infinite',
-        'magical-glow': 'magical-glow 3s ease-in-out infinite',
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;
