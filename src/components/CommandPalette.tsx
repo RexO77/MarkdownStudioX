@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Search, FileText, Download, Sparkles, Moon, Sun, Settings,
-    HelpCircle, FileDown, Code, Bold, Italic, Heading1, List,
-    Quote, Link, PanelLeft, Type, Palette
+    FileText, Download, Sparkles, Moon, Sun, HelpCircle, FileDown, Code,
+    Bold, Italic, Heading1, List, Quote, Link, PanelLeft, Settings,
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { Kbd } from '@/components/ui/kbd';
 import { useCommandRegistry, Command } from '@/hooks/useCommandRegistry';
 import { useTheme } from '@/components/ui/theme-provider';
 
@@ -18,46 +17,40 @@ export interface CommandPaletteProps {
 }
 
 const iconMap: Record<string, React.ReactNode> = {
-    'file-text': <FileText className="h-4 w-4" />,
-    'download': <Download className="h-4 w-4" />,
-    'file-down': <FileDown className="h-4 w-4" />,
-    'sparkles': <Sparkles className="h-4 w-4" />,
-    'moon': <Moon className="h-4 w-4" />,
-    'sun': <Sun className="h-4 w-4" />,
-    'settings': <Settings className="h-4 w-4" />,
-    'help': <HelpCircle className="h-4 w-4" />,
-    'code': <Code className="h-4 w-4" />,
-    'bold': <Bold className="h-4 w-4" />,
-    'italic': <Italic className="h-4 w-4" />,
-    'heading': <Heading1 className="h-4 w-4" />,
-    'list': <List className="h-4 w-4" />,
-    'quote': <Quote className="h-4 w-4" />,
-    'link': <Link className="h-4 w-4" />,
-    'panel': <PanelLeft className="h-4 w-4" />,
-    'type': <Type className="h-4 w-4" />,
-    'palette': <Palette className="h-4 w-4" />,
+    'file-text': <FileText className="h-3.5 w-3.5" />,
+    'download': <Download className="h-3.5 w-3.5" />,
+    'file-down': <FileDown className="h-3.5 w-3.5" />,
+    'sparkles': <Sparkles className="h-3.5 w-3.5" />,
+    'moon': <Moon className="h-3.5 w-3.5" />,
+    'sun': <Sun className="h-3.5 w-3.5" />,
+    'help': <HelpCircle className="h-3.5 w-3.5" />,
+    'code': <Code className="h-3.5 w-3.5" />,
+    'bold': <Bold className="h-3.5 w-3.5" />,
+    'italic': <Italic className="h-3.5 w-3.5" />,
+    'heading': <Heading1 className="h-3.5 w-3.5" />,
+    'list': <List className="h-3.5 w-3.5" />,
+    'quote': <Quote className="h-3.5 w-3.5" />,
+    'link': <Link className="h-3.5 w-3.5" />,
+    'panel': <PanelLeft className="h-3.5 w-3.5" />,
+    'settings': <Settings className="h-3.5 w-3.5" />,
 };
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
     isOpen,
     onClose,
     onCommand,
-    content,
 }) => {
     const [query, setQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
-    const { theme, setTheme } = useTheme();
+    const { theme, setTheme, resolvedTheme } = useTheme();
 
-    // Define all commands
     const commands: Command[] = [
-        // File commands
         {
             id: 'new-document',
-            name: 'New Document',
-            description: 'Create a new blank document',
-            shortcut: '⌘N',
+            name: 'New document',
+            description: 'Create a blank document',
             icon: 'file-text',
             category: 'File',
             action: () => onCommand('new-document'),
@@ -65,8 +58,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         {
             id: 'export-markdown',
             name: 'Export as Markdown',
-            description: 'Download document as .md file',
-            shortcut: '⌘⇧M',
+            description: 'Download the manuscript as .md',
             icon: 'download',
             category: 'Export',
             action: () => onCommand('export-markdown'),
@@ -74,27 +66,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         {
             id: 'export-html',
             name: 'Export as HTML',
-            description: 'Download document as .html file',
-            shortcut: '⌘⇧H',
+            description: 'Download the typeset page as .html',
             icon: 'file-down',
             category: 'Export',
             action: () => onCommand('export-html'),
         },
-        // AI commands
         {
             id: 'ai-format',
-            name: 'Format with AI',
-            description: 'Use AI to format and improve your document',
-            shortcut: '⌘⇧F',
+            name: 'AI formatting…',
+            description: 'Open the AI formatting panel',
             icon: 'sparkles',
             category: 'AI',
             action: () => onCommand('ai-format'),
         },
-        // Format commands
         {
             id: 'format-bold',
             name: 'Bold',
-            description: 'Make selected text bold',
             shortcut: '⌘B',
             icon: 'bold',
             category: 'Format',
@@ -103,7 +90,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         {
             id: 'format-italic',
             name: 'Italic',
-            description: 'Make selected text italic',
             shortcut: '⌘I',
             icon: 'italic',
             category: 'Format',
@@ -111,8 +97,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         },
         {
             id: 'format-code',
-            name: 'Inline Code',
-            description: 'Format as inline code',
+            name: 'Inline code',
             shortcut: '⌘`',
             icon: 'code',
             category: 'Format',
@@ -121,7 +106,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         {
             id: 'format-heading',
             name: 'Heading',
-            description: 'Add heading to current line',
             shortcut: '⌘⇧H',
             icon: 'heading',
             category: 'Format',
@@ -129,8 +113,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         },
         {
             id: 'format-list',
-            name: 'Bullet List',
-            description: 'Add bullet point to current line',
+            name: 'Bullet list',
             shortcut: '⌘⇧L',
             icon: 'list',
             category: 'Format',
@@ -139,7 +122,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         {
             id: 'format-quote',
             name: 'Quote',
-            description: 'Add blockquote to current line',
             shortcut: '⌘⇧Q',
             icon: 'quote',
             category: 'Format',
@@ -148,38 +130,41 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         {
             id: 'format-link',
             name: 'Link',
-            description: 'Add link to selected text',
             shortcut: '⌘K',
             icon: 'link',
             category: 'Format',
             action: () => onCommand('format-link'),
         },
-        // View commands
         {
             id: 'toggle-theme',
-            name: theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-            description: 'Toggle between dark and light theme',
-            icon: theme === 'dark' ? 'sun' : 'moon',
+            name: resolvedTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme',
+            description: `Currently: ${theme}`,
+            icon: resolvedTheme === 'dark' ? 'sun' : 'moon',
             category: 'View',
             action: () => {
-                setTheme(theme === 'dark' ? 'light' : 'dark');
+                setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
                 onClose();
             },
         },
         {
-            id: 'toggle-preview',
-            name: 'Toggle Preview Panel',
-            description: 'Show or hide the preview panel',
+            id: 'toggle-sidebar',
+            name: 'Toggle index',
+            shortcut: '⌘\\',
             icon: 'panel',
             category: 'View',
-            action: () => onCommand('toggle-preview'),
+            action: () => onCommand('toggle-sidebar'),
         },
-        // Help
+        {
+            id: 'open-settings',
+            name: 'Settings…',
+            description: 'Theme, AI key',
+            icon: 'settings',
+            category: 'View',
+            action: () => onCommand('open-settings'),
+        },
         {
             id: 'keyboard-shortcuts',
-            name: 'Keyboard Shortcuts',
-            description: 'View all available keyboard shortcuts',
-            shortcut: '⌘/',
+            name: 'Keyboard shortcuts',
             icon: 'help',
             category: 'Help',
             action: () => onCommand('keyboard-shortcuts'),
@@ -190,13 +175,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
     const filteredCommands = query ? search(query) : commands;
     const recentCommands = getRecentCommandObjects();
+    // One flat list drives keyboard navigation; recent rows come first
+    const recentSlice = !query ? recentCommands.slice(0, 3) : [];
+    const visibleCommands = [...recentSlice, ...filteredCommands];
 
-    // Reset selection when query changes
     useEffect(() => {
         setSelectedIndex(0);
     }, [query]);
 
-    // Focus input when opened
     useEffect(() => {
         if (isOpen && inputRef.current) {
             inputRef.current.focus();
@@ -205,35 +191,41 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         }
     }, [isOpen]);
 
-    // Keyboard navigation
-    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-        switch (e.key) {
-            case 'ArrowDown':
-                e.preventDefault();
-                setSelectedIndex((prev) =>
-                    prev < filteredCommands.length - 1 ? prev + 1 : 0
-                );
-                break;
-            case 'ArrowUp':
-                e.preventDefault();
-                setSelectedIndex((prev) =>
-                    prev > 0 ? prev - 1 : filteredCommands.length - 1
-                );
-                break;
-            case 'Enter':
-                e.preventDefault();
-                if (filteredCommands[selectedIndex]) {
-                    executeCommand(filteredCommands[selectedIndex]);
-                }
-                break;
-            case 'Escape':
-                e.preventDefault();
-                onClose();
-                break;
-        }
-    }, [filteredCommands, selectedIndex, onClose]);
+    const executeCommand = useCallback(
+        (command: Command) => {
+            addRecentCommand(command.id);
+            command.action();
+            onClose();
+        },
+        [addRecentCommand, onClose]
+    );
 
-    // Scroll selected item into view
+    const handleKeyDown = useCallback(
+        (e: React.KeyboardEvent) => {
+            switch (e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    setSelectedIndex((prev) => (prev < visibleCommands.length - 1 ? prev + 1 : 0));
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    setSelectedIndex((prev) => (prev > 0 ? prev - 1 : visibleCommands.length - 1));
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (visibleCommands[selectedIndex]) {
+                        executeCommand(visibleCommands[selectedIndex]);
+                    }
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    onClose();
+                    break;
+            }
+        },
+        [visibleCommands, selectedIndex, onClose, executeCommand]
+    );
+
     useEffect(() => {
         if (listRef.current) {
             const selectedElement = listRef.current.querySelector(`[data-index="${selectedIndex}"]`);
@@ -243,109 +235,105 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         }
     }, [selectedIndex]);
 
-    const executeCommand = (command: Command) => {
-        addRecentCommand(command.id);
-        command.action();
-        onClose();
-    };
-
     return (
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+                        exit={{ opacity: 0, transition: { duration: 0.08 } }}
+                        transition={{ duration: 0.12 }}
+                        className="fixed inset-0 z-50 bg-foreground/25 dark:bg-black/55"
                         onClick={onClose}
                     />
 
-                    {/* Palette */}
+                    <div className="pointer-events-none fixed inset-x-0 top-[18%] z-50 flex justify-center px-4">
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -20 }}
+                        initial={{ opacity: 0, scale: 0.985, y: -8 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -20 }}
-                        transition={{ duration: 0.15, ease: 'easeOut' }}
-                        className="fixed top-[20%] left-1/2 -translate-x-1/2 z-50 w-full max-w-lg"
+                        exit={{ opacity: 0, transition: { duration: 0.08 } }}
+                        transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                        className="pointer-events-auto w-full max-w-lg"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Command palette"
                     >
-                        <div className="bg-background border rounded-xl shadow-2xl overflow-hidden">
-                            {/* Search Input */}
-                            <div className="flex items-center px-4 gap-3 border-b">
-                                <Search className="h-5 w-5 text-muted-foreground shrink-0" />
-                                <Input
+                        <div className="overflow-hidden border border-border bg-popover shadow-[0_8px_32px_rgba(0,0,0,0.18)]">
+                            {/* The ex-command line */}
+                            <div className="flex items-center gap-2 border-b border-border px-3">
+                                <span className="font-mono text-base font-bold text-primary" aria-hidden="true">
+                                    :
+                                </span>
+                                <input
                                     ref={inputRef}
                                     type="text"
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    placeholder="Type a command or search..."
-                                    className="border-0 focus-visible:ring-0 h-12 text-base bg-transparent"
+                                    placeholder="command"
+                                    className="h-10 w-full bg-transparent font-mono text-sm placeholder:text-muted-foreground/70 focus:outline-none"
                                 />
                             </div>
 
-                            {/* Commands List */}
-                            <div ref={listRef} className="max-h-[300px] overflow-y-auto p-2">
-                                {/* Recent Commands */}
+                            <div ref={listRef} className="max-h-[320px] overflow-y-auto">
                                 {!query && recentCommands.length > 0 && (
-                                    <>
-                                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                                            Recent
-                                        </div>
-                                        {recentCommands.slice(0, 3).map((cmd, index) => (
-                                            <CommandItem
-                                                key={`recent-${cmd.id}`}
-                                                command={cmd}
-                                                isSelected={selectedIndex === index}
-                                                dataIndex={index}
-                                                onClick={() => executeCommand(cmd)}
-                                                onMouseEnter={() => setSelectedIndex(index)}
-                                            />
-                                        ))}
-                                        <div className="my-2 border-t" />
-                                    </>
+                                    <div className="border-b border-border bg-secondary/60 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+                                        Recent
+                                    </div>
+                                )}
+                                {recentSlice.map((cmd, index) => (
+                                    <CommandItem
+                                        key={`recent-${cmd.id}`}
+                                        command={cmd}
+                                        isSelected={selectedIndex === index}
+                                        dataIndex={index}
+                                        onClick={() => executeCommand(cmd)}
+                                        onMouseEnter={() => setSelectedIndex(index)}
+                                    />
+                                ))}
+
+                                {recentSlice.length > 0 && (
+                                    <div className="border-b border-border bg-secondary/60 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+                                        All commands
+                                    </div>
                                 )}
 
-                                {/* All/Filtered Commands */}
                                 {filteredCommands.length > 0 ? (
                                     filteredCommands.map((cmd, index) => (
                                         <CommandItem
                                             key={cmd.id}
                                             command={cmd}
-                                            isSelected={selectedIndex === index}
-                                            dataIndex={index}
+                                            isSelected={selectedIndex === recentSlice.length + index}
+                                            dataIndex={recentSlice.length + index}
                                             onClick={() => executeCommand(cmd)}
-                                            onMouseEnter={() => setSelectedIndex(index)}
+                                            onMouseEnter={() => setSelectedIndex(recentSlice.length + index)}
                                         />
                                     ))
                                 ) : (
-                                    <div className="py-8 text-center text-muted-foreground">
-                                        No commands found
+                                    <div className="py-8 text-center font-mono text-xs uppercase tracking-[0.04em] text-muted-foreground">
+                                        No matching command
                                     </div>
                                 )}
                             </div>
 
-                            {/* Footer */}
-                            <div className="flex items-center justify-between px-4 py-2 border-t bg-muted/30 text-xs text-muted-foreground">
-                                <div className="flex items-center gap-4">
-                                    <span className="flex items-center gap-1">
-                                        <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">↑↓</kbd>
-                                        navigate
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">↵</kbd>
-                                        select
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">esc</kbd>
-                                        close
-                                    </span>
-                                </div>
+                            <div className="flex items-center gap-4 border-t border-border bg-secondary/60 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                                <span className="flex items-center gap-1.5">
+                                    <Kbd keys="↑↓" />
+                                    navigate
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <Kbd keys="↵" />
+                                    run
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <Kbd keys="esc" />
+                                    close
+                                </span>
                             </div>
                         </div>
                     </motion.div>
+                    </div>
                 </>
             )}
         </AnimatePresence>
@@ -373,27 +361,32 @@ const CommandItem: React.FC<CommandItemProps> = ({
             onClick={onClick}
             onMouseEnter={onMouseEnter}
             className={cn(
-                'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors',
-                isSelected
-                    ? 'bg-primary/10 text-primary'
-                    : 'hover:bg-muted/50'
+                'flex w-full items-center gap-2.5 px-3 py-2 text-left font-mono text-[13px]',
+                isSelected ? 'bg-foreground text-background' : 'text-foreground'
             )}
         >
-            <div className="shrink-0 w-8 h-8 rounded-md bg-muted/50 flex items-center justify-center">
+            <span className={cn('shrink-0', isSelected ? 'text-background' : 'text-muted-foreground')}>
                 {command.icon && iconMap[command.icon]}
-            </div>
-            <div className="flex-1 min-w-0">
-                <div className="font-medium truncate">{command.name}</div>
+            </span>
+            <span className="min-w-0 flex-1 truncate">
+                {command.name}
                 {command.description && (
-                    <div className="text-xs text-muted-foreground truncate">
+                    <span className={cn('ml-2 text-[11px]', isSelected ? 'text-background/70' : 'text-muted-foreground')}>
                         {command.description}
-                    </div>
+                    </span>
                 )}
-            </div>
-            {command.shortcut && (
-                <kbd className="shrink-0 px-2 py-1 rounded bg-muted font-mono text-xs text-muted-foreground">
-                    {command.shortcut}
-                </kbd>
+            </span>
+            {command.shortcut ? (
+                <Kbd keys={command.shortcut} tone={isSelected ? 'inverse' : 'chrome'} className="shrink-0" />
+            ) : (
+                <span
+                    className={cn(
+                        'shrink-0 text-[11px] uppercase tracking-[0.04em]',
+                        isSelected ? 'text-background/70' : 'text-muted-foreground/70'
+                    )}
+                >
+                    {command.category}
+                </span>
             )}
         </button>
     );

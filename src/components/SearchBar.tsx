@@ -1,7 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, ChevronUp, ChevronDown, Replace, CaseSensitive, WholeWord, Regex } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { UseFindReturn } from '@/hooks/useFind';
@@ -13,15 +11,34 @@ interface SearchBarProps {
     onReplace: (newContent: string) => void;
 }
 
-export const SearchBar: React.FC<SearchBarProps> = ({
-    isOpen,
-    onClose,
-    find,
-    onReplace,
-}) => {
+const IconButton: React.FC<{
+    onClick: () => void;
+    title: string;
+    disabled?: boolean;
+    active?: boolean;
+    children: React.ReactNode;
+}> = ({ onClick, title, disabled, active, children }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        title={title}
+        aria-label={title}
+        disabled={disabled}
+        className={cn(
+            'inline-flex h-6 w-6 items-center justify-center text-muted-foreground',
+            'hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40',
+            active && 'bg-foreground text-background hover:bg-foreground hover:text-background'
+        )}
+    >
+        {children}
+    </button>
+);
+
+export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, find, onReplace }) => {
     const [showReplace, setShowReplace] = useState(false);
     const [replaceValue, setReplaceValue] = useState('');
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (isOpen && searchInputRef.current) {
@@ -36,7 +53,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
             if (e.key === 'Escape') {
                 onClose();
-            } else if (e.key === 'Enter' && !e.shiftKey) {
+                return;
+            }
+
+            // Enter/F3 only act inside the search panel; the editor keeps its keys
+            const inSearch = containerRef.current?.contains(e.target as Node);
+            if (!inSearch) return;
+
+            if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 find.goToNext();
             } else if (e.key === 'Enter' && e.shiftKey) {
@@ -44,11 +68,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 find.goToPrev();
             } else if (e.key === 'F3') {
                 e.preventDefault();
-                if (e.shiftKey) {
-                    find.goToPrev();
-                } else {
-                    find.goToNext();
-                }
+                if (e.shiftKey) find.goToPrev();
+                else find.goToNext();
             }
         };
 
@@ -56,176 +77,117 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose, find]);
 
-    const handleReplace = () => {
-        const newContent = find.replace(replaceValue);
-        onReplace(newContent);
-    };
-
-    const handleReplaceAll = () => {
-        const newContent = find.replaceAll(replaceValue);
-        onReplace(newContent);
-    };
-
-    const ToggleButton: React.FC<{
-        active: boolean;
-        onClick: () => void;
-        title: string;
-        children: React.ReactNode;
-    }> = ({ active, onClick, title, children }) => (
-        <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClick}
-            title={title}
-            className={cn(
-                'h-7 w-7 p-0 transition-colors',
-                active && 'bg-primary/20 text-primary hover:bg-primary/30'
-            )}
-        >
-            {children}
-        </Button>
-    );
-
     return (
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.15, ease: 'easeOut' }}
-                    className="absolute top-2 right-4 z-50 bg-background border rounded-lg shadow-lg p-3 min-w-[360px]"
+                    ref={containerRef}
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute right-3 top-11 z-40 w-[380px] max-w-[calc(100vw-24px)] border border-border bg-popover shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+                    role="search"
                 >
-                    {/* Search Row */}
-                    <div className="flex items-center gap-2">
-                        <div className="flex-1 relative">
-                            <Input
-                                ref={searchInputRef}
-                                type="text"
-                                value={find.query}
-                                onChange={(e) => find.setQuery(e.target.value)}
-                                placeholder="Find..."
-                                className="h-8 pr-20 text-sm"
-                            />
-                            {find.query && (
-                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                                    {find.totalMatches > 0
-                                        ? `${find.currentIndex + 1} of ${find.totalMatches}`
-                                        : 'No results'}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Navigation */}
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={find.goToPrev}
-                            disabled={find.totalMatches === 0}
-                            className="h-7 w-7 p-0"
-                            title="Previous match (Shift+Enter)"
-                        >
-                            <ChevronUp className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={find.goToNext}
-                            disabled={find.totalMatches === 0}
-                            className="h-7 w-7 p-0"
-                            title="Next match (Enter)"
-                        >
-                            <ChevronDown className="h-4 w-4" />
-                        </Button>
-
-                        {/* Toggle Replace */}
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowReplace(!showReplace)}
-                            className={cn('h-7 w-7 p-0', showReplace && 'bg-primary/20')}
-                            title="Toggle Replace"
-                        >
-                            <Replace className="h-4 w-4" />
-                        </Button>
-
-                        {/* Close */}
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={onClose}
-                            className="h-7 w-7 p-0"
-                            title="Close (Esc)"
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
+                    {/* Find row */}
+                    <div className="flex items-center gap-1 border-b border-border p-1.5">
+                        <span className="pl-1 font-mono text-[11px] font-bold text-primary" aria-hidden="true">/</span>
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            value={find.query}
+                            onChange={(e) => find.setQuery(e.target.value)}
+                            placeholder="find"
+                            className="h-6 min-w-0 flex-1 bg-transparent px-1 font-mono text-[12px] placeholder:text-muted-foreground/70 focus:outline-none"
+                        />
+                        <span className="shrink-0 px-1 font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                            {find.query ? (find.totalMatches > 0 ? `${find.currentIndex + 1}/${find.totalMatches}` : '0/0') : ''}
+                        </span>
+                        <IconButton onClick={find.goToPrev} disabled={find.totalMatches === 0} title="Previous match (⇧↵)">
+                            <ChevronUp className="h-3.5 w-3.5" />
+                        </IconButton>
+                        <IconButton onClick={find.goToNext} disabled={find.totalMatches === 0} title="Next match (↵)">
+                            <ChevronDown className="h-3.5 w-3.5" />
+                        </IconButton>
+                        <IconButton onClick={() => setShowReplace(!showReplace)} title="Replace" active={showReplace}>
+                            <Replace className="h-3.5 w-3.5" />
+                        </IconButton>
+                        <IconButton onClick={onClose} title="Close (esc)">
+                            <X className="h-3.5 w-3.5" />
+                        </IconButton>
                     </div>
 
-                    {/* Options Row */}
-                    <div className="flex items-center gap-1 mt-2">
-                        <ToggleButton
-                            active={find.options.caseSensitive}
-                            onClick={() => find.setOptions({ caseSensitive: !find.options.caseSensitive })}
-                            title="Match Case"
-                        >
-                            <CaseSensitive className="h-4 w-4" />
-                        </ToggleButton>
-                        <ToggleButton
-                            active={find.options.wholeWord}
-                            onClick={() => find.setOptions({ wholeWord: !find.options.wholeWord })}
-                            title="Match Whole Word"
-                        >
-                            <WholeWord className="h-4 w-4" />
-                        </ToggleButton>
-                        <ToggleButton
-                            active={find.options.useRegex}
-                            onClick={() => find.setOptions({ useRegex: !find.options.useRegex })}
-                            title="Use Regular Expression"
-                        >
-                            <Regex className="h-4 w-4" />
-                        </ToggleButton>
-                    </div>
-
-                    {/* Replace Row */}
+                    {/* Replace row */}
                     <AnimatePresence>
                         {showReplace && (
                             <motion.div
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.15 }}
-                                className="overflow-hidden"
+                                transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                                className="overflow-hidden border-b border-border"
                             >
-                                <div className="flex items-center gap-2 mt-2 pt-2 border-t">
-                                    <Input
+                                <div className="flex items-center gap-1 p-1.5">
+                                    <span className="pl-1 font-mono text-[11px] font-bold text-muted-foreground" aria-hidden="true">→</span>
+                                    <input
                                         type="text"
                                         value={replaceValue}
                                         onChange={(e) => setReplaceValue(e.target.value)}
-                                        placeholder="Replace with..."
-                                        className="h-8 flex-1 text-sm"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                if (find.totalMatches > 0) onReplace(find.replace(replaceValue));
+                                            }
+                                        }}
+                                        placeholder="replace with"
+                                        className="h-6 min-w-0 flex-1 bg-transparent px-1 font-mono text-[12px] placeholder:text-muted-foreground/70 focus:outline-none"
                                     />
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleReplace}
+                                    <button
+                                        type="button"
+                                        onClick={() => onReplace(find.replace(replaceValue))}
                                         disabled={find.totalMatches === 0}
-                                        className="h-7 text-xs"
+                                        className="h-6 border border-border px-1.5 font-mono text-[11px] uppercase tracking-[0.06em] text-foreground hover:bg-secondary disabled:opacity-40"
                                     >
-                                        Replace
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleReplaceAll}
+                                        One
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => onReplace(find.replaceAll(replaceValue))}
                                         disabled={find.totalMatches === 0}
-                                        className="h-7 text-xs"
+                                        className="h-6 border border-border px-1.5 font-mono text-[11px] uppercase tracking-[0.06em] text-foreground hover:bg-secondary disabled:opacity-40"
                                     >
                                         All
-                                    </Button>
+                                    </button>
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    {/* Options row */}
+                    <div className="flex items-center gap-0.5 p-1.5">
+                        <IconButton
+                            active={find.options.caseSensitive}
+                            onClick={() => find.setOptions({ caseSensitive: !find.options.caseSensitive })}
+                            title="Match case"
+                        >
+                            <CaseSensitive className="h-3.5 w-3.5" />
+                        </IconButton>
+                        <IconButton
+                            active={find.options.wholeWord}
+                            onClick={() => find.setOptions({ wholeWord: !find.options.wholeWord })}
+                            title="Whole word"
+                        >
+                            <WholeWord className="h-3.5 w-3.5" />
+                        </IconButton>
+                        <IconButton
+                            active={find.options.useRegex}
+                            onClick={() => find.setOptions({ useRegex: !find.options.useRegex })}
+                            title="Regular expression"
+                        >
+                            <Regex className="h-3.5 w-3.5" />
+                        </IconButton>
+                    </div>
                 </motion.div>
             )}
         </AnimatePresence>
