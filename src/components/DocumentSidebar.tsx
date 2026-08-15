@@ -1,23 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-    Plus, Search, FileText, Star, Trash2, MoreHorizontal,
-    ChevronLeft, ChevronRight, Clock, Edit2, Check, X
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Plus, Star, Trash2, Pencil, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Document } from '@/hooks/useDocuments';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 interface DocumentSidebarProps {
     isOpen: boolean;
-    onToggle: () => void;
     documents: Document[];
     activeDocument: Document | null;
     onSelectDocument: (id: string) => void;
@@ -27,9 +15,36 @@ interface DocumentSidebarProps {
     onToggleFavorite: (id: string) => void;
 }
 
+const SIDEBAR_WIDTH = 264;
+
+function formatDate(timestamp: number) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'now';
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 7) return `${diffDays}d`;
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function wordCount(content: string) {
+    const trimmed = content.trim();
+    return trimmed ? trimmed.split(/\s+/).length : 0;
+}
+
+const SectionRule: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="border-b border-border bg-secondary/60 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+        {children}
+    </div>
+);
+
 export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
     isOpen,
-    onToggle,
     documents,
     activeDocument,
     onSelectDocument,
@@ -43,7 +58,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
     const [editingName, setEditingName] = useState('');
     const editInputRef = useRef<HTMLInputElement>(null);
 
-    // Focus input when editing
     useEffect(() => {
         if (editingId && editInputRef.current) {
             editInputRef.current.focus();
@@ -51,34 +65,17 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
         }
     }, [editingId]);
 
-    const filteredDocuments = searchQuery
-        ? documents.filter(
-            (doc) =>
-                doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                doc.content.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        : documents;
+    const filtered = useMemo(() => {
+        const sorted = [...documents].sort((a, b) => b.updatedAt - a.updatedAt);
+        if (!searchQuery) return sorted;
+        const q = searchQuery.toLowerCase();
+        return sorted.filter(
+            (doc) => doc.name.toLowerCase().includes(q) || doc.content.toLowerCase().includes(q)
+        );
+    }, [documents, searchQuery]);
 
-    const favoriteDocuments = filteredDocuments.filter((doc) => doc.isFavorite);
-    const recentDocuments = [...filteredDocuments]
-        .sort((a, b) => b.updatedAt - a.updatedAt)
-        .slice(0, 5);
-    const otherDocuments = filteredDocuments.filter((doc) => !doc.isFavorite);
-
-    const formatDate = (timestamp: number) => {
-        const date = new Date(timestamp);
-        const now = new Date();
-        const diffMs = now.getTime() - date.getTime();
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-
-        if (diffMins < 1) return 'Just now';
-        if (diffMins < 60) return `${diffMins}m ago`;
-        if (diffHours < 24) return `${diffHours}h ago`;
-        if (diffDays < 7) return `${diffDays}d ago`;
-        return date.toLocaleDateString();
-    };
+    const starred = filtered.filter((doc) => doc.isFavorite);
+    const rest = filtered.filter((doc) => !doc.isFavorite);
 
     const startEditing = (doc: Document) => {
         setEditingId(doc.id);
@@ -92,250 +89,213 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
         setEditingId(null);
     };
 
-    const cancelEditing = () => {
-        setEditingId(null);
-        setEditingName('');
+    const handleEditKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') saveEditing();
+        else if (e.key === 'Escape') setEditingId(null);
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            saveEditing();
-        } else if (e.key === 'Escape') {
-            cancelEditing();
-        }
-    };
+    // Plain render function, not a nested component: a nested component
+    // definition remounts every row on each keystroke and drops input focus.
+    const renderDocumentRow = (doc: Document) => {
+        const isActive = activeDocument?.id === doc.id;
+        const isEditing = editingId === doc.id;
 
-    const DocumentItem: React.FC<{ doc: Document }> = ({ doc }) => (
-        <div
-            className={cn(
-                'group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors',
-                activeDocument?.id === doc.id
-                    ? 'bg-primary/10 text-primary'
-                    : 'hover:bg-muted/50'
-            )}
-            onClick={() => onSelectDocument(doc.id)}
-        >
-            <FileText className="h-4 w-4 shrink-0 opacity-60" />
-
-            <div className="flex-1 min-w-0">
-                {editingId === doc.id ? (
-                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        <Input
+        return (
+            <div
+                key={doc.id}
+                className={cn(
+                    'group relative border-b border-border',
+                    isActive ? 'bg-foreground text-background' : 'hover:bg-secondary'
+                )}
+            >
+                {isEditing ? (
+                    <div className="px-3 py-2">
+                        <input
                             ref={editInputRef}
                             value={editingName}
                             onChange={(e) => setEditingName(e.target.value)}
-                            onKeyDown={handleKeyDown}
+                            onKeyDown={handleEditKeyDown}
                             onBlur={saveEditing}
-                            className="h-6 text-sm px-1"
+                            aria-label="Document name"
+                            className={cn(
+                                'w-full border border-input bg-background px-1 py-0.5 font-mono text-[12px] font-bold text-foreground',
+                                'focus:outline-none focus:ring-1 focus:ring-ring'
+                            )}
                         />
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={saveEditing}
+                        <span
+                            className={cn(
+                                'mt-0.5 block font-mono text-[11px] uppercase tracking-[0.06em]',
+                                isActive ? 'text-background/70' : 'text-muted-foreground'
+                            )}
                         >
-                            <Check className="h-3 w-3" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={cancelEditing}
-                        >
-                            <X className="h-3 w-3" />
-                        </Button>
+                            {formatDate(doc.updatedAt)} · {wordCount(doc.content)} words
+                        </span>
                     </div>
                 ) : (
                     <>
-                        <div className="font-medium text-sm truncate">{doc.name}</div>
-                        <div className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatDate(doc.updatedAt)}
+                        <button
+                            type="button"
+                            onClick={() => onSelectDocument(doc.id)}
+                            className="flex w-full flex-col gap-0.5 px-3 py-2 text-left"
+                        >
+                            <span className="flex items-center gap-1.5 pr-20 font-mono text-[12px] font-bold leading-4">
+                                <span className="truncate">{doc.name}</span>
+                                {doc.isFavorite && (
+                                    <Star
+                                        className={cn(
+                                            'h-2.5 w-2.5 shrink-0 fill-current',
+                                            isActive ? 'text-background/80' : 'text-primary'
+                                        )}
+                                    />
+                                )}
+                            </span>
+                            <span
+                                className={cn(
+                                    'font-mono text-[11px] uppercase tracking-[0.06em]',
+                                    isActive ? 'text-background/70' : 'text-muted-foreground'
+                                )}
+                            >
+                                {formatDate(doc.updatedAt)} · {wordCount(doc.content)} words
+                            </span>
+                        </button>
+
+                        <div
+                            className={cn(
+                                'absolute right-2 top-1/2 flex -translate-y-1/2 items-center opacity-0 transition-opacity',
+                                'group-hover:opacity-100 focus-within:opacity-100',
+                                '[@media(hover:none)]:opacity-100'
+                            )}
+                        >
+                            <button
+                                type="button"
+                                aria-label={doc.isFavorite ? 'Remove star' : 'Star document'}
+                                onClick={() => onToggleFavorite(doc.id)}
+                                className={cn(
+                                    'inline-flex h-6 w-6 items-center justify-center',
+                                    isActive
+                                        ? 'text-background/70 hover:text-background'
+                                        : 'text-muted-foreground hover:text-primary'
+                                )}
+                            >
+                                <Star className={cn('h-3 w-3', doc.isFavorite && 'fill-current')} />
+                            </button>
+                            <button
+                                type="button"
+                                aria-label="Rename document"
+                                onClick={() => startEditing(doc)}
+                                className={cn(
+                                    'inline-flex h-6 w-6 items-center justify-center',
+                                    isActive
+                                        ? 'text-background/70 hover:text-background'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                )}
+                            >
+                                <Pencil className="h-3 w-3" />
+                            </button>
+                            <button
+                                type="button"
+                                aria-label="Delete document"
+                                onClick={() => onDeleteDocument(doc.id)}
+                                className={cn(
+                                    'inline-flex h-6 w-6 items-center justify-center',
+                                    isActive
+                                        ? 'text-background/70 hover:text-background'
+                                        : 'text-muted-foreground hover:text-destructive'
+                                )}
+                            >
+                                <Trash2 className="h-3 w-3" />
+                            </button>
                         </div>
                     </>
                 )}
             </div>
-
-            {editingId !== doc.id && (
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                            'h-6 w-6 p-0',
-                            doc.isFavorite && 'text-yellow-500 opacity-100'
-                        )}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleFavorite(doc.id);
-                        }}
-                    >
-                        <Star className={cn('h-3 w-3', doc.isFavorite && 'fill-current')} />
-                    </Button>
-
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <MoreHorizontal className="h-3 w-3" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => startEditing(doc)}>
-                                <Edit2 className="h-4 w-4 mr-2" />
-                                Rename
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => onDeleteDocument(doc.id)}
-                                className="text-destructive focus:text-destructive"
-                            >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-            )}
-        </div>
-    );
+        );
+    };
 
     return (
-        <>
-            {/* Toggle Button (when closed) */}
-            {!isOpen && (
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onToggle}
-                    className="fixed left-2 top-20 z-40 h-8 w-8 p-0 shadow-md bg-background border"
+        <AnimatePresence initial={false}>
+            {isOpen && (
+                <motion.aside
+                    initial={{ width: 0 }}
+                    animate={{ width: SIDEBAR_WIDTH }}
+                    exit={{ width: 0, transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] } }}
+                    transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                    className="h-full shrink-0 overflow-hidden border-r border-border bg-background"
                 >
-                    <ChevronRight className="h-4 w-4" />
-                </Button>
-            )}
-
-            {/* Sidebar */}
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ x: -280, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: -280, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: 'easeOut' }}
-                        className="fixed left-0 top-16 bottom-0 z-40 w-72 bg-background border-r flex flex-col"
-                    >
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-3 border-b">
-                            <h2 className="font-medium text-sm">Documents</h2>
-                            <div className="flex items-center gap-1">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={onCreateDocument}
-                                    className="h-7 w-7 p-0"
-                                    title="New Document"
-                                >
-                                    <Plus className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={onToggle}
-                                    className="h-7 w-7 p-0"
-                                    title="Close Sidebar"
-                                >
-                                    <ChevronLeft className="h-4 w-4" />
-                                </Button>
-                            </div>
+                    <div className="flex h-full flex-col" style={{ width: SIDEBAR_WIDTH }}>
+                        {/* Index head */}
+                        <div className="flex h-8 shrink-0 items-center justify-between border-b border-border pl-3 pr-1">
+                            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+                                Index ({documents.length})
+                            </span>
+                            <button
+                                type="button"
+                                onClick={onCreateDocument}
+                                className="inline-flex h-6 items-center gap-1 px-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.04em] text-primary hover:bg-secondary"
+                            >
+                                <Plus className="h-3 w-3" />
+                                New
+                            </button>
                         </div>
 
-                        {/* Search */}
-                        <div className="p-3 border-b">
-                            <div className="relative">
-                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search documents..."
-                                    className="h-8 pl-8 text-sm"
-                                />
-                            </div>
+                        {/* grep */}
+                        <div className="shrink-0 border-b border-border">
+                            <input
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="grep documents…"
+                                aria-label="Search documents"
+                                className={cn(
+                                    'w-full bg-transparent px-3 py-1.5 font-mono text-[12px]',
+                                    'placeholder:text-muted-foreground/70 focus:outline-none'
+                                )}
+                            />
                         </div>
 
-                        {/* Document List */}
-                        <div className="flex-1 overflow-y-auto p-2">
-                            {/* Favorites */}
-                            {favoriteDocuments.length > 0 && (
-                                <div className="mb-4">
-                                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground flex items-center gap-1">
-                                        <Star className="h-3 w-3" />
-                                        Favorites
-                                    </div>
-                                    {favoriteDocuments.map((doc) => (
-                                        <DocumentItem key={doc.id} doc={doc} />
-                                    ))}
-                                </div>
+                        <div className="flex-1 overflow-y-auto">
+                            {starred.length > 0 && (
+                                <>
+                                    <SectionRule>Starred</SectionRule>
+                                    {starred.map(renderDocumentRow)}
+                                </>
                             )}
 
-                            {/* Recent (only when not searching) */}
-                            {!searchQuery && recentDocuments.length > 0 && (
-                                <div className="mb-4">
-                                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground flex items-center gap-1">
-                                        <Clock className="h-3 w-3" />
-                                        Recent
-                                    </div>
-                                    {recentDocuments.map((doc) => (
-                                        <DocumentItem key={`recent-${doc.id}`} doc={doc} />
-                                    ))}
-                                </div>
-                            )}
+                            {starred.length > 0 && rest.length > 0 && <SectionRule>All files</SectionRule>}
 
-                            {/* All Documents */}
-                            {searchQuery ? (
-                                <div>
-                                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
-                                        Search Results ({filteredDocuments.length})
-                                    </div>
-                                    {filteredDocuments.length === 0 ? (
-                                        <div className="px-3 py-8 text-center text-sm text-muted-foreground">
-                                            No documents found
-                                        </div>
+                            {rest.map(renderDocumentRow)}
+
+                            {filtered.length === 0 && (
+                                <div className="px-3 py-10 text-center font-mono text-[11px] uppercase tracking-[0.04em] text-muted-foreground">
+                                    {searchQuery ? (
+                                        <>
+                                            <p>No matches for “{searchQuery}”</p>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSearchQuery('')}
+                                                className="mt-3 border border-border px-2 py-1 font-bold text-primary hover:bg-secondary"
+                                            >
+                                                Clear search
+                                            </button>
+                                        </>
                                     ) : (
-                                        filteredDocuments.map((doc) => (
-                                            <DocumentItem key={doc.id} doc={doc} />
-                                        ))
+                                        <>
+                                            <FileText className="mx-auto mb-2 h-5 w-5 opacity-60" />
+                                            <p>Index is empty</p>
+                                            <button
+                                                type="button"
+                                                onClick={onCreateDocument}
+                                                className="mt-3 border border-border px-2 py-1 font-bold text-primary hover:bg-secondary"
+                                            >
+                                                + New document
+                                            </button>
+                                        </>
                                     )}
                                 </div>
-                            ) : (
-                                otherDocuments.length > 0 && (
-                                    <div>
-                                        <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
-                                            All Documents
-                                        </div>
-                                        {otherDocuments.map((doc) => (
-                                            <DocumentItem key={doc.id} doc={doc} />
-                                        ))}
-                                    </div>
-                                )
-                            )}
-
-                            {documents.length === 0 && (
-                                <div className="px-3 py-8 text-center text-sm text-muted-foreground">
-                                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                    <p>No documents yet</p>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={onCreateDocument}
-                                        className="mt-2"
-                                    >
-                                        <Plus className="h-4 w-4 mr-1" />
-                                        Create Document
-                                    </Button>
-                                </div>
                             )}
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </>
+                    </div>
+                </motion.aside>
+            )}
+        </AnimatePresence>
     );
 };
