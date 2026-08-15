@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
-type Theme = 'light' | 'dark' | 'system' | 'cyberpunk' | 'forest' | 'ocean' | 'sunset' | 'minimal' | 'high-contrast';
+type Theme = 'light' | 'dark' | 'system';
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -13,33 +12,30 @@ type ThemeProviderState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   themes: { name: Theme; label: string; description: string }[];
-  resolvedTheme: 'light' | 'dark'; // Actual light/dark value
+  resolvedTheme: 'light' | 'dark';
 };
 
 const initialState: ThemeProviderState = {
   theme: 'system',
   setTheme: () => null,
   themes: [
-    { name: 'light', label: 'Light', description: 'Clean and bright interface' },
-    { name: 'dark', label: 'Dark', description: 'Easy on the eyes' },
+    { name: 'light', label: 'Light', description: 'Paper' },
+    { name: 'dark', label: 'Dark', description: 'Machine room' },
     { name: 'system', label: 'System', description: 'Follow system preference' },
-    { name: 'cyberpunk', label: 'Cyberpunk', description: 'Neon-inspired design' },
-    { name: 'forest', label: 'Forest', description: 'Nature-inspired greens' },
-    { name: 'ocean', label: 'Ocean', description: 'Deep blue tranquility' },
-    { name: 'sunset', label: 'Sunset', description: 'Warm orange gradients' },
-    { name: 'minimal', label: 'Minimal', description: 'Ultra-clean interface' },
-    { name: 'high-contrast', label: 'High Contrast', description: 'Accessibility-focused' },
   ],
   resolvedTheme: 'light',
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
-// Helper to determine if a theme is "dark" based
-function isDarkTheme(theme: Theme, systemIsDark: boolean): boolean {
-  if (theme === 'system') return systemIsDark;
-  if (theme === 'light' || theme === 'minimal') return false;
-  return true; // dark, cyberpunk, forest, ocean, sunset, high-contrast are dark
+const LEGACY_THEMES = ['cyberpunk', 'forest', 'ocean', 'sunset', 'minimal', 'high-contrast'];
+
+function normalizeTheme(value: string | null): Theme {
+  if (value === 'light' || value === 'dark' || value === 'system') return value;
+  // Legacy themes from earlier versions map to their light/dark base
+  if (value === 'minimal') return 'light';
+  if (value && LEGACY_THEMES.includes(value)) return 'dark';
+  return 'system';
 }
 
 export function ThemeProvider({
@@ -48,9 +44,14 @@ export function ThemeProvider({
   storageKey = 'markdown-studio-theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  );
+  const [theme, setThemeState] = useState<Theme>(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      return stored ? normalizeTheme(stored) : defaultTheme;
+    } catch {
+      return defaultTheme;
+    }
+  });
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
   const applyTheme = useCallback((newTheme: Theme) => {
@@ -58,38 +59,18 @@ export function ThemeProvider({
     const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
     // Disable transitions temporarily for instant theme switch
-    root.style.setProperty('--theme-transition', 'none');
     root.classList.add('theme-switching');
+    root.classList.remove('light', 'dark', ...LEGACY_THEMES);
 
-    // Remove all theme classes
-    root.classList.remove(
-      'light',
-      'dark',
-      'cyberpunk',
-      'forest',
-      'ocean',
-      'sunset',
-      'minimal',
-      'high-contrast'
-    );
-
-    // Determine resolved theme
-    const isDark = isDarkTheme(newTheme, systemIsDark);
+    const isDark = newTheme === 'system' ? systemIsDark : newTheme === 'dark';
     setResolvedTheme(isDark ? 'dark' : 'light');
 
-    // Set color-scheme for browser-native elements (scrollbars, form controls)
+    // Browser-native surfaces (scrollbars, form controls) follow the theme
     root.style.colorScheme = isDark ? 'dark' : 'light';
+    root.classList.add(isDark ? 'dark' : 'light');
 
-    if (newTheme === 'system') {
-      root.classList.add(systemIsDark ? 'dark' : 'light');
-    } else {
-      root.classList.add(newTheme);
-    }
-
-    // Re-enable transitions after a frame
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        root.style.removeProperty('--theme-transition');
         root.classList.remove('theme-switching');
       });
     });
@@ -99,24 +80,25 @@ export function ThemeProvider({
     applyTheme(theme);
   }, [theme, applyTheme]);
 
-  // Listen for system theme changes when using system theme
   useEffect(() => {
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-      const handleChange = () => {
-        applyTheme('system');
-      };
-
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
+    if (theme !== 'system') return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => applyTheme('system');
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme, applyTheme]);
 
-  const setTheme = useCallback((newTheme: Theme) => {
-    localStorage.setItem(storageKey, newTheme);
-    setThemeState(newTheme);
-  }, [storageKey]);
+  const setTheme = useCallback(
+    (newTheme: Theme) => {
+      try {
+        localStorage.setItem(storageKey, newTheme);
+      } catch {
+        // Storage may be unavailable; theme still applies for the session
+      }
+      setThemeState(newTheme);
+    },
+    [storageKey]
+  );
 
   const value = {
     theme,
@@ -140,4 +122,3 @@ export const useTheme = () => {
 
   return context;
 };
-
