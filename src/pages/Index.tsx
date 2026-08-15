@@ -51,10 +51,14 @@ const Index = () => {
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const formatRef = useRef<((format: string) => void) | null>(null);
+  const initialDocumentCreationPending = useRef(false);
 
   // Create initial document if none exist
   useEffect(() => {
-    if (documents.length === 0) {
+    if (documents.length > 0) {
+      initialDocumentCreationPending.current = false;
+    } else if (!initialDocumentCreationPending.current) {
+      initialDocumentCreationPending.current = true;
       createDocument('Welcome');
     }
   }, [documents.length, createDocument]);
@@ -97,11 +101,13 @@ const Index = () => {
 
   // Documents persist synchronously in useDocuments; the statusline holds
   // "saving…" briefly while typing so the state change is legible.
+  const activeDocId = activeDocument?.id;
+
   const handleContentChange = useCallback(
     (newContent: string) => {
-      if (!activeDocument) return;
+      if (!activeDocId) return;
 
-      updateDocument(activeDocument.id, { content: newContent });
+      updateDocument(activeDocId, { content: newContent });
       setSavingStatus('saving');
 
       if (saveTimeoutRef.current) {
@@ -112,7 +118,7 @@ const Index = () => {
         setSavingStatus('saved');
       }, 600);
     },
-    [activeDocument, updateDocument]
+    [activeDocId, updateDocument]
   );
 
   const effectiveSavingStatus = saveFailed ? 'error' : savingStatus;

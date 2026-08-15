@@ -134,19 +134,19 @@ export const useDocuments = (): UseDocumentsReturn => {
     }, []);
 
     const deleteDocument = useCallback((id: string) => {
-        setDocuments((prev) => {
-            const filtered = prev.filter((doc) => doc.id !== id);
+        setDocuments((prev) => prev.filter((doc) => doc.id !== id));
+    }, []);
 
-            // If we're deleting the active document, switch to another
-            if (id === activeDocId && filtered.length > 0) {
-                setActiveDocId(filtered[0].id);
-            } else if (filtered.length === 0) {
-                setActiveDocId(null);
-            }
-
-            return filtered;
-        });
-    }, [activeDocId]);
+    // Keep the active id valid after any deletion. Computed from the
+    // documents result rather than from inside the updater, so React
+    // StrictMode double-invokes cannot fire this side effect twice.
+    useEffect(() => {
+        if (documents.length === 0) {
+            if (activeDocId !== null) setActiveDocId(null);
+        } else if (!documents.some((doc) => doc.id === activeDocId)) {
+            setActiveDocId(documents[0].id);
+        }
+    }, [documents, activeDocId]);
 
     const setActiveDocument = useCallback((id: string) => {
         if (documents.some((doc) => doc.id === id)) {

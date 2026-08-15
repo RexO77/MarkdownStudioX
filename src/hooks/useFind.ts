@@ -46,7 +46,6 @@ export const useFind = (content: string): UseFindReturn => {
         if (!query) return [];
 
         try {
-            let pattern: RegExp;
             let searchQuery = query;
 
             if (!options.useRegex) {
@@ -59,7 +58,7 @@ export const useFind = (content: string): UseFindReturn => {
             }
 
             const flags = options.caseSensitive ? 'g' : 'gi';
-            pattern = new RegExp(searchQuery, flags);
+            const pattern = new RegExp(searchQuery, flags);
 
             const foundMatches: FindMatch[] = [];
             let match: RegExpExecArray | null;

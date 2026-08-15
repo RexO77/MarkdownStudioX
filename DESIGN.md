@@ -271,6 +271,7 @@ wins (`GalleyEditor` sync guards). View modes read SOURCE / SPLIT / GALLEY.
 - **Alert stamps** are a first-class node: rendered as the galley's proof stamps, label click cycles NOTE→TIP→IMPORTANT→WARNING→CAUTION, serialized to exact `> [!NOTE]` GFM.
 - **Code listings** keep the listing-head grammar: an inline language picker (mono uppercase select) and copy control; `spellcheck` off inside listings.
 - New blocks in the galley must keep round-trip safety: every node needs a `markdown` storage serializer (and parser when GFM has a syntax for it). A block that cannot serialize does not ship.
+- **Known limitations.** Documents containing raw HTML, HTML comments, footnote syntax (`[^1]`), or YAML front matter open **read-only** in the galley — the schema cannot round-trip them without corrupting the source; edit those in SOURCE view. Table column alignment (`|:---|:---:|---:|`) is dropped on serialize. Consecutive task-list items come back "loose" (a blank line between items) even with `tightLists: true`.
 
 ### Statusline (signature)
 tmux-grade, 26px tall, mono 11px uppercase with 0.04em tracking.
