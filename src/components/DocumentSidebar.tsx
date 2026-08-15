@@ -223,17 +223,17 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                     className="h-full shrink-0 overflow-hidden border-r border-border bg-background"
                 >
                     <div className="flex h-full flex-col" style={{ width: SIDEBAR_WIDTH }}>
-                        {/* Index head */}
-                        <div className="flex h-8 shrink-0 items-center justify-between border-b border-border pl-3 pr-1">
-                            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+                        {/* Index head — same 36px track as the editor toolbar so the hairlines meet */}
+                        <div className="flex h-9 shrink-0 items-stretch justify-between border-b border-border">
+                            <span className="flex items-center pl-3 font-mono text-[11px] font-bold uppercase leading-none tracking-[0.06em] text-muted-foreground">
                                 Index ({documents.length})
                             </span>
                             <button
                                 type="button"
                                 onClick={onCreateDocument}
-                                className="inline-flex h-6 items-center gap-1 px-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.04em] text-primary hover:bg-secondary"
+                                className="inline-flex h-full items-center gap-1 border-l border-border px-2.5 font-mono text-[11px] font-bold uppercase leading-none tracking-[0.04em] text-primary hover:bg-secondary"
                             >
-                                <Plus className="h-3 w-3" />
+                                <Plus className="size-3 shrink-0" />
                                 New
                             </button>
                         </div>
