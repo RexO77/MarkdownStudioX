@@ -169,11 +169,3 @@ export const convertMarkdownToHtml = (markdown: string): string => {
 function escapeRegex(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-
-export const getSavedMarkdown = (): string => {
-  return localStorage.getItem('markdown-content') || '';
-};
-
-export const saveMarkdown = (content: string): void => {
-  localStorage.setItem('markdown-content', content);
-};
