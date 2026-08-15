@@ -1,7 +1,6 @@
-
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Table, Code, List, Quote, Sparkles, Wand2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Table, Code, ListChecks, Quote, Info } from 'lucide-react';
 
 interface TemplatePanelProps {
   visible: boolean;
@@ -9,77 +8,79 @@ interface TemplatePanelProps {
   onClose: () => void;
 }
 
-export const TemplatePanel = ({ visible, onInsertTemplate, onClose }: TemplatePanelProps) => {
-  const templates = [
-    { 
-      icon: Table, 
-      name: 'table', 
-      label: 'Table',
-      content: `| Column 1 | Column 2 | Column 3 |
+const TEMPLATES = [
+  {
+    icon: Table,
+    name: 'table',
+    label: 'Table',
+    content: `| Column 1 | Column 2 | Column 3 |
 |----------|----------|----------|
 | Row 1    | Data     | Data     |
-| Row 2    | Data     | Data     |`
-    },
-    { 
-      icon: Code, 
-      name: 'codeblock', 
-      label: 'Code Block',
-      content: '```javascript\n// Your code here\n```'
-    },
-    { 
-      icon: List, 
-      name: 'checklist', 
-      label: 'Checklist',
-      content: `- [ ] Task 1
+| Row 2    | Data     | Data     |`,
+  },
+  {
+    icon: Code,
+    name: 'codeblock',
+    label: 'Code block',
+    content: '```javascript\n// Your code here\n```',
+  },
+  {
+    icon: ListChecks,
+    name: 'checklist',
+    label: 'Checklist',
+    content: `- [ ] Task 1
 - [ ] Task 2
-- [x] Completed task`
-    },
-    { 
-      icon: Quote, 
-      name: 'quote', 
-      label: 'Quote',
-      content: '> This is a blockquote\n> \n> With multiple lines'
-    },
-    { 
-      icon: Sparkles, 
-      name: 'note', 
-      label: 'Note',
-      content: `> [!NOTE]
-> This is an informational note`
-    },
-    { 
-      icon: Wand2, 
-      name: 'mermaid', 
-      label: 'Diagram',
-      content: `\`\`\`mermaid
-graph TD
-    A[Start] --> B{Decision}
-    B -->|Yes| C[Process]
-    B -->|No| D[End]
-    C --> D
-\`\`\``
-    },
-  ];
+- [x] Completed task`,
+  },
+  {
+    icon: Quote,
+    name: 'quote',
+    label: 'Quote',
+    content: '> This is a blockquote\n> \n> With multiple lines',
+  },
+  {
+    icon: Info,
+    name: 'note',
+    label: 'Alert',
+    content: `> [!NOTE]
+> This is an informational note`,
+  },
+];
 
-  if (!visible) return null;
-
+export const TemplatePanel = ({ visible, onInsertTemplate, onClose }: TemplatePanelProps) => {
   return (
-    <div className="flex items-center gap-1 p-2 border-b bg-muted/30">
-      {templates.map(({ icon: Icon, name, label, content }) => (
-        <Button
-          key={name}
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            onInsertTemplate(content);
-            onClose();
-          }}
-          className="h-8 text-xs"
+    <AnimatePresence initial={false}>
+      {visible && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
+          className="shrink-0 overflow-hidden border-b border-border bg-secondary/60"
+          role="toolbar"
+          aria-label="Insert template"
         >
-          <Icon className="h-3 w-3 mr-1" />
-          {label}
-        </Button>
-      ))}
-    </div>
+          <div className="flex items-center gap-0.5 overflow-x-auto px-2 py-1">
+            <span className="pr-2 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+              Insert
+            </span>
+            {TEMPLATES.map(({ icon: Icon, name, label, content }) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => {
+                  onInsertTemplate(content);
+                  onClose();
+                }}
+                className="inline-flex h-6 shrink-0 items-center gap-1.5 border border-border bg-background px-2 font-mono text-[11px] text-foreground hover:bg-secondary"
+              >
+                <Icon className="h-3 w-3 text-muted-foreground" />
+                {label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

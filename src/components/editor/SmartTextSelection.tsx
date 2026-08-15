@@ -1,9 +1,7 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bold, Italic, Code, Link2, Heading1 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Bold, Italic, Code, Link2, Type, Sparkles } from 'lucide-react';
 
 interface SmartTextSelectionProps {
   onFormat: (format: string, selection?: string) => void;
@@ -13,42 +11,24 @@ interface SmartTextSelectionProps {
   onClose?: () => void;
 }
 
+const FORMAT_ACTIONS = [
+  { icon: Bold, action: 'bold', label: 'Bold (⌘B)' },
+  { icon: Italic, action: 'italic', label: 'Italic (⌘I)' },
+  { icon: Code, action: 'code', label: 'Code (⌘`)' },
+  { icon: Link2, action: 'link', label: 'Link (⌘K)' },
+  { icon: Heading1, action: 'heading', label: 'Heading (⌘⇧H)' },
+];
+
 export function SmartTextSelection({
   onFormat,
   selectedText,
   position = { x: 0, y: 0 },
   visible,
-  onClose
+  onClose,
 }: SmartTextSelectionProps) {
-  const [suggestions, setSuggestions] = useState<string[]>([]);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (selectedText && selectedText.length > 3) {
-      // Generate smart suggestions based on selected text
-      const textSuggestions = [];
-
-      if (/^\d+$/.test(selectedText)) {
-        textSuggestions.push('Convert to bold');
-      }
-
-      if (selectedText.includes('http')) {
-        textSuggestions.push('Convert to link');
-      }
-
-      if (selectedText.length > 20) {
-        textSuggestions.push('Make heading');
-      }
-
-      if (/[A-Z][a-z]+/.test(selectedText)) {
-        textSuggestions.push('Add emphasis');
-      }
-
-      setSuggestions(textSuggestions);
-    }
-  }, [selectedText]);
-
-  // Click-outside handler to dismiss toolbar
+  // Click-outside dismissal
   useEffect(() => {
     if (!visible) return;
 
@@ -58,7 +38,6 @@ export function SmartTextSelection({
       }
     };
 
-    // Delay adding listener to avoid immediate dismissal
     const timeoutId = setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside);
     }, 100);
@@ -69,75 +48,41 @@ export function SmartTextSelection({
     };
   }, [visible, onClose]);
 
-  if (!visible || !selectedText) return null;
-
-  const formatActions = [
-    { icon: Bold, action: 'bold', label: 'Bold', shortcut: '⌘B' },
-    { icon: Italic, action: 'italic', label: 'Italic', shortcut: '⌘I' },
-    { icon: Code, action: 'code', label: 'Code', shortcut: '⌘K' },
-    { icon: Link2, action: 'link', label: 'Link', shortcut: '⌘L' },
-    { icon: Type, action: 'heading', label: 'Heading', shortcut: '⌘H' },
-    { icon: Sparkles, action: 'ai-improve', label: 'AI Improve', shortcut: '⌘AI' },
-  ];
-
   return (
-    <div
-      ref={toolbarRef}
-      className={cn(
-        'fixed z-50 border rounded-lg shadow-xl p-2',
-        // Explicit solid background with fallback
-        'bg-popover/95 backdrop-blur-sm',
-        // Ensure solid background in browsers without backdrop-filter
-        'supports-[backdrop-filter]:bg-popover/90',
-        'animate-fade-in transform transition-all duration-200'
+    <AnimatePresence>
+      {visible && selectedText && (
+        <motion.div
+          ref={toolbarRef}
+          initial={{ opacity: 0, y: 4, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 4, scale: 0.98 }}
+          transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed z-50 flex items-center border border-border bg-popover shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+          style={{
+            left: Math.max(10, position.x - 80),
+            top: Math.max(48, position.y - 44),
+          }}
+          role="toolbar"
+          aria-label="Format selection"
+        >
+          {FORMAT_ACTIONS.map(({ icon: Icon, action, label }, i) => (
+            <button
+              key={action}
+              type="button"
+              onClick={() => onFormat(action, selectedText)}
+              title={label}
+              aria-label={label}
+              className={cn(
+                'inline-flex h-7 w-7 items-center justify-center text-muted-foreground',
+                'hover:bg-foreground hover:text-background',
+                i > 0 && 'border-l border-border'
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </button>
+          ))}
+        </motion.div>
       )}
-      style={{
-        left: Math.max(10, position.x - 100),
-        top: Math.max(10, position.y - 60),
-        // Ensure solid background color as inline style fallback
-        backgroundColor: 'hsl(var(--popover))',
-      }}
-    >
-      {/* Selection Info */}
-      <div className="text-xs text-muted-foreground mb-2 px-1">
-        {selectedText.length} chars selected
-      </div>
-
-      {/* Format Actions */}
-      <div className="flex items-center gap-1 mb-2">
-        {formatActions.map(({ icon: Icon, action, label, shortcut }) => (
-          <Button
-            key={action}
-            variant="ghost"
-            size="sm"
-            onClick={() => onFormat(action, selectedText)}
-            className="h-8 w-8 p-0"
-            title={`${label} (${shortcut})`}
-          >
-            <Icon className="h-3 w-3" />
-          </Button>
-        ))}
-      </div>
-
-      {/* Smart Suggestions */}
-      {suggestions.length > 0 && (
-        <div className="border-t pt-2">
-          <div className="text-xs text-muted-foreground mb-1">Smart suggestions:</div>
-          <div className="flex flex-wrap gap-1">
-            {suggestions.map((suggestion, index) => (
-              <Badge
-                key={index}
-                variant="secondary"
-                className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                onClick={() => onFormat('ai-suggestion', selectedText)}
-              >
-                {suggestion}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    </AnimatePresence>
   );
 }
-
