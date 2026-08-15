@@ -51,10 +51,14 @@ const Index = () => {
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const formatRef = useRef<((format: string) => void) | null>(null);
+  const initialDocumentCreationPending = useRef(false);
 
   // Create initial document if none exist
   useEffect(() => {
-    if (documents.length === 0) {
+    if (documents.length > 0) {
+      initialDocumentCreationPending.current = false;
+    } else if (!initialDocumentCreationPending.current) {
+      initialDocumentCreationPending.current = true;
       createDocument('Welcome');
     }
   }, [documents.length, createDocument]);
