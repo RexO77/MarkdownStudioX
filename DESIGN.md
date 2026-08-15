@@ -117,7 +117,7 @@ There are no gradients, no glass, no blur, and (with one deliberate exception
 for the floating command palette) no shadows. Depth is conveyed by ink
 inversion and hairlines, not elevation.
 
-Copy speaks in man-page register: the header names itself `MARKDOWN-STUDIO-X(1)`
+Copy speaks in man-page register: the header names itself Markdown Studio X
 under a "User Commands" running title, the sidebar is an "Index", search is
 "grep documents…", the palette opens with an ex-command `:` prompt, and the
 statusline reports lowercase facts ("saved", "saving…", "12 min read").
@@ -277,7 +277,6 @@ wins (`GalleyEditor` sync guards). View modes read SOURCE / SPLIT / GALLEY.
 tmux-grade, 26px tall, mono 11px uppercase with 0.04em tracking.
 - **Mode segment:** inverse video in Bell blue (`bg-primary text-primary-foreground`, bold) reading SOURCE / SPLIT / GALLEY.
 - **Document segment:** raised ground (`bg-secondary`), normal-case truncating filename.
-- **Caret segment:** a 0.75ch × 1.1em Bell-blue block blinking at 1.1s in `steps(2)` (disabled under reduced motion).
 - **Metric segments:** faded ink, hairline left rules, dropping by breakpoint (LN/COL, words, chars, read time).
 - **Save segment:** fixed 13ch, lowercase verbs — "saved" faded, "saving…" blue, "save failed" red.
 

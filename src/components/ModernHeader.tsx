@@ -62,9 +62,8 @@ const ModernHeader = ({
           <PanelLeft className="h-3.5 w-3.5" />
         </HeaderIconButton>
 
-        {/* The man page names itself */}
         <span className="truncate font-mono text-[12px] font-bold tracking-[0.02em]">
-          MARKDOWN-STUDIO-X(1)
+          Markdown Studio X
         </span>
       </div>
 

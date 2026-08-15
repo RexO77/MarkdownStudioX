@@ -254,8 +254,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
         </div>
 
         <div className="flex items-center justify-between border-t border-border px-4 py-2">
-          <span className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
-            markdown-studio-x(1)
+          <span className="text-[11px] tracking-[0.02em] text-muted-foreground">
+            Markdown Studio X
           </span>
           <a
             href="https://github.com/RexO77/MarkdownStudioX"

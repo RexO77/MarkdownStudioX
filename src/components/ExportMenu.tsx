@@ -93,9 +93,12 @@ const ExportMenu = ({ content, documentName }: ExportMenuProps) => {
         aria-expanded={isOpen}
         aria-haspopup="true"
         className={cn(
-          'inline-flex h-7 items-center gap-1.5 px-2.5',
-          'bg-foreground font-mono text-[11px] font-bold uppercase tracking-[0.04em] text-background',
-          'hover:opacity-85 active:opacity-100 disabled:opacity-50'
+          'inline-flex h-9 items-center gap-1.5 px-2.5 font-mono text-[11px] font-bold uppercase tracking-[0.04em] md:h-7',
+          'text-muted-foreground',
+          'hover:bg-secondary hover:text-foreground',
+          'active:bg-foreground active:text-background',
+          'disabled:opacity-50',
+          isOpen && 'bg-foreground text-background hover:bg-foreground hover:text-background'
         )}
       >
         {exporting ? (

@@ -48,10 +48,6 @@ export function StatusBar({
             <span className="truncate normal-case">{documentName}</span>
           </span>
         )}
-
-        <span className="statusline-segment" aria-hidden="true">
-          <span className="statusline-caret" />
-        </span>
       </div>
 
       <div className="flex items-stretch">

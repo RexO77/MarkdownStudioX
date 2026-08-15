@@ -94,18 +94,18 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
                     variants={sectionVariants}
                     className="flex items-baseline justify-between border-b border-border pb-2 font-mono text-[11px] font-bold tracking-[0.02em]"
                 >
-                    <span>MARKDOWN-STUDIO-X(1)</span>
+                    <span>Markdown Studio X</span>
                     <span className="hidden font-normal uppercase tracking-[0.06em] text-muted-foreground sm:block">
                         User Commands
                     </span>
-                    <span className="hidden sm:block">MARKDOWN-STUDIO-X(1)</span>
+                    <span className="hidden sm:block">Markdown Studio X</span>
                 </motion.div>
 
                 <div className="space-y-8 py-10">
                     <motion.section custom={1} initial="hidden" animate="visible" variants={sectionVariants}>
                         <SectionHead>Name</SectionHead>
                         <p className="mt-2 pl-6 font-serif text-[17px] leading-6">
-                            <span className="font-mono text-[14px] font-bold">markdown-studio-x</span> — write
+                            <span className="font-mono text-[14px] font-bold">Markdown Studio X</span> — write
                             markdown, watch it typeset.
                         </p>
                     </motion.section>
