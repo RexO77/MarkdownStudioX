@@ -44,12 +44,14 @@ const SHORTCUTS = [
     { keys: '⌘\\', action: 'index' },
 ];
 
+const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
 const sectionVariants = {
     hidden: { opacity: 0, y: 8 },
     visible: (i: number) => ({
         opacity: 1,
         y: 0,
-        transition: { delay: 0.08 + i * 0.07, duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+        transition: { delay: 0.08 + i * 0.07, duration: 0.3, ease: EASE_OUT },
     }),
 };
 

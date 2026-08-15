@@ -103,7 +103,9 @@ export const exportToPdf = async (content: string, filename: string = 'document'
   container.innerHTML = html;
 
   const style = document.createElement('style');
-  style.textContent = GALLEY_EXPORT_CSS.replaceAll('body {', '.galley-export {').replaceAll('body > ', '.galley-export > ');
+  style.textContent = GALLEY_EXPORT_CSS
+    .replace(/body \{/g, '.galley-export {')
+    .replace(/body > /g, '.galley-export > ');
   container.prepend(style);
   container.className = 'galley-export';
   container.style.cssText = `
