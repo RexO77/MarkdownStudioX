@@ -101,11 +101,13 @@ const Index = () => {
 
   // Documents persist synchronously in useDocuments; the statusline holds
   // "saving…" briefly while typing so the state change is legible.
+  const activeDocId = activeDocument?.id;
+
   const handleContentChange = useCallback(
     (newContent: string) => {
-      if (!activeDocument) return;
+      if (!activeDocId) return;
 
-      updateDocument(activeDocument.id, { content: newContent });
+      updateDocument(activeDocId, { content: newContent });
       setSavingStatus('saving');
 
       if (saveTimeoutRef.current) {
@@ -116,7 +118,7 @@ const Index = () => {
         setSavingStatus('saved');
       }, 600);
     },
-    [activeDocument, updateDocument]
+    [activeDocId, updateDocument]
   );
 
   const effectiveSavingStatus = saveFailed ? 'error' : savingStatus;

@@ -39,7 +39,9 @@ export const useSmartPaste = ({ onContentChange, currentContent }: SmartPasteHan
     try {
       JSON.parse(text);
       return 'json';
-    } catch {}
+    } catch {
+      // not JSON
+    }
 
     // CSV detection
     if (text.includes(',') && text.split('\n').length > 1) {
@@ -60,9 +62,10 @@ export const useSmartPaste = ({ onContentChange, currentContent }: SmartPasteHan
 
   const formatContent = useCallback((text: string, type: string) => {
     switch (type) {
-      case 'youtube':
+      case 'youtube': {
         const videoId = text.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
         return videoId ? `[![YouTube Video](https://img.youtube.com/vi/${videoId[1]}/0.jpg)](${text})` : `[YouTube Video](${text})`;
+      }
       
       case 'github':
         return `[GitHub Repository](${text})`;
@@ -86,17 +89,18 @@ export const useSmartPaste = ({ onContentChange, currentContent }: SmartPasteHan
           return `\`\`\`json\n${text}\n\`\`\``;
         }
       
-      case 'csv':
+      case 'csv': {
         const lines = text.trim().split('\n');
         const headers = lines[0].split(',').map(h => h.trim());
         const rows = lines.slice(1).map(line => line.split(',').map(c => c.trim()));
-        
+
         let markdown = `| ${headers.join(' | ')} |\n`;
         markdown += `| ${headers.map(() => '---').join(' | ')} |\n`;
         rows.forEach(row => {
           markdown += `| ${row.join(' | ')} |\n`;
         });
         return markdown;
+      }
       
       case 'email':
         return `[${text}](mailto:${text})`;
@@ -118,7 +122,7 @@ export const useSmartPaste = ({ onContentChange, currentContent }: SmartPasteHan
     
     if (html && html.includes('<')) {
       // Convert HTML to markdown (basic conversion)
-      let markdown = html
+      const markdown = html
         .replace(/<h([1-6])>(.*?)<\/h[1-6]>/g, (_, level, content) => `${'#'.repeat(parseInt(level))} ${content}\n`)
         .replace(/<strong>(.*?)<\/strong>/g, '**$1**')
         .replace(/<em>(.*?)<\/em>/g, '*$1*')

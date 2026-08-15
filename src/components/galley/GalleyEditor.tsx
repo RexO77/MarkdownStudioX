@@ -25,7 +25,8 @@ import { createLowlight, common } from 'lowlight';
 import { Markdown } from 'tiptap-markdown';
 import { Bold, Italic, Strikethrough, Code, Link2, Unlink, CornerDownLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { createSlashCommand, filterSlashItems, type SlashMenuState, type SlashItem } from './slash-command';
+import { findLossyConstructs } from '@/lib/galley-safety';
+import { createSlashCommand, filterSlashItems, type SlashMenuState } from './slash-command';
 import { CodeBlockView } from './CodeBlockView';
 import { Alert } from './alert';
 
@@ -58,6 +59,17 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
 
     const lastMarkdown = useRef(value);
     const updateTimer = useRef<ReturnType<typeof setTimeout>>();
+    const onChangeRef = useRef(onChange);
+    onChangeRef.current = onChange;
+    const editorInstanceRef = useRef<ReturnType<typeof useEditor>>(null);
+
+    // Re-scanned when the source (or any other external writer) changes.
+    // Keystrokes inside a focused galley are ignored so we don't flip
+    // read-only mid-edit, and so we don't re-run on every debounce echo.
+    const [lossyConstructs, setLossyConstructs] = useState(() => findLossyConstructs(value));
+    const isReadOnly = lossyConstructs.length > 0;
+    const isReadOnlyRef = useRef(isReadOnly);
+    isReadOnlyRef.current = isReadOnly;
 
     // Slash menu state, mirrored in refs for the suggestion keyboard handler
     const [slash, setSlash] = useState<SlashMenuState>(CLOSED_SLASH);
@@ -137,28 +149,36 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
     const editor = useEditor({
       extensions,
       content: value,
+      editable: !isReadOnly,
       editorProps: {
         attributes: {
           'aria-label': 'Typeset galley editor',
         },
       },
       onUpdate: ({ editor }) => {
+        // Never serialize a document we cannot round-trip — even a
+        // programmatic update would write escaped HTML/footnotes back.
+        // Read from the ref: useEditor keeps this closure from first render.
+        if (isReadOnlyRef.current) return;
         if (updateTimer.current) clearTimeout(updateTimer.current);
         updateTimer.current = setTimeout(() => {
           const md = editor.storage.markdown.getMarkdown();
           if (md !== lastMarkdown.current) {
             lastMarkdown.current = md;
-            onChange(md);
+            onChangeRef.current(md);
           }
         }, 200);
       },
     });
+
+    editorInstanceRef.current = editor;
 
     // External source changes (source pane typing, find & replace, AI format)
     // parse back into the galley — but never while the galley itself is focused.
     useEffect(() => {
       if (!editor || value === lastMarkdown.current) return;
       if (editor.isFocused) return;
+      setLossyConstructs(findLossyConstructs(value));
       const t = setTimeout(() => {
         lastMarkdown.current = value;
         editor.commands.setContent(value, false);
@@ -167,8 +187,24 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
     }, [value, editor]);
 
     useEffect(() => {
+      editor?.setEditable(!isReadOnly);
+    }, [editor, isReadOnly]);
+
+    // Flush any pending serialization on unmount — switching view or document
+    // must never discard the last keystrokes. Skip lossy documents: serializing
+    // them would write escaped HTML/footnotes back over the original source.
+    useEffect(() => {
       return () => {
-        if (updateTimer.current) clearTimeout(updateTimer.current);
+        if (!updateTimer.current) return;
+        clearTimeout(updateTimer.current);
+        if (isReadOnlyRef.current) return;
+        const ed = editorInstanceRef.current;
+        if (!ed) return;
+        const md = ed.storage.markdown.getMarkdown();
+        if (md !== lastMarkdown.current) {
+          lastMarkdown.current = md;
+          onChangeRef.current(md);
+        }
       };
     }, []);
 
@@ -177,7 +213,7 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
       formatApiRef,
       () => ({
         applyFormat: (format: string) => {
-          if (!editor) return;
+          if (!editor || isReadOnly) return;
           const chain = editor.chain().focus();
           switch (format) {
             case 'bold':
@@ -210,7 +246,7 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
           }
         },
       }),
-      [editor]
+      [editor, isReadOnly]
     );
 
     useEffect(() => {
@@ -264,6 +300,14 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
       <div className={cn('relative flex h-full w-full flex-col bg-background', className)}>
         <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-[38rem] px-6 py-8 md:px-10">
+            {isReadOnly && (
+              <div className="mb-4 border border-border bg-secondary/60 px-3 py-2 font-mono text-[11px] leading-4 text-muted-foreground">
+                <span className="font-bold uppercase tracking-[0.06em] text-foreground">Read-only</span>
+                {' — this document contains '}
+                {lossyConstructs.join(' and ')}
+                {', which the galley cannot edit without corrupting. Edit it in SOURCE view.'}
+              </div>
+            )}
             {/* Running head, the way a proof sheet names itself */}
             <div className="mb-8 flex items-baseline justify-between border-b border-border pb-2 font-mono text-[11px] uppercase tracking-[0.04em] text-muted-foreground">
               <span className="truncate">{title || 'untitled'}</span>
