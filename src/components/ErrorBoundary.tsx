@@ -31,9 +31,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
     private handleReload = () => {
         // Save current content before reloading
-        const savedContent = localStorage.getItem('markdown-content');
-        if (savedContent) {
-            sessionStorage.setItem('markdown-backup', savedContent);
+        const savedDocs = localStorage.getItem('markdown-studio-documents');
+        if (savedDocs) {
+            sessionStorage.setItem('markdown-backup', savedDocs);
         }
         window.location.reload();
     };
