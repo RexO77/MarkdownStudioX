@@ -170,8 +170,8 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                         >
                             <IconButton
                                 size="row"
-                                tooltip={false}
                                 label={doc.isFavorite ? 'Remove star' : 'Star document'}
+                                side="right"
                                 onClick={() => onToggleFavorite(doc.id)}
                                 className={cn(
                                     isActive
@@ -183,8 +183,8 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                             </IconButton>
                             <IconButton
                                 size="row"
-                                tooltip={false}
                                 label="Rename document"
+                                side="right"
                                 onClick={() => startEditing(doc)}
                                 className={cn(
                                     isActive
@@ -196,8 +196,8 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                             </IconButton>
                             <IconButton
                                 size="row"
-                                tooltip={false}
                                 label="Delete document"
+                                side="right"
                                 onClick={() => onDeleteDocument(doc.id)}
                                 className={cn(
                                     isActive

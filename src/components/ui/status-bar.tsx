@@ -18,7 +18,7 @@ interface StatusBarProps {
 }
 
 const VIEW_LABEL: Record<EditorView, string> = {
-  edit: 'SOURCE',
+  edit: 'RICH TEXT',
   split: 'SPLIT',
   read: 'GALLEY',
 };

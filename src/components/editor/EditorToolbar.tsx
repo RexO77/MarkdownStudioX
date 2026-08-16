@@ -21,9 +21,9 @@ interface EditorToolbarProps {
 }
 
 const VIEWS: SegmentedItem<EditorView>[] = [
-  { id: 'edit', label: 'SOURCE', Icon: CodeXml },
-  { id: 'split', label: 'SPLIT', Icon: Columns2, mobileHidden: true },
-  { id: 'read', label: 'GALLEY', Icon: Feather },
+  { id: 'edit', label: 'RICH TEXT', shortcut: 'R', Icon: CodeXml },
+  { id: 'split', label: 'SPLIT', shortcut: 'S', Icon: Columns2, mobileHidden: true },
+  { id: 'read', label: 'GALLEY', shortcut: 'G', Icon: Feather },
 ];
 
 const FORMAT_BUTTONS = [

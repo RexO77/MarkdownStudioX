@@ -319,18 +319,18 @@ width of the display.
 The typeset page is itself an editor (TipTap, `src/components/galley/`).
 Markdown stays the single source of truth: rich edits serialize back out
 (debounced 200ms), source edits parse back in, and the focused surface always
-wins (`GalleyEditor` sync guards). View modes read SOURCE / SPLIT / GALLEY.
+wins (`GalleyEditor` sync guards). View modes read RICH TEXT / SPLIT / GALLEY.
 - **Slash menu** (`/`): block palette at the caret — same anatomy as the command palette (hairline panel, mono labels, inverse-video selection, "INSERT BLOCK" section rule).
 - **Bubble toolbar**: on selection, a hairline popover row (B, I, S, code, link) with inverse-video hover/active; the link button swaps the row for an inline URL input (Enter applies, Esc cancels).
 - **Alert stamps** are a first-class node: rendered as the galley's proof stamps, label click cycles NOTE→TIP→IMPORTANT→WARNING→CAUTION, serialized to exact `> [!NOTE]` GFM.
 - **Code listings** keep the listing-head grammar: an inline language picker (mono uppercase select) and copy control; `spellcheck` off inside listings.
 - New blocks in the galley must keep round-trip safety: every node needs a `markdown` storage serializer (and parser when GFM has a syntax for it). A block that cannot serialize does not ship.
-- **Known limitations.** Documents containing raw HTML, HTML comments, footnote syntax (`[^1]`), or YAML front matter open **read-only** in the galley — the schema cannot round-trip them without corrupting the source; edit those in SOURCE view. Table column alignment (`|:---|:---:|---:|`) is dropped on serialize. Consecutive task-list items come back "loose" (a blank line between items) even with `tightLists: true`.
+- **Known limitations.** Documents containing raw HTML, HTML comments, footnote syntax (`[^1]`), or YAML front matter open **read-only** in the galley — the schema cannot round-trip them without corrupting the source; edit those in RICH TEXT view. Table column alignment (`|:---|:---:|---:|`) is dropped on serialize. Consecutive task-list items come back "loose" (a blank line between items) even with `tightLists: true`.
 
 ### Statusline (signature)
 tmux-grade, 26px tall, mono 11px uppercase with 0.04em tracking; segments are
 padded to the same 8px gutter as every other bar.
-- **Mode segment:** inverse video in Bell blue (`bg-primary text-primary-foreground`, bold) reading SOURCE / SPLIT / GALLEY.
+- **Mode segment:** inverse video in Bell blue (`bg-primary text-primary-foreground`, bold) reading RICH TEXT / SPLIT / GALLEY.
 - **Document segment:** raised ground (`bg-secondary`), normal-case truncating filename — shown only below `md`, where the header's centred title is hidden. The name is never reported twice at the same width.
 - **Commands segment:** a real button — Bell-blue `:` prompt, "COMMANDS", `⌘P` — opening the palette. This is where a "user commands" affordance belongs: in the footer, and clickable.
 - **Metric segments:** faded ink, hairline left rules, dropping by breakpoint (LN/COL, words, chars, read time).

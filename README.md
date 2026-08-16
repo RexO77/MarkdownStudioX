@@ -17,7 +17,7 @@ The design is borrowed from the place markdown actually comes from: the Bell Lab
 - **Galley editing**: type `/` for a block palette (headings, lists, tasks, tables, code, alert stamps, dividers), select text for a floating format bubble, click an alert's label to change its type, pick code-listing languages inline
 - **Split manuscript/galley view** with synchronized scrolling — both panes move as one document
 - **Typeset galley**: STIX Two Text on a 24px baseline grid, print-ruled tables, GitHub alerts as proof stamps, syntax-highlighted code listings with copy buttons, task lists, footnotes, smart punctuation
-- **Resizable panes**, plus dedicated SOURCE and GALLEY modes
+- **Resizable panes**, plus dedicated RICH TEXT and GALLEY modes
 - **GitHub-flavored markdown**: tables, strikethrough, task lists, `> [!NOTE]`-style alerts — all round-trip safely between the two editors
 
 ### The editor

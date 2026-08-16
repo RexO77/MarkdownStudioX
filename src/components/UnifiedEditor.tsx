@@ -190,6 +190,37 @@ const UnifiedEditor = ({
     [isMobile, onViewChange]
   );
 
+  // Single-key view triggers are intentionally available only outside an
+  // editable surface. Typing R, S or G in either editor must remain text.
+  useEffect(() => {
+    const handleViewKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
+
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.matches('input, textarea, select') ||
+        target?.isContentEditable ||
+        target?.closest('[contenteditable="true"], [data-editor]')
+      ) {
+        return;
+      }
+
+      const viewByKey: Record<string, EditorView> = {
+        r: 'edit',
+        s: 'split',
+        g: 'read',
+      };
+      const nextView = viewByKey[event.key.toLowerCase()];
+      if (!nextView) return;
+
+      event.preventDefault();
+      handleViewChange(nextView);
+    };
+
+    document.addEventListener('keydown', handleViewKeyDown);
+    return () => document.removeEventListener('keydown', handleViewKeyDown);
+  }, [handleViewChange]);
+
   useEffect(() => {
     onViewChange?.(activeView);
     // eslint-disable-next-line react-hooks/exhaustive-deps
