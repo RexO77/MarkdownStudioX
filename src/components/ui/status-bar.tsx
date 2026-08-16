@@ -18,9 +18,9 @@ interface StatusBarProps {
 }
 
 const VIEW_LABEL: Record<EditorView, string> = {
-  edit: 'RICH TEXT',
+  edit: 'MARKDOWN',
   split: 'SPLIT',
-  read: 'GALLEY',
+  read: 'RICH TEXT',
 };
 
 export function StatusBar({
@@ -50,7 +50,7 @@ export function StatusBar({
         {/* The name lives in the header at md+; below that the footer carries it */}
         {documentName && (
           <span className="statusline-segment min-w-0 border-r border-border bg-secondary text-foreground md:hidden">
-            <span className="cap-center truncate normal-case">{documentName}</span>
+            <span className="truncate leading-none normal-case">{documentName}</span>
           </span>
         )}
 

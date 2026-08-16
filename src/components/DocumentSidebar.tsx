@@ -145,7 +145,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                             className={cn('flex w-full flex-col gap-1 py-2 text-left', ROW_GUTTER, ROW_ACTIONS_RESERVE)}
                         >
                             <span className="flex items-center gap-1.5 font-mono text-[12px] font-bold">
-                                <span className="cap-center truncate">{doc.name}</span>
+                                <span className="min-w-0 truncate leading-none">{doc.name}</span>
                                 {doc.isFavorite && (
                                     <Star
                                         className={cn(

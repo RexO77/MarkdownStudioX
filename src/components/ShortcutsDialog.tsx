@@ -32,9 +32,9 @@ const GROUPS: { title: string; items: { keys: string; action: string }[] }[] = [
   {
     title: 'Navigate',
     items: [
-      { keys: 'R', action: 'Rich Text view' },
+      { keys: 'M', action: 'Markdown view' },
       { keys: 'S', action: 'Split view' },
-      { keys: 'G', action: 'Galley view' },
+      { keys: 'G', action: 'Rich Text view' },
       { keys: '⌘P', action: 'Command palette' },
       { keys: '⌘F', action: 'Find & replace' },
       { keys: '⌘⇧F', action: 'Focus mode' },

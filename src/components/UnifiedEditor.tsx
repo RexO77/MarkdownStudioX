@@ -191,7 +191,7 @@ const UnifiedEditor = ({
   );
 
   // Single-key view triggers are intentionally available only outside an
-  // editable surface. Typing R, S or G in either editor must remain text.
+  // editable surface. Typing M, S or G in either editor must remain text.
   useEffect(() => {
     const handleViewKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
@@ -206,7 +206,7 @@ const UnifiedEditor = ({
       }
 
       const viewByKey: Record<string, EditorView> = {
-        r: 'edit',
+        m: 'edit',
         s: 'split',
         g: 'read',
       };

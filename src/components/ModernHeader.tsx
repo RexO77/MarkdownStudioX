@@ -79,7 +79,7 @@ const DocumentTitle = ({
                 HOVER
               )}
             >
-              <span className="cap-center truncate">{documentName}</span>
+              <span className="truncate leading-none">{documentName}</span>
             </button>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="font-mono text-[11px]">

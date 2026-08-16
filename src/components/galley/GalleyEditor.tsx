@@ -305,7 +305,7 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
                 <span className="font-bold uppercase tracking-[0.06em] text-foreground">Read-only</span>
                 {' — this document contains '}
                 {lossyConstructs.join(' and ')}
-                {', which the galley cannot edit without corrupting. Edit it in RICH TEXT view.'}
+                {', which the rich text view cannot edit without corrupting. Edit it in MARKDOWN view.'}
               </div>
             )}
             {/* No running head: the header already names the document, and the
