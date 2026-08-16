@@ -34,3 +34,6 @@ dist-ssr
 
 # BusyTeX WASM assets (downloaded via npx texlyre-busytex download-assets, ~100MB+)
 public/core/
+
+# Local Claude workspace configuration
+.claude/
