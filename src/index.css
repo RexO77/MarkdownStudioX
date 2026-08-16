@@ -245,13 +245,38 @@
 
 @layer components {
   /* ------------------------------------------------------------------ */
+  /* Cap-height centering for chrome labels                              */
+  /* ------------------------------------------------------------------ */
+  /* An 11px Courier Prime label set at leading-none still carries the
+     font's descender slack inside its line box, so `items-center` lands
+     the caps ~0.7px above the icon beside them. Trimming the box down to
+     cap/baseline makes flex centering optically true. Browsers without
+     text-box get the equivalent nudge instead. */
+  .cap-center {
+    line-height: 1;
+  }
+
+  @supports (text-box: trim-both cap alphabetic) {
+    .cap-center {
+      text-box: trim-both cap alphabetic;
+    }
+  }
+
+  @supports not (text-box: trim-both cap alphabetic) {
+    .cap-center {
+      position: relative;
+      top: 0.5px;
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
   /* The statusline: inverse-video segments, tmux grammar                */
   /* ------------------------------------------------------------------ */
   .statusline-segment {
     display: inline-flex;
     align-items: center;
-    gap: 0.5ch;
-    padding: 0 1ch;
+    gap: 6px;
+    padding: 0 8px; /* the 8px chrome gutter, same as every other bar */
     height: 100%;
     font-size: 11px;
     letter-spacing: 0.04em;
@@ -492,6 +517,13 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--alert-ink);
+  }
+
+  /* The stamp label is a button (it cycles the type); the UA sheet resets
+     text-transform on buttons, which was rendering "note" instead of "NOTE". */
+  .galley .alert-label button {
+    text-transform: inherit;
+    letter-spacing: inherit;
   }
 
   .galley .alert-label svg {

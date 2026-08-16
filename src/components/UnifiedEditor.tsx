@@ -3,6 +3,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { cn } from '@/lib/utils';
 import { GalleyEditor, type GalleyFormatApi } from './galley/GalleyEditor';
 import { EditorToolbar } from './editor/EditorToolbar';
+import { FocusModeExit } from './editor/FocusModeExit';
 import { EnhancedEditor } from './editor/EnhancedEditor';
 import { TemplatePanel } from './editor/TemplatePanel';
 import { SearchBar } from './SearchBar';
@@ -15,13 +16,16 @@ export type EditorView = 'edit' | 'split' | 'read';
 interface UnifiedEditorProps {
   value: string;
   onChange: (value: string) => void;
-  title?: string;
   docId?: string;
   className?: string;
   formatRef?: React.MutableRefObject<((format: string) => void) | null>;
   onViewChange?: (view: EditorView) => void;
   onCursorChange?: (position: { line: number; column: number }) => void;
   onOpenAIPanel?: () => void;
+  /** Focus mode drops the toolbar too; the surface is all that is left. */
+  isFocusMode?: boolean;
+  onEnterFocus?: () => void;
+  onExitFocus?: () => void;
 }
 
 const isGalleyFocused = () =>
@@ -33,13 +37,15 @@ const TIPTAP_NATIVE_SHORTCUTS = new Set(['bold', 'italic', 'code']);
 const UnifiedEditor = ({
   value,
   onChange,
-  title,
   docId,
   className,
   formatRef,
   onViewChange,
   onCursorChange,
   onOpenAIPanel,
+  isFocusMode,
+  onEnterFocus,
+  onExitFocus,
 }: UnifiedEditorProps) => {
   const isMobile = useIsMobile();
   const [activeView, setActiveView] = useState<EditorView>('split');
@@ -137,17 +143,20 @@ const UnifiedEditor = ({
     }
   }, [formatRef, routeFormat]);
 
+  // Every unshifted binding says so: with `shift` left undefined the hook
+  // matches either state, so ⌘⇧F would have run Find before reaching Focus.
   useKeyboardShortcuts({
     shortcuts: [
-      { key: 'b', meta: true, action: () => shortcutFormat('bold'), description: 'Bold' },
-      { key: 'i', meta: true, action: () => shortcutFormat('italic'), description: 'Italic' },
-      { key: '`', meta: true, action: () => shortcutFormat('code'), description: 'Inline Code' },
+      { key: 'b', meta: true, shift: false, action: () => shortcutFormat('bold'), description: 'Bold' },
+      { key: 'i', meta: true, shift: false, action: () => shortcutFormat('italic'), description: 'Italic' },
+      { key: '`', meta: true, shift: false, action: () => shortcutFormat('code'), description: 'Inline Code' },
       { key: 'k', meta: true, shift: false, action: () => shortcutFormat('link'), description: 'Link' },
       { key: 'h', meta: true, shift: true, action: () => shortcutFormat('heading'), description: 'Heading' },
       { key: 'l', meta: true, shift: true, action: () => shortcutFormat('list'), description: 'List' },
       { key: 'q', meta: true, shift: true, action: () => shortcutFormat('quote'), description: 'Quote' },
       { key: 'c', meta: true, shift: true, action: () => shortcutFormat('codeblock'), description: 'Code Block' },
-      { key: 'f', meta: true, action: () => setShowSearch(true), description: 'Find' },
+      { key: 'f', meta: true, shift: false, action: () => setShowSearch(true), description: 'Find' },
+      { key: 'f', meta: true, shift: true, action: () => onEnterFocus?.(), description: 'Focus mode' },
     ],
     enabled: true,
   });
@@ -237,6 +246,7 @@ const UnifiedEditor = ({
       onScroll={isSplit ? handleEditorScroll : undefined}
       onCursorChange={onCursorChange}
       className="h-full"
+      measured={isFocusMode && !isSplit}
       placeholder="Start writing. The galley typesets as you go."
     />
   );
@@ -247,7 +257,6 @@ const UnifiedEditor = ({
       ref={previewRef}
       value={value}
       onChange={onChange}
-      title={title}
       formatApiRef={galleyApiRef}
       onScroll={isSplit ? handlePreviewScroll : undefined}
     />
@@ -255,15 +264,20 @@ const UnifiedEditor = ({
 
   return (
     <div className={cn('flex flex-col h-full bg-background relative', className)}>
-      <EditorToolbar
-        showTemplates={showTemplates}
-        onToggleTemplates={() => setShowTemplates((v) => !v)}
-        activeView={activeView}
-        onViewChange={handleViewChange}
-        onFormat={routeFormat}
-        onSearch={() => setShowSearch(true)}
-        onOpenAIPanel={onOpenAIPanel}
-      />
+      {isFocusMode ? (
+        <FocusModeExit onExit={() => onExitFocus?.()} />
+      ) : (
+        <EditorToolbar
+          showTemplates={showTemplates}
+          onToggleTemplates={() => setShowTemplates((v) => !v)}
+          activeView={activeView}
+          onViewChange={handleViewChange}
+          onFormat={routeFormat}
+          onSearch={() => setShowSearch(true)}
+          onOpenAIPanel={onOpenAIPanel}
+          onEnterFocus={onEnterFocus}
+        />
+      )}
 
       <SearchBar
         isOpen={showSearch}

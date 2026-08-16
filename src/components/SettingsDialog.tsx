@@ -24,6 +24,7 @@ import {
   type GalleyFace,
 } from '@/lib/typography';
 import { cn } from '@/lib/utils';
+import { Label, Segmented } from '@/components/chrome';
 import { toast } from 'sonner';
 
 interface SettingsDialogProps {
@@ -32,14 +33,16 @@ interface SettingsDialogProps {
 }
 
 const THEME_CHOICES = [
-  { value: 'light' as const, label: 'LIGHT', icon: Sun },
-  { value: 'dark' as const, label: 'DARK', icon: Moon },
-  { value: 'system' as const, label: 'SYSTEM', icon: Monitor },
+  { id: 'light' as const, label: 'LIGHT', Icon: Sun },
+  { id: 'dark' as const, label: 'DARK', Icon: Moon },
+  { id: 'system' as const, label: 'SYSTEM', Icon: Monitor },
 ];
 
 const SectionHead: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <h3 className="font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
-    {children}
+  <h3>
+    <Label weight="strong" className="text-muted-foreground">
+      {children}
+    </Label>
   </h3>
 );
 
@@ -71,14 +74,9 @@ const FaceOption: React.FC<{
     <span className="text-[14px] leading-5" style={{ fontFamily: previewStack }}>
       Aa {label}
     </span>
-    <span
-      className={cn(
-        'font-mono text-[10px] uppercase tracking-[0.04em]',
-        selected ? 'text-background/70' : 'text-muted-foreground'
-      )}
-    >
+    <Label className={selected ? 'text-background/70' : 'text-muted-foreground'}>
       {description}
-    </span>
+    </Label>
   </button>
 );
 
@@ -146,29 +144,14 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
           {/* Theme */}
           <section className="space-y-2">
             <SectionHead>Theme</SectionHead>
-            <div
-              role="group"
-              aria-label="Theme"
-              className="inline-flex items-stretch border border-border text-[11px] tracking-[0.04em]"
-            >
-              {THEME_CHOICES.map((choice) => (
-                <button
-                  key={choice.value}
-                  type="button"
-                  aria-pressed={theme === choice.value}
-                  onClick={() => setTheme(choice.value)}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 px-3 py-1.5',
-                    theme === choice.value
-                      ? 'bg-foreground text-background'
-                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                  )}
-                >
-                  <choice.icon className="h-3 w-3" />
-                  {choice.label}
-                </button>
-              ))}
-            </div>
+            <Segmented
+              label="Theme"
+              items={THEME_CHOICES}
+              value={theme}
+              onChange={setTheme}
+              compactLabels={false}
+              className="w-fit"
+            />
           </section>
 
           {/* Manuscript face */}
@@ -223,9 +206,9 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
               <button
                 type="button"
                 onClick={handleSaveKey}
-                className="h-8 bg-primary px-3 text-[11px] font-bold uppercase tracking-[0.04em] text-primary-foreground hover:opacity-90"
+                className="inline-flex h-8 items-center bg-primary px-3 text-primary-foreground hover:opacity-90"
               >
-                Save
+                <Label weight="strong">Save</Label>
               </button>
               {hasKey && (
                 <button
@@ -238,7 +221,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
                 </button>
               )}
             </div>
-            <p className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+            <p className="cap-center font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
               {hasKey ? 'Key set · used only for AI formatting calls' : 'Optional · powers the AI format panel'}
               {' · '}
               <a
@@ -254,14 +237,14 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
         </div>
 
         <div className="flex items-center justify-between border-t border-border px-4 py-2">
-          <span className="text-[11px] tracking-[0.02em] text-muted-foreground">
+          <span className="cap-center text-[11px] tracking-[0.02em] text-muted-foreground">
             Markdown Studio X
           </span>
           <a
             href="https://github.com/RexO77/MarkdownStudioX"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[11px] uppercase tracking-[0.04em] text-primary hover:underline"
+            className="cap-center text-[11px] uppercase tracking-[0.04em] text-primary hover:underline"
           >
             Source ↗
           </a>

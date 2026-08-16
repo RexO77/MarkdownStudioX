@@ -4,6 +4,7 @@ import { X, Sparkles, Undo2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { getStoredApiKey } from '@/components/ui/api-key-dialog';
+import { DURATION, EASE, ICON, IconButton, Label, ROW_GUTTER, SELECTED } from '@/components/chrome';
 
 interface AIPanelProps {
     isOpen: boolean;
@@ -20,6 +21,8 @@ interface AIHistoryEntry {
     content: string;
     timestamp: number;
 }
+
+const AI_PANEL_WIDTH = 288;
 
 const toneOptions: { value: Tone; label: string }[] = [
     { value: 'professional', label: 'Professional' },
@@ -43,9 +46,9 @@ const lengthOptions: { value: LengthAction; label: string }[] = [
 ];
 
 const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+    <Label weight="strong" className="mb-2 block text-muted-foreground">
         {children}
-    </div>
+    </Label>
 );
 
 const OptionButton: React.FC<{
@@ -59,12 +62,10 @@ const OptionButton: React.FC<{
         aria-pressed={selected}
         className={cn(
             'border px-2 py-1.5 text-left font-mono text-[11px] tracking-[0.02em]',
-            selected
-                ? 'border-foreground bg-foreground text-background'
-                : 'border-border text-foreground hover:bg-secondary'
+            selected ? cn('border-foreground', SELECTED) : 'border-border text-foreground hover:bg-secondary'
         )}
     >
-        {children}
+        <span className="cap-center">{children}</span>
     </button>
 );
 
@@ -134,28 +135,24 @@ export const AIPanel: React.FC<AIPanelProps> = ({ isOpen, onClose, content, onCo
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: 288 }}
-                    exit={{ width: 0, transition: { duration: 0.15, ease: [0.16, 1, 0.3, 1] } }}
-                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                    className="h-full shrink-0 overflow-hidden border-l border-border bg-background"
+                    initial={{ marginRight: -AI_PANEL_WIDTH }}
+                    animate={{ marginRight: 0 }}
+                    exit={{ marginRight: -AI_PANEL_WIDTH, transition: { duration: DURATION.exit, ease: EASE } }}
+                    transition={{ duration: DURATION.enter, ease: EASE }}
+                    style={{ width: AI_PANEL_WIDTH }}
+                    className="h-full shrink-0 border-l border-border bg-background"
                     role="complementary"
                     aria-label="AI formatting"
                 >
-                <div className="flex h-full w-72 flex-col">
-                    <div className="flex h-8 shrink-0 items-center justify-between border-b border-border pl-3 pr-1">
-                        <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
-                            <Sparkles className="h-3 w-3 text-primary" />
-                            AI Format
+                <div className="flex h-full flex-col">
+                    <div className={cn('flex h-8 shrink-0 items-center justify-between border-b border-border pr-1', ROW_GUTTER)}>
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                            <Sparkles className={cn(ICON.sm, 'text-primary')} />
+                            <Label weight="strong">AI Format</Label>
                         </span>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            aria-label="Close AI panel"
-                            className="inline-flex h-6 w-6 items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground"
-                        >
-                            <X className="h-3.5 w-3.5" />
-                        </button>
+                        <IconButton size="row" label="Close AI panel" tooltip={false} onClick={onClose}>
+                            <X className={ICON.md} />
+                        </IconButton>
                     </div>
 
                     <div className="flex-1 space-y-5 overflow-y-auto p-3">
@@ -223,13 +220,13 @@ export const AIPanel: React.FC<AIPanelProps> = ({ isOpen, onClose, content, onCo
                         >
                             {isProcessing ? (
                                 <>
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin [animation-duration:600ms]" />
-                                    Formatting…
+                                    <Loader2 className={cn(ICON.md, 'animate-spin [animation-duration:600ms]')} />
+                                    <span className="cap-center">Formatting…</span>
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles className="h-3.5 w-3.5" />
-                                    Format manuscript
+                                    <Sparkles className={ICON.md} />
+                                    <span className="cap-center">Format manuscript</span>
                                 </>
                             )}
                         </button>
@@ -244,8 +241,10 @@ export const AIPanel: React.FC<AIPanelProps> = ({ isOpen, onClose, content, onCo
                                 'hover:bg-secondary disabled:opacity-40'
                             )}
                         >
-                            <Undo2 className="h-3.5 w-3.5" />
-                            Undo{history.length > 0 ? ` (${history.length})` : ''}
+                            <Undo2 className={ICON.md} />
+                            <span className="cap-center">
+                                Undo{history.length > 0 ? ` (${history.length})` : ''}
+                            </span>
                         </button>
                     </div>
                 </div>

@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { exportToMarkdown, exportToHtml } from '@/utils/exportUtils';
 import { useDocuments } from '@/hooks/useDocuments';
+import { useFocusMode } from '@/hooks/useFocusMode';
+import { documentStats as computeDocumentStats } from '@/lib/text-stats';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -48,6 +50,8 @@ const Index = () => {
     renameDocument,
     toggleFavorite,
   } = useDocuments();
+
+  const { isFocusMode, enterFocusMode, exitFocusMode } = useFocusMode();
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const formatRef = useRef<((format: string) => void) | null>(null);
@@ -80,23 +84,9 @@ const Index = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Document statistics
+  // Document statistics — the same count the index reports
   useEffect(() => {
-    const content = activeDocument?.content || '';
-    const plainText = content
-      .replace(/^#{1,6}\s+/gm, '')
-      .replace(/\*\*([^*]+)\*\*/g, '$1')
-      .replace(/\*([^*]+)\*/g, '$1')
-      .replace(/`[^`]+`/g, '')
-      .replace(/```[\s\S]*?```/g, '')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      .trim();
-
-    const words = plainText ? plainText.split(/\s+/).filter((w) => w.length > 0).length : 0;
-    const characters = content.length;
-    const readingTime = words === 0 ? 0 : Math.max(1, Math.ceil(words / 200));
-
-    setDocumentStats({ words, characters, readingTime });
+    setDocumentStats(computeDocumentStats(activeDocument?.content || ''));
   }, [activeDocument?.content]);
 
   // Documents persist synchronously in useDocuments; the statusline holds
@@ -166,6 +156,9 @@ const Index = () => {
         case 'toggle-sidebar':
           setShowSidebar((prev) => !prev);
           break;
+        case 'focus-mode':
+          enterFocusMode();
+          break;
         case 'ai-format':
           setShowAIPanel(true);
           break;
@@ -178,7 +171,7 @@ const Index = () => {
       }
       setShowCommandPalette(false);
     },
-    [activeDocument, handleCreateDocument]
+    [activeDocument, handleCreateDocument, enterFocusMode]
   );
 
   useEffect(() => {
@@ -193,17 +186,20 @@ const Index = () => {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <ModernHeader
-        content={activeDocument?.content || ''}
-        documentName={activeDocument?.name}
-        sidebarOpen={showSidebar}
-        onToggleSidebar={() => setShowSidebar((prev) => !prev)}
-        onOpenSettings={() => setShowSettings(true)}
-      />
+      {!isFocusMode && (
+        <ModernHeader
+          content={activeDocument?.content || ''}
+          documentName={activeDocument?.name}
+          sidebarOpen={showSidebar}
+          onToggleSidebar={() => setShowSidebar((prev) => !prev)}
+          onOpenSettings={() => setShowSettings(true)}
+          onRenameDocument={(name) => activeDocId && renameDocument(activeDocId, name)}
+        />
+      )}
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         <DocumentSidebar
-          isOpen={showSidebar}
+          isOpen={showSidebar && !isFocusMode}
           documents={documents}
           activeDocument={activeDocument}
           onSelectDocument={setActiveDocument}
@@ -217,31 +213,36 @@ const Index = () => {
           <UnifiedEditor
             value={activeDocument?.content || ''}
             onChange={handleContentChange}
-            title={activeDocument?.name}
             docId={activeDocument?.id}
             className="h-full"
             formatRef={formatRef}
             onViewChange={setView}
             onCursorChange={setCursor}
             onOpenAIPanel={() => setShowAIPanel(true)}
+            isFocusMode={isFocusMode}
+            onEnterFocus={enterFocusMode}
+            onExitFocus={exitFocusMode}
           />
         </div>
 
         <AIPanel
-          isOpen={showAIPanel}
+          isOpen={showAIPanel && !isFocusMode}
           onClose={() => setShowAIPanel(false)}
           content={activeDocument?.content || ''}
           onContentChange={handleContentChange}
         />
       </div>
 
-      <StatusBar
-        documentName={activeDocument?.name}
-        view={view}
-        cursor={view === 'read' ? undefined : cursor}
-        documentStats={documentStats}
-        savingStatus={effectiveSavingStatus}
-      />
+      {!isFocusMode && (
+        <StatusBar
+          documentName={activeDocument?.name}
+          view={view}
+          cursor={view === 'read' ? undefined : cursor}
+          documentStats={documentStats}
+          savingStatus={effectiveSavingStatus}
+          onOpenCommands={() => setShowCommandPalette(true)}
+        />
+      )}
 
       <CommandPalette
         isOpen={showCommandPalette}

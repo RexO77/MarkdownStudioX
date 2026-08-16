@@ -3,6 +3,7 @@ import { X, ChevronUp, ChevronDown, Replace, CaseSensitive, WholeWord, Regex } f
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { UseFindReturn } from '@/hooks/useFind';
+import { DURATION, EASE, ICON, IconButton, Label, LabelButton } from '@/components/chrome';
 
 interface SearchBarProps {
     isOpen: boolean;
@@ -10,29 +11,6 @@ interface SearchBarProps {
     find: UseFindReturn;
     onReplace: (newContent: string) => void;
 }
-
-const IconButton: React.FC<{
-    onClick: () => void;
-    title: string;
-    disabled?: boolean;
-    active?: boolean;
-    children: React.ReactNode;
-}> = ({ onClick, title, disabled, active, children }) => (
-    <button
-        type="button"
-        onClick={onClick}
-        title={title}
-        aria-label={title}
-        disabled={disabled}
-        className={cn(
-            'inline-flex h-6 w-6 items-center justify-center text-muted-foreground',
-            'hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40',
-            active && 'bg-foreground text-background hover:bg-foreground hover:text-background'
-        )}
-    >
-        {children}
-    </button>
-);
 
 export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, find, onReplace }) => {
     const [showReplace, setShowReplace] = useState(false);
@@ -85,13 +63,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, find, onR
                     initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute right-3 top-11 z-40 w-[380px] max-w-[calc(100vw-24px)] border border-border bg-popover shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+                    transition={{ duration: DURATION.state, ease: EASE }}
+                    className="absolute right-2 top-11 z-40 w-[380px] max-w-[calc(100vw-16px)] border border-border bg-popover shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
                     role="search"
                 >
                     {/* Find row */}
                     <div className="flex items-center gap-1 border-b border-border p-1.5">
-                        <span className="pl-1 font-mono text-[11px] font-bold text-primary" aria-hidden="true">/</span>
+                        <span className="cap-center pl-1 font-mono text-[11px] font-bold text-primary" aria-hidden="true">/</span>
                         <input
                             ref={searchInputRef}
                             type="text"
@@ -100,20 +78,20 @@ export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, find, onR
                             placeholder="find"
                             className="h-6 min-w-0 flex-1 bg-transparent px-1 font-mono text-[12px] placeholder:text-muted-foreground/70 focus:outline-none"
                         />
-                        <span className="shrink-0 px-1 font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                        <Label className="shrink-0 px-1 text-muted-foreground">
                             {find.query ? (find.totalMatches > 0 ? `${find.currentIndex + 1}/${find.totalMatches}` : '0/0') : ''}
-                        </span>
-                        <IconButton onClick={find.goToPrev} disabled={find.totalMatches === 0} title="Previous match (⇧↵)">
-                            <ChevronUp className="h-3.5 w-3.5" />
+                        </Label>
+                        <IconButton size="row" side="bottom" onClick={find.goToPrev} disabled={find.totalMatches === 0} label="Previous match" shortcut="⇧↵">
+                            <ChevronUp className={ICON.md} />
                         </IconButton>
-                        <IconButton onClick={find.goToNext} disabled={find.totalMatches === 0} title="Next match (↵)">
-                            <ChevronDown className="h-3.5 w-3.5" />
+                        <IconButton size="row" side="bottom" onClick={find.goToNext} disabled={find.totalMatches === 0} label="Next match" shortcut="↵">
+                            <ChevronDown className={ICON.md} />
                         </IconButton>
-                        <IconButton onClick={() => setShowReplace(!showReplace)} title="Replace" active={showReplace}>
-                            <Replace className="h-3.5 w-3.5" />
+                        <IconButton size="row" side="bottom" onClick={() => setShowReplace(!showReplace)} label="Replace" active={showReplace}>
+                            <Replace className={ICON.md} />
                         </IconButton>
-                        <IconButton onClick={onClose} title="Close (esc)">
-                            <X className="h-3.5 w-3.5" />
+                        <IconButton size="row" side="bottom" onClick={onClose} label="Close" shortcut="esc">
+                            <X className={ICON.md} />
                         </IconButton>
                     </div>
 
@@ -124,11 +102,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, find, onR
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                                transition={{ duration: DURATION.state, ease: EASE }}
                                 className="overflow-hidden border-b border-border"
                             >
                                 <div className="flex items-center gap-1 p-1.5">
-                                    <span className="pl-1 font-mono text-[11px] font-bold text-muted-foreground" aria-hidden="true">→</span>
+                                    <span className="cap-center pl-1 font-mono text-[11px] font-bold text-muted-foreground" aria-hidden="true">→</span>
                                     <input
                                         type="text"
                                         value={replaceValue}
@@ -143,22 +121,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, find, onR
                                         placeholder="replace with"
                                         className="h-6 min-w-0 flex-1 bg-transparent px-1 font-mono text-[12px] placeholder:text-muted-foreground/70 focus:outline-none"
                                     />
-                                    <button
-                                        type="button"
+                                    <LabelButton
+                                        size="row"
                                         onClick={() => onReplace(find.replace(replaceValue))}
                                         disabled={find.totalMatches === 0}
-                                        className="h-6 border border-border px-1.5 font-mono text-[11px] uppercase tracking-[0.06em] text-foreground hover:bg-secondary disabled:opacity-40"
+                                        className="border border-border text-foreground"
                                     >
                                         One
-                                    </button>
-                                    <button
-                                        type="button"
+                                    </LabelButton>
+                                    <LabelButton
+                                        size="row"
                                         onClick={() => onReplace(find.replaceAll(replaceValue))}
                                         disabled={find.totalMatches === 0}
-                                        className="h-6 border border-border px-1.5 font-mono text-[11px] uppercase tracking-[0.06em] text-foreground hover:bg-secondary disabled:opacity-40"
+                                        className="border border-border text-foreground"
                                     >
                                         All
-                                    </button>
+                                    </LabelButton>
                                 </div>
                             </motion.div>
                         )}
@@ -167,25 +145,28 @@ export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, find, onR
                     {/* Options row */}
                     <div className="flex items-center gap-0.5 p-1.5">
                         <IconButton
+                            size="row"
                             active={find.options.caseSensitive}
                             onClick={() => find.setOptions({ caseSensitive: !find.options.caseSensitive })}
-                            title="Match case"
+                            label="Match case"
                         >
-                            <CaseSensitive className="h-3.5 w-3.5" />
+                            <CaseSensitive className={ICON.md} />
                         </IconButton>
                         <IconButton
+                            size="row"
                             active={find.options.wholeWord}
                             onClick={() => find.setOptions({ wholeWord: !find.options.wholeWord })}
-                            title="Whole word"
+                            label="Whole word"
                         >
-                            <WholeWord className="h-3.5 w-3.5" />
+                            <WholeWord className={ICON.md} />
                         </IconButton>
                         <IconButton
+                            size="row"
                             active={find.options.useRegex}
                             onClick={() => find.setOptions({ useRegex: !find.options.useRegex })}
-                            title="Regular expression"
+                            label="Regular expression"
                         >
-                            <Regex className="h-3.5 w-3.5" />
+                            <Regex className={ICON.md} />
                         </IconButton>
                     </div>
                 </motion.div>

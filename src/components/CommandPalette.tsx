@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FileText, Download, Sparkles, Moon, Sun, HelpCircle, FileDown, Code,
-    Bold, Italic, Heading1, List, Quote, Link, PanelLeft, Settings,
+    Bold, Italic, Heading1, List, Quote, Link, PanelLeft, Settings, Maximize2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Kbd } from '@/components/ui/kbd';
+import { DURATION, EASE, Label, ROW_GUTTER, SectionRule, SELECTED, STRIP } from '@/components/chrome';
 import { useCommandRegistry, Command } from '@/hooks/useCommandRegistry';
 import { useTheme } from '@/components/ui/theme-provider';
 
@@ -33,6 +34,7 @@ const iconMap: Record<string, React.ReactNode> = {
     'link': <Link className="h-3.5 w-3.5" />,
     'panel': <PanelLeft className="h-3.5 w-3.5" />,
     'settings': <Settings className="h-3.5 w-3.5" />,
+    'focus': <Maximize2 className="h-3.5 w-3.5" />,
 };
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -147,6 +149,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             },
         },
         {
+            id: 'focus-mode',
+            name: 'Focus mode',
+            description: 'Write fullscreen, no chrome',
+            shortcut: '⌘⇧F',
+            icon: 'focus',
+            category: 'View',
+            action: () => onCommand('focus-mode'),
+        },
+        {
             id: 'toggle-sidebar',
             name: 'Toggle index',
             shortcut: '⌘\\',
@@ -242,7 +253,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        exit={{ opacity: 0, transition: { duration: 0.08 } }}
+                        exit={{ opacity: 0, transition: { duration: DURATION.floatOut } }}
                         transition={{ duration: 0.12 }}
                         className="fixed inset-0 z-50 bg-foreground/25 dark:bg-black/55"
                         onClick={onClose}
@@ -252,8 +263,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     <motion.div
                         initial={{ opacity: 0, scale: 0.985, y: -8 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, transition: { duration: 0.08 } }}
-                        transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                        exit={{ opacity: 0, transition: { duration: DURATION.floatOut } }}
+                        transition={{ duration: DURATION.floatIn, ease: EASE }}
                         className="pointer-events-auto w-full max-w-lg"
                         role="dialog"
                         aria-modal="true"
@@ -261,7 +272,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     >
                         <div className="overflow-hidden border border-border bg-popover shadow-[0_8px_32px_rgba(0,0,0,0.18)]">
                             {/* The ex-command line */}
-                            <div className="flex items-center gap-2 border-b border-border px-3">
+                            <div className={cn('flex items-center gap-2 border-b border-border', ROW_GUTTER)}>
                                 <span className="font-mono text-base font-bold text-primary" aria-hidden="true">
                                     :
                                 </span>
@@ -277,11 +288,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                             </div>
 
                             <div ref={listRef} className="max-h-[320px] overflow-y-auto">
-                                {!query && recentCommands.length > 0 && (
-                                    <div className="border-b border-border bg-secondary/60 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
-                                        Recent
-                                    </div>
-                                )}
+                                {!query && recentCommands.length > 0 && <SectionRule>Recent</SectionRule>}
                                 {recentSlice.map((cmd, index) => (
                                     <CommandItem
                                         key={`recent-${cmd.id}`}
@@ -293,11 +300,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                                     />
                                 ))}
 
-                                {recentSlice.length > 0 && (
-                                    <div className="border-b border-border bg-secondary/60 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
-                                        All commands
-                                    </div>
-                                )}
+                                {recentSlice.length > 0 && <SectionRule>All commands</SectionRule>}
 
                                 {filteredCommands.length > 0 ? (
                                     filteredCommands.map((cmd, index) => (
@@ -311,24 +314,30 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                                         />
                                     ))
                                 ) : (
-                                    <div className="py-8 text-center font-mono text-xs uppercase tracking-[0.04em] text-muted-foreground">
-                                        No matching command
+                                    <div className="py-8 text-center">
+                                        <Label className="text-muted-foreground">No matching command</Label>
                                     </div>
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-4 border-t border-border bg-secondary/60 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                            <div
+                                className={cn(
+                                    'flex items-center gap-4 border-b-0 border-t py-1.5 text-muted-foreground',
+                                    STRIP,
+                                    ROW_GUTTER
+                                )}
+                            >
                                 <span className="flex items-center gap-1.5">
                                     <Kbd keys="↑↓" />
-                                    navigate
+                                    <Label>navigate</Label>
                                 </span>
                                 <span className="flex items-center gap-1.5">
                                     <Kbd keys="↵" />
-                                    run
+                                    <Label>run</Label>
                                 </span>
                                 <span className="flex items-center gap-1.5">
                                     <Kbd keys="esc" />
-                                    close
+                                    <Label>close</Label>
                                 </span>
                             </div>
                         </div>
@@ -361,8 +370,9 @@ const CommandItem: React.FC<CommandItemProps> = ({
             onClick={onClick}
             onMouseEnter={onMouseEnter}
             className={cn(
-                'flex w-full items-center gap-2.5 px-3 py-2 text-left font-mono text-[13px]',
-                isSelected ? 'bg-foreground text-background' : 'text-foreground'
+                'flex w-full items-center gap-2.5 py-2 text-left font-mono text-[13px]',
+                ROW_GUTTER,
+                isSelected ? SELECTED : 'text-foreground'
             )}
         >
             <span className={cn('shrink-0', isSelected ? 'text-background' : 'text-muted-foreground')}>
@@ -379,14 +389,14 @@ const CommandItem: React.FC<CommandItemProps> = ({
             {command.shortcut ? (
                 <Kbd keys={command.shortcut} tone={isSelected ? 'inverse' : 'chrome'} className="shrink-0" />
             ) : (
-                <span
+                <Label
                     className={cn(
-                        'shrink-0 text-[11px] uppercase tracking-[0.04em]',
+                        'shrink-0',
                         isSelected ? 'text-background/70' : 'text-muted-foreground/70'
                     )}
                 >
                     {command.category}
-                </span>
+                </Label>
             )}
         </button>
     );

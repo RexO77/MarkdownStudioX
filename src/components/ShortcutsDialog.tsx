@@ -7,6 +7,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Kbd } from '@/components/ui/kbd';
+import { Label, ROW_GUTTER } from '@/components/chrome';
+import { cn } from '@/lib/utils';
 
 interface ShortcutsDialogProps {
   open: boolean;
@@ -32,6 +34,7 @@ const GROUPS: { title: string; items: { keys: string; action: string }[] }[] = [
     items: [
       { keys: '⌘P', action: 'Command palette' },
       { keys: '⌘F', action: 'Find & replace' },
+      { keys: '⌘⇧F', action: 'Focus mode' },
       { keys: '⌘\\', action: 'Toggle index' },
       { keys: 'esc', action: 'Close any panel' },
     ],
@@ -61,16 +64,16 @@ export const ShortcutsDialog: React.FC<ShortcutsDialogProps> = ({ open, onOpenCh
       <div className="max-h-[60vh] space-y-5 overflow-y-auto px-4 py-4">
         {GROUPS.map((group) => (
           <section key={group.title}>
-            <h3 className="mb-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+            <Label weight="strong" className="mb-1.5 block text-muted-foreground">
               {group.title}
-            </h3>
+            </Label>
             <div className="divide-y divide-border border border-border">
               {group.items.map((item) => (
                 <div
                   key={item.action}
-                  className="flex items-center justify-between px-2.5 py-1.5 text-[12px]"
+                  className={cn('flex items-center justify-between py-1.5 text-[12px]', ROW_GUTTER)}
                 >
-                  <span>{item.action}</span>
+                  <span className="cap-center">{item.action}</span>
                   <Kbd keys={item.keys} />
                 </div>
               ))}

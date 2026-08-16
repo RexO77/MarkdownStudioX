@@ -25,6 +25,7 @@ import { createLowlight, common } from 'lowlight';
 import { Markdown } from 'tiptap-markdown';
 import { Bold, Italic, Strikethrough, Code, Link2, Unlink, CornerDownLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Label, SectionRule } from '@/components/chrome';
 import { findLossyConstructs } from '@/lib/galley-safety';
 import { createSlashCommand, filterSlashItems, type SlashMenuState } from './slash-command';
 import { CodeBlockView } from './CodeBlockView';
@@ -39,7 +40,6 @@ export interface GalleyFormatApi {
 interface GalleyEditorProps {
   value: string;
   onChange: (markdown: string) => void;
-  title?: string;
   onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
   formatApiRef?: React.MutableRefObject<GalleyFormatApi | null>;
   className?: string;
@@ -53,7 +53,7 @@ const CLOSED_SLASH: SlashMenuState = { open: false, query: '', clientRect: null,
  * in, guarded so the focused surface always wins.
  */
 export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
-  ({ value, onChange, title, onScroll, formatApiRef, className }, ref) => {
+  ({ value, onChange, onScroll, formatApiRef, className }, ref) => {
     const scrollRef = useRef<HTMLDivElement>(null);
     useImperativeHandle(ref, () => scrollRef.current as HTMLDivElement);
 
@@ -301,19 +301,15 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
         <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-[38rem] px-6 py-8 md:px-10">
             {isReadOnly && (
-              <div className="mb-4 border border-border bg-secondary/60 px-3 py-2 font-mono text-[11px] leading-4 text-muted-foreground">
+              <div className="mb-4 border border-border bg-secondary px-3 py-2 font-mono text-[11px] leading-4 text-muted-foreground">
                 <span className="font-bold uppercase tracking-[0.06em] text-foreground">Read-only</span>
                 {' — this document contains '}
                 {lossyConstructs.join(' and ')}
                 {', which the galley cannot edit without corrupting. Edit it in SOURCE view.'}
               </div>
             )}
-            {/* Running head, the way a proof sheet names itself */}
-            <div className="mb-8 flex items-baseline justify-between border-b border-border pb-2 font-mono text-[11px] uppercase tracking-[0.04em] text-muted-foreground">
-              <span className="truncate">{title || 'untitled'}</span>
-              <span className="shrink-0 pl-4">typeset galley</span>
-            </div>
-
+            {/* No running head: the header already names the document, and the
+                writing surface should open on the writing. */}
             <EditorContent editor={editor} className="galley galley-editable pb-24" />
           </div>
         </div>
@@ -420,9 +416,7 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
                   : Math.max(8, slashRect.top - 4 - Math.min(288, slashItems.length * 42 + 26)),
             }}
           >
-            <div className="border-b border-border bg-secondary/60 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
-              Insert block
-            </div>
+            <SectionRule>Insert block</SectionRule>
             <div className="max-h-[262px] overflow-y-auto">
               {slashItems.map((item, index) => (
                 <button
@@ -445,15 +439,15 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
                     )}
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block font-mono text-[12px] font-bold leading-4">{item.title}</span>
-                    <span
+                    <span className="cap-center block font-mono text-[12px] font-bold">{item.title}</span>
+                    <Label
                       className={cn(
-                        'block font-mono text-[10px] uppercase tracking-[0.04em]',
+                        'mt-1 block',
                         index === slashIndex ? 'text-background/70' : 'text-muted-foreground'
                       )}
                     >
                       {item.hint}
-                    </span>
+                    </Label>
                   </span>
                 </button>
               ))}

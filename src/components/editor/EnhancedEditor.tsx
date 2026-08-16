@@ -11,6 +11,8 @@ interface EnhancedEditorProps {
   onCursorChange?: (position: { line: number; column: number }) => void;
   className?: string;
   placeholder?: string;
+  /** Cap the manuscript at a reading measure and centre it — used in focus mode. */
+  measured?: boolean;
 }
 
 // Helper to get approximate caret position for the selection toolbar
@@ -58,7 +60,7 @@ function getCaretPosition(textarea: HTMLTextAreaElement): { x: number; y: number
 const LIST_PATTERN = /^(\s*)((?:[-*+]|\d+\.)\s+(?:\[[ xX]\]\s+)?|>\s+)(.*)$/;
 
 export const EnhancedEditor = forwardRef<HTMLTextAreaElement, EnhancedEditorProps>(
-  function EnhancedEditor({ value, onChange, onScroll, onCursorChange, className, placeholder }, ref) {
+  function EnhancedEditor({ value, onChange, onScroll, onCursorChange, className, placeholder, measured }, ref) {
     const [selection, setSelection] = useState({ text: '', position: { x: 0, y: 0 }, visible: false });
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const valueRef = useRef(value);
@@ -254,6 +256,7 @@ export const EnhancedEditor = forwardRef<HTMLTextAreaElement, EnhancedEditorProp
           placeholder={placeholder || 'Start writing. The galley typesets as you go.'}
           className={cn(
             'flex-1 w-full resize-none border-0 bg-transparent px-6 py-8',
+            measured && 'mx-auto max-w-[41rem]',
             'manuscript text-[14px] leading-[24px]',
             'placeholder:text-muted-foreground/70',
             'focus:outline-none focus:ring-0'

@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Table, Code, ListChecks, Quote, Info } from 'lucide-react';
+import { DURATION, EASE, GUTTER, ICON, Label, LabelButton, STRIP } from '@/components/chrome';
+import { cn } from '@/lib/utils';
 
 interface TemplatePanelProps {
   visible: boolean;
@@ -55,28 +57,28 @@ export const TemplatePanel = ({ visible, onInsertTemplate, onClose }: TemplatePa
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
-          className="shrink-0 overflow-hidden border-b border-border bg-secondary/60"
+          transition={{ duration: DURATION.state, ease: EASE }}
+          className={cn('shrink-0 overflow-hidden', STRIP)}
           role="toolbar"
           aria-label="Insert template"
         >
-          <div className="flex items-center gap-0.5 overflow-x-auto px-2 py-1">
-            <span className="pr-2 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+          <div className={cn('flex items-center gap-1 overflow-x-auto py-1', GUTTER)}>
+            <Label weight="strong" className="pr-1.5 text-muted-foreground">
               Insert
-            </span>
+            </Label>
             {TEMPLATES.map(({ icon: Icon, name, label, content }) => (
-              <button
+              <LabelButton
                 key={name}
-                type="button"
+                size="row"
+                icon={<Icon className={cn(ICON.sm, 'text-muted-foreground')} />}
                 onClick={() => {
                   onInsertTemplate(content);
                   onClose();
                 }}
-                className="inline-flex h-6 shrink-0 items-center gap-1.5 border border-border bg-background px-2 font-mono text-[11px] text-foreground hover:bg-secondary"
+                className="shrink-0 border border-border bg-background text-foreground"
               >
-                <Icon className="h-3 w-3 text-muted-foreground" />
                 {label}
-              </button>
+              </LabelButton>
             ))}
           </div>
         </motion.div>

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Kbd } from '@/components/ui/kbd';
 import { useTheme } from '@/components/ui/theme-provider';
 import { setStoredApiKey } from '@/components/ui/api-key-dialog';
+import { Label, Segmented } from '@/components/chrome';
 import { toast } from 'sonner';
 
 interface WelcomeScreenProps {
@@ -30,9 +31,9 @@ export const setOnboardingComplete = () => {
 };
 
 const THEME_CHOICES = [
-    { value: 'light' as const, label: 'LIGHT', icon: Sun },
-    { value: 'dark' as const, label: 'DARK', icon: Moon },
-    { value: 'system' as const, label: 'SYSTEM', icon: Monitor },
+    { id: 'light' as const, label: 'LIGHT', Icon: Sun },
+    { id: 'dark' as const, label: 'DARK', Icon: Moon },
+    { id: 'system' as const, label: 'SYSTEM', Icon: Monitor },
 ];
 
 const SHORTCUTS = [
@@ -56,8 +57,10 @@ const sectionVariants = {
 };
 
 const SectionHead: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-foreground">
-        {children}
+    <h2>
+        <Label weight="strong" className="text-foreground">
+            {children}
+        </Label>
     </h2>
 );
 
@@ -94,11 +97,10 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
                     variants={sectionVariants}
                     className="flex items-baseline justify-between border-b border-border pb-2 font-mono text-[11px] font-bold tracking-[0.02em]"
                 >
-                    <span>Markdown Studio X</span>
-                    <span className="hidden font-normal uppercase tracking-[0.06em] text-muted-foreground sm:block">
-                        User Commands
-                    </span>
-                    <span className="hidden sm:block">Markdown Studio X</span>
+                    <span className="cap-center">Markdown Studio X</span>
+                    <Label weight="strong" className="text-muted-foreground">
+                        msx(1)
+                    </Label>
                 </motion.div>
 
                 <div className="space-y-8 py-10">
@@ -124,29 +126,13 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
                         <div className="mt-3 space-y-4 pl-6">
                             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                                 <code className="font-mono text-[12px] text-muted-foreground">--theme</code>
-                                <div
-                                    role="group"
-                                    aria-label="Theme"
-                                    className="flex items-stretch border border-border font-mono text-[11px] tracking-[0.04em]"
-                                >
-                                    {THEME_CHOICES.map((choice) => (
-                                        <button
-                                            key={choice.value}
-                                            type="button"
-                                            aria-pressed={theme === choice.value}
-                                            onClick={() => setTheme(choice.value)}
-                                            className={cn(
-                                                'inline-flex items-center gap-1.5 px-3 py-1.5',
-                                                theme === choice.value
-                                                    ? 'bg-foreground text-background'
-                                                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                                            )}
-                                        >
-                                            <choice.icon className="h-3 w-3" />
-                                            {choice.label}
-                                        </button>
-                                    ))}
-                                </div>
+                                <Segmented
+                                    label="Theme"
+                                    items={THEME_CHOICES}
+                                    value={theme}
+                                    onChange={setTheme}
+                                    compactLabels={false}
+                                />
                             </div>
 
                             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -171,9 +157,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
                                     get a free key ↗
                                 </a>
                             </div>
-                            <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                            <Label weight="strong" className="block font-normal text-muted-foreground">
                                 Both live in Settings afterwards. Keys are stored only in this browser.
-                            </p>
+                            </Label>
                         </div>
                     </motion.section>
 
@@ -197,9 +183,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
                     variants={sectionVariants}
                     className="flex items-center justify-between border-t border-border pt-4"
                 >
-                    <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                    <Label weight="strong" className="font-normal text-muted-foreground">
                         Free · local-first · open source
-                    </span>
+                    </Label>
                     <button
                         type="button"
                         onClick={handleStart}
@@ -209,7 +195,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
                             'hover:opacity-90'
                         )}
                     >
-                        Start writing
+                        <span className="cap-center">Start writing</span>
                         <ArrowRight className="h-3.5 w-3.5" />
                     </button>
                 </motion.div>

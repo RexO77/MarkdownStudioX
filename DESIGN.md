@@ -205,25 +205,41 @@ Courier Prime, uppercase, and letter-spaced 0.04–0.06em (0.04em for running
 labels, 0.06em for bold section rules and stamps). Lowercase 11px exists only
 for statusline status verbs ("saved", "saving…") and listing-copy verbs.
 
+**The Cap-Centering Rule.** A label set beside an icon is centered on its cap
+height, not its line box. `leading-none` alone leaves the font's descender
+slack inside the box and lands the caps ~0.7px above the icon — visible at
+11px. The `.cap-center` utility in `index.css` trims the box
+(`text-box: trim-both cap alphabetic`, with a half-pixel nudge where that is
+unsupported) and the `<Label>` primitive carries it. Never hand-roll an 11px
+label; import `Label` from `@/components/chrome`.
+
 **The Two Faces Rule.** STIX Two Text never appears in chrome; Courier Prime
 appears inside the galley only as inline code and listing text.
 
 ## Layout
 
-A fixed full-height frame, ruled like a proof sheet. Stacked chrome bars:
-man-page header 40px (`h-10`), formatting toolbar 36px (`h-9`), statusline
-26px, sidebar index head 32px. Every bar is separated from content by a single
+A fixed full-height frame, ruled like a proof sheet. Stacked chrome bars, all
+declared once as `BAR` in `src/components/chrome/tokens.ts`: man-page header
+40px (`h-10`), formatting toolbar 36px (`h-9`), sidebar index head 36px (the
+same track as the toolbar beside it, so their hairlines meet), grep field
+32px (`h-8`), statusline 26px. Every bar is separated from content by a single
 1px hairline; vertical dividers inside bars are 1px × 16px strokes.
 
 The workspace splits into manuscript and galley panes ruled by one shared
 hairline. The document sidebar ("Index") is a fixed 264px column of
-hairline-separated rows that animates its width open/closed. The galley
-centers its content at a 38rem (608px) max measure with 24px side padding
-(40px at md+), topped by a running head (title left, "typeset preview" right,
-hairline beneath). The AI panel is a right-side column on the same grammar.
+hairline-separated rows that **slides** in and out on `margin-left` — never on
+`width`: a width animation squeezes the rows every frame and, if it is
+interrupted or throttled, strands the column at an arbitrary size. The AI
+panel is the mirror of this on the right (`margin-right`). The galley centers
+its content at a 38rem (608px) max measure with 24px side padding (40px at
+md+) and **no running head** — the header names the document, and the writing
+surface opens on the writing.
 
-Spacing inside chrome is compact: 8px horizontal bar padding, 12px row
-padding, 4–6px gaps. There is no spacing scale beyond Tailwind defaults; the
+Spacing inside chrome is compact and comes from two constants: `GUTTER`
+(8px) pads every bar, `ROW_GUTTER` (12px) pads every text row, menu item and
+strip. Gaps are 4–6px. A trailing cluster of 24px row buttons sits at
+`ROW_ACTION_INSET` (6px), which puts the 12px icon inside it on the same 12px
+optical gutter as the row's text. There is no spacing scale beyond that; the
 24px ruling governs the galley, and the bar heights govern chrome.
 
 Responsive behavior: touch targets grow (icon buttons 36px on mobile, 28px on
@@ -261,6 +277,44 @@ inked in full foreground.
 
 ## Components
 
+### The Chrome Kit (`src/components/chrome/`)
+
+Every piece of terminal chrome is assembled from one kit, so a spacing or ink
+decision is made once and read everywhere. Import from `@/components/chrome`;
+do not hand-roll these shapes.
+
+| Export | What it is |
+| --- | --- |
+| `Bar` | A chrome bar: fixed track (`header`/`toolbar`/`field`/`status`), one hairline, the 8px gutter. `stretch` for full-height cells, `flush` when children own their padding. |
+| `BarDivider` | The 1px × 16px stroke between clusters in a bar. |
+| `Label` | The 11px Courier Prime label, cap-centered. `weight="strong"` is the bold 0.06em cut. |
+| `IconButton` | Square icon button with the tooltip + key caps built in. `size="bar"` (36/28px) or `size="row"` (24px). |
+| `LabelButton` | The same grammar with a word instead of a glyph (EXPORT, NEW, ONE/ALL). `tone="accent"`, `fill`, `size="row"`. |
+| `Segmented` | The bordered N-cell switch: view switcher, theme picker. Selected cell is inverse video, flipped instantly. |
+| `SectionRule` | The raised-ground 24px strip that names a group (STARRED, RECENT, INSERT BLOCK). |
+| tokens | `BAR`, `GUTTER`, `ROW_GUTTER`, `ROW_ACTION_INSET`, `LABEL`, `INK`, `HOVER`, `PRESS`, `SELECTED`, `TOGGLED`, `STRIP`, `ICON`, `EASE`, `DURATION`. |
+
+The kit is chrome only. The galley is the other material and stays out of it.
+
+### Header
+
+40px, three zones. Left: the index toggle and the app name. Centre: the
+**document's name**, positioned absolutely on the header's true midpoint so it
+cannot drift with the width of the clusters beside it, and clickable to rename
+in place (it falls away below `md`, where the statusline carries the name
+instead). Right: EXPORT, settings, source. There is no decorative running
+title — a label nobody can click does not earn 40px of the top of the screen.
+
+### Focus Mode
+
+Every bar steps out and the writing surface takes the whole screen, backed by
+real fullscreen where the browser grants it. Entered from the toolbar, `⌘⇧F`,
+or the palette; left with Escape or the faint corner control, which is the
+only chrome that remains. Escape defers to anything nearer the caret that
+already handled the key (the slash menu, the find bar). On a single surface
+the manuscript takes a centered 41rem measure rather than running the full
+width of the display.
+
 ### Editable Galley (signature surface)
 The typeset page is itself an editor (TipTap, `src/components/galley/`).
 Markdown stays the single source of truth: rich edits serialize back out
@@ -274,11 +328,17 @@ wins (`GalleyEditor` sync guards). View modes read SOURCE / SPLIT / GALLEY.
 - **Known limitations.** Documents containing raw HTML, HTML comments, footnote syntax (`[^1]`), or YAML front matter open **read-only** in the galley — the schema cannot round-trip them without corrupting the source; edit those in SOURCE view. Table column alignment (`|:---|:---:|---:|`) is dropped on serialize. Consecutive task-list items come back "loose" (a blank line between items) even with `tightLists: true`.
 
 ### Statusline (signature)
-tmux-grade, 26px tall, mono 11px uppercase with 0.04em tracking.
+tmux-grade, 26px tall, mono 11px uppercase with 0.04em tracking; segments are
+padded to the same 8px gutter as every other bar.
 - **Mode segment:** inverse video in Bell blue (`bg-primary text-primary-foreground`, bold) reading SOURCE / SPLIT / GALLEY.
-- **Document segment:** raised ground (`bg-secondary`), normal-case truncating filename.
+- **Document segment:** raised ground (`bg-secondary`), normal-case truncating filename — shown only below `md`, where the header's centred title is hidden. The name is never reported twice at the same width.
+- **Commands segment:** a real button — Bell-blue `:` prompt, "COMMANDS", `⌘P` — opening the palette. This is where a "user commands" affordance belongs: in the footer, and clickable.
 - **Metric segments:** faded ink, hairline left rules, dropping by breakpoint (LN/COL, words, chars, read time).
 - **Save segment:** fixed 13ch, lowercase verbs — "saved" faded, "saving…" blue, "save failed" red.
+
+Word counts everywhere — statusline and index rows — come from
+`countWords`/`documentStats` in `src/lib/text-stats.ts`. One document must
+never report two different numbers.
 
 ### View Switcher
 A bordered 3-cell group (28px tall, 24px at md), mono 11px labels with icons.
@@ -299,7 +359,10 @@ shadow. Inverse tone (on selected/inverse rows): transparent fill,
 ("Cmd Shift Q").
 
 ### Index (Document Sidebar)
-264px column. Section rules ("STARRED", "ALL FILES") are raised-ground strips
+264px column. The head is a 36px bar: the word "Index" and a NEW button that
+fills the bar's height against a left hairline — no document count (the list
+is right there) and no plus glyph beside the word "new" (one affordance, said
+once). Section rules ("STARRED", "ALL FILES") are raised-ground strips
 with bold 11px labels. Rows are hairline-separated: bold 12px mono name, then
 an 11px uppercase meta line ("2H · 340 WORDS").
 - **Active row:** full inverse video (`bg-foreground text-background`); meta and row actions shift to `text-background/70`.
@@ -346,7 +409,9 @@ box-shadow/border-color over 140ms. Selection highlight is Bell blue at 25%.
 - **Do** mark selection and pressed states with instant inverse video (`bg-foreground text-background`, or Bell blue for the statusline mode block).
 - **Do** set all labels at the 11px floor: Courier Prime, uppercase, 0.04–0.06em tracking, usually bold.
 - **Do** keep new galley elements on the 24px ruling — margins and line-heights in multiples of 24px.
-- **Do** animate size/position with `cubic-bezier(0.16, 1, 0.3, 1)` only: 140ms for CSS state transitions, 0.12–0.24s for framer panels, with exits shorter than entries (e.g. sidebar 0.24s in / 0.18s out, palette 0.16s in / 0.08s out). Wrap motion in `MotionConfig reducedMotion="user"`.
+- **Do** animate size/position with `cubic-bezier(0.16, 1, 0.3, 1)` only: 140ms for CSS state transitions, 0.12–0.24s for framer panels, with exits shorter than entries (e.g. sidebar 0.24s in / 0.18s out, palette 0.16s in / 0.08s out). Take both from `EASE` and `DURATION` in the chrome kit rather than writing the literals again. Wrap motion in `MotionConfig reducedMotion="user"`.
+- **Do** build chrome out of the kit — `Bar`, `Label`, `IconButton`, `LabelButton`, `Segmented`, `SectionRule`. A new surface that re-types these classes is how the bars drifted apart in the first place.
+- **Do** slide panels in on a margin, never by animating their width.
 - **Do** speak man-page: name surfaces as artifacts ("Index", "manuscript", "typeset preview"), keep statusline verbs lowercase, and bracket empty states ("[ blank galley ]").
 
 ### Don't:
@@ -356,3 +421,4 @@ box-shadow/border-color over 140ms. Selection highlight is Bell blue at 25%.
 - **Don't** introduce a fifth chrome ink. Bell blue is the accent; red is errors only; the galley's stamp inks stay inside alerts.
 - **Don't** use vertical rules in tables, backgrounds on table rows, or rounded/tinted "cards" in the galley — it is a printed page, not a dashboard.
 - **Don't** animate keyboard-driven dismissals slowly; Escape paths exit at ≤0.08–0.15s or instantly.
+- **Don't** put a label on screen that looks interactive and isn't, and don't say the same fact twice at the same breakpoint (the document's name, its word count). If a decorative label is worth keeping, give it a job in the footer.

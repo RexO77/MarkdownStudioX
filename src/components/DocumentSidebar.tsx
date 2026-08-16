@@ -1,8 +1,21 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Star, Trash2, Pencil, FileText } from 'lucide-react';
+import { Star, Trash2, Pencil, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Document } from '@/hooks/useDocuments';
+import { countWords } from '@/lib/text-stats';
+import {
+    Bar,
+    DURATION,
+    EASE,
+    ICON,
+    IconButton,
+    Label,
+    LabelButton,
+    ROW_ACTION_INSET,
+    ROW_GUTTER,
+    SectionRule,
+} from '@/components/chrome';
 
 interface DocumentSidebarProps {
     isOpen: boolean;
@@ -16,6 +29,9 @@ interface DocumentSidebarProps {
 }
 
 const SIDEBAR_WIDTH = 264;
+
+/** 3 × 24px row buttons + the 6px inset they sit at. */
+const ROW_ACTIONS_RESERVE = 'pr-[78px]';
 
 function formatDate(timestamp: number) {
     const date = new Date(timestamp);
@@ -31,17 +47,6 @@ function formatDate(timestamp: number) {
     if (diffDays < 7) return `${diffDays}d`;
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
-
-function wordCount(content: string) {
-    const trimmed = content.trim();
-    return trimmed ? trimmed.split(/\s+/).length : 0;
-}
-
-const SectionRule: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="border-b border-border bg-secondary/60 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
-        {children}
-    </div>
-);
 
 export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
     isOpen,
@@ -99,6 +104,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
     const renderDocumentRow = (doc: Document) => {
         const isActive = activeDocument?.id === doc.id;
         const isEditing = editingId === doc.id;
+        const meta = `${formatDate(doc.updatedAt)} · ${countWords(doc.content)} words`;
 
         return (
             <div
@@ -109,7 +115,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                 )}
             >
                 {isEditing ? (
-                    <div className="px-3 py-2">
+                    <div className={cn('py-2', ROW_GUTTER)}>
                         <input
                             ref={editInputRef}
                             value={editingName}
@@ -122,24 +128,24 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                                 'focus:outline-none focus:ring-1 focus:ring-ring'
                             )}
                         />
-                        <span
+                        <Label
                             className={cn(
-                                'mt-0.5 block font-mono text-[11px] uppercase tracking-[0.06em]',
+                                'mt-1 block',
                                 isActive ? 'text-background/70' : 'text-muted-foreground'
                             )}
                         >
-                            {formatDate(doc.updatedAt)} · {wordCount(doc.content)} words
-                        </span>
+                            {meta}
+                        </Label>
                     </div>
                 ) : (
                     <>
                         <button
                             type="button"
                             onClick={() => onSelectDocument(doc.id)}
-                            className="flex w-full flex-col gap-0.5 px-3 py-2 text-left"
+                            className={cn('flex w-full flex-col gap-1 py-2 text-left', ROW_GUTTER, ROW_ACTIONS_RESERVE)}
                         >
-                            <span className="flex items-center gap-1.5 pr-20 font-mono text-[12px] font-bold leading-4">
-                                <span className="truncate">{doc.name}</span>
+                            <span className="flex items-center gap-1.5 font-mono text-[12px] font-bold">
+                                <span className="cap-center truncate">{doc.name}</span>
                                 {doc.isFavorite && (
                                     <Star
                                         className={cn(
@@ -149,62 +155,58 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                                     />
                                 )}
                             </span>
-                            <span
-                                className={cn(
-                                    'font-mono text-[11px] uppercase tracking-[0.06em]',
-                                    isActive ? 'text-background/70' : 'text-muted-foreground'
-                                )}
-                            >
-                                {formatDate(doc.updatedAt)} · {wordCount(doc.content)} words
-                            </span>
+                            <Label className={isActive ? 'text-background/70' : 'text-muted-foreground'}>
+                                {meta}
+                            </Label>
                         </button>
 
                         <div
                             className={cn(
-                                'absolute right-2 top-1/2 flex -translate-y-1/2 items-center opacity-0 transition-opacity',
+                                'absolute top-1/2 flex -translate-y-1/2 items-center opacity-0 transition-opacity',
+                                ROW_ACTION_INSET,
                                 'group-hover:opacity-100 focus-within:opacity-100',
                                 '[@media(hover:none)]:opacity-100'
                             )}
                         >
-                            <button
-                                type="button"
-                                aria-label={doc.isFavorite ? 'Remove star' : 'Star document'}
+                            <IconButton
+                                size="row"
+                                tooltip={false}
+                                label={doc.isFavorite ? 'Remove star' : 'Star document'}
                                 onClick={() => onToggleFavorite(doc.id)}
                                 className={cn(
-                                    'inline-flex h-6 w-6 items-center justify-center',
                                     isActive
-                                        ? 'text-background/70 hover:text-background'
-                                        : 'text-muted-foreground hover:text-primary'
+                                        ? 'text-background/70 hover:bg-transparent hover:text-background'
+                                        : 'hover:bg-transparent hover:text-primary'
                                 )}
                             >
-                                <Star className={cn('h-3 w-3', doc.isFavorite && 'fill-current')} />
-                            </button>
-                            <button
-                                type="button"
-                                aria-label="Rename document"
+                                <Star className={cn(ICON.sm, doc.isFavorite && 'fill-current')} />
+                            </IconButton>
+                            <IconButton
+                                size="row"
+                                tooltip={false}
+                                label="Rename document"
                                 onClick={() => startEditing(doc)}
                                 className={cn(
-                                    'inline-flex h-6 w-6 items-center justify-center',
                                     isActive
-                                        ? 'text-background/70 hover:text-background'
-                                        : 'text-muted-foreground hover:text-foreground'
+                                        ? 'text-background/70 hover:bg-transparent hover:text-background'
+                                        : 'hover:bg-transparent hover:text-foreground'
                                 )}
                             >
-                                <Pencil className="h-3 w-3" />
-                            </button>
-                            <button
-                                type="button"
-                                aria-label="Delete document"
+                                <Pencil className={ICON.sm} />
+                            </IconButton>
+                            <IconButton
+                                size="row"
+                                tooltip={false}
+                                label="Delete document"
                                 onClick={() => onDeleteDocument(doc.id)}
                                 className={cn(
-                                    'inline-flex h-6 w-6 items-center justify-center',
                                     isActive
-                                        ? 'text-background/70 hover:text-background'
-                                        : 'text-muted-foreground hover:text-destructive'
+                                        ? 'text-background/70 hover:bg-transparent hover:text-background'
+                                        : 'hover:bg-transparent hover:text-destructive'
                                 )}
                             >
-                                <Trash2 className="h-3 w-3" />
-                            </button>
+                                <Trash2 className={ICON.sm} />
+                            </IconButton>
                         </div>
                     </>
                 )}
@@ -214,43 +216,48 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
 
     return (
         <AnimatePresence initial={false}>
+            {/* Slid in by margin, not squeezed by width: an interrupted or
+                throttled width animation leaves the index clipped at an
+                arbitrary size, and every frame of it reflows the rows. */}
             {isOpen && (
                 <motion.aside
-                    initial={{ width: 0 }}
-                    animate={{ width: SIDEBAR_WIDTH }}
-                    exit={{ width: 0, transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] } }}
-                    transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-                    className="h-full shrink-0 overflow-hidden border-r border-border bg-background"
+                    initial={{ marginLeft: -SIDEBAR_WIDTH }}
+                    animate={{ marginLeft: 0 }}
+                    exit={{ marginLeft: -SIDEBAR_WIDTH, transition: { duration: DURATION.exit, ease: EASE } }}
+                    transition={{ duration: DURATION.enter, ease: EASE }}
+                    style={{ width: SIDEBAR_WIDTH }}
+                    className="h-full shrink-0 border-r border-border bg-background"
                 >
-                    <div className="flex h-full flex-col" style={{ width: SIDEBAR_WIDTH }}>
-                        {/* Index head — same 36px track as the editor toolbar so the hairlines meet */}
-                        <div className="flex h-9 shrink-0 items-stretch justify-between border-b border-border">
-                            <span className="flex items-center pl-3 font-mono text-[11px] font-bold uppercase leading-none tracking-[0.06em] text-muted-foreground">
-                                Index ({documents.length})
+                    <div className="flex h-full flex-col">
+                        {/* Index head — the same 36px track as the editor toolbar beside it */}
+                        <Bar track="toolbar" stretch flush>
+                            <span className={cn('flex items-center text-muted-foreground', ROW_GUTTER)}>
+                                <Label weight="strong">Index</Label>
                             </span>
-                            <button
-                                type="button"
+                            <LabelButton
+                                fill
+                                tone="accent"
                                 onClick={onCreateDocument}
-                                className="inline-flex h-full items-center gap-1 border-l border-border px-2.5 font-mono text-[11px] font-bold uppercase leading-none tracking-[0.04em] text-primary hover:bg-secondary"
+                                className="border-l border-border"
                             >
-                                <Plus className="size-3 shrink-0" />
                                 New
-                            </button>
-                        </div>
+                            </LabelButton>
+                        </Bar>
 
                         {/* grep */}
-                        <div className="shrink-0 border-b border-border">
+                        <Bar track="field" flush rule="bottom">
                             <input
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="grep documents…"
                                 aria-label="Search documents"
                                 className={cn(
-                                    'w-full bg-transparent px-3 py-1.5 font-mono text-[12px]',
+                                    'h-full w-full bg-transparent font-mono text-[12px]',
+                                    ROW_GUTTER,
                                     'placeholder:text-muted-foreground/70 focus:outline-none'
                                 )}
                             />
-                        </div>
+                        </Bar>
 
                         <div className="flex-1 overflow-y-auto">
                             {starred.length > 0 && (
@@ -265,29 +272,31 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                             {rest.map(renderDocumentRow)}
 
                             {filtered.length === 0 && (
-                                <div className="px-3 py-10 text-center font-mono text-[11px] uppercase tracking-[0.04em] text-muted-foreground">
+                                <div className={cn('py-10 text-center', ROW_GUTTER)}>
                                     {searchQuery ? (
                                         <>
-                                            <p>No matches for “{searchQuery}”</p>
-                                            <button
-                                                type="button"
+                                            <Label className="block text-muted-foreground">
+                                                No matches for “{searchQuery}”
+                                            </Label>
+                                            <LabelButton
+                                                tone="accent"
                                                 onClick={() => setSearchQuery('')}
-                                                className="mt-3 border border-border px-2 py-1 font-bold text-primary hover:bg-secondary"
+                                                className="mt-3 border border-border"
                                             >
                                                 Clear search
-                                            </button>
+                                            </LabelButton>
                                         </>
                                     ) : (
                                         <>
-                                            <FileText className="mx-auto mb-2 h-5 w-5 opacity-60" />
-                                            <p>Index is empty</p>
-                                            <button
-                                                type="button"
+                                            <FileText className="mx-auto mb-2 h-5 w-5 text-muted-foreground opacity-60" />
+                                            <Label className="block text-muted-foreground">Index is empty</Label>
+                                            <LabelButton
+                                                tone="accent"
                                                 onClick={onCreateDocument}
-                                                className="mt-3 border border-border px-2 py-1 font-bold text-primary hover:bg-secondary"
+                                                className="mt-3 border border-border"
                                             >
-                                                + New document
-                                            </button>
+                                                New document
+                                            </LabelButton>
                                         </>
                                     )}
                                 </div>
