@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { MotionConfig } from "framer-motion";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +9,9 @@ import { Analytics } from "@vercel/analytics/react";
 import { WelcomeScreen, hasCompletedOnboarding } from "@/components/WelcomeScreen";
 import { applyTypography } from "@/lib/typography";
 import Index from "./pages/Index";
+
+// Prototype route — the WASM TeX engine only loads when /latex is visited.
+const LatexLab = lazy(() => import("./pages/LatexLab"));
 
 const App = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -38,6 +41,14 @@ const App = () => {
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route
+                  path="/latex"
+                  element={
+                    <Suspense fallback={null}>
+                      <LatexLab />
+                    </Suspense>
+                  }
+                />
               </Routes>
             </BrowserRouter>
           )}

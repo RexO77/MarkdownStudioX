@@ -1,3 +1,5 @@
+import { isLatexDocument } from './latex';
+
 /**
  * Markdown constructs the galley editor cannot round-trip without corrupting them.
  * Documents containing these are opened read-only in the galley.
@@ -8,6 +10,10 @@ const FOOTNOTE = /\[\^[^\]\s]+\]/;
 const FRONT_MATTER = /^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/;
 
 export function findLossyConstructs(markdown: string): string[] {
+  // A full LaTeX document isn't markdown at all — one galley edit would
+  // backslash-escape every command. Read-only; the LaTeX Lab compiles it.
+  if (isLatexDocument(markdown)) return ['a LaTeX document'];
+
   // Code blocks and inline code legitimately contain angle brackets — ignore them.
   const stripped = markdown
     .replace(/```[\s\S]*?```/g, '')

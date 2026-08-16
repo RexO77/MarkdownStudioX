@@ -180,6 +180,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             category: 'Help',
             action: () => onCommand('keyboard-shortcuts'),
         },
+        {
+            id: 'open-latex-lab',
+            name: 'Open LaTeX Lab',
+            description: 'Compile full LaTeX documents to PDF, entirely in your browser',
+            icon: 'code',
+            category: 'LaTeX Lab',
+            action: () => onCommand('open-latex-lab'),
+        },
     ];
 
     const { search, addRecentCommand, getRecentCommandObjects } = useCommandRegistry({ commands });

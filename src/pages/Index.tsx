@@ -21,6 +21,8 @@ import { exportToMarkdown, exportToHtml } from '@/utils/exportUtils';
 import { useDocuments } from '@/hooks/useDocuments';
 import { useFocusMode } from '@/hooks/useFocusMode';
 import { documentStats as computeDocumentStats } from '@/lib/text-stats';
+import { isLatexDocument, LATEX_HANDOFF_KEY } from '@/lib/latex';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -88,6 +90,35 @@ const Index = () => {
   useEffect(() => {
     setDocumentStats(computeDocumentStats(activeDocument?.content || ''));
   }, [activeDocument?.content]);
+
+  // A pasted \documentclass document isn't markdown — offer the LaTeX Lab.
+  // One toast per document; clears if the LaTeX goes away so a re-paste
+  // offers again. Content is read at click time via ref, not toast time.
+  const navigate = useNavigate();
+  const latexToastFor = useRef<string | null>(null);
+  const contentRef = useRef('');
+  contentRef.current = activeDocument?.content || '';
+  useEffect(() => {
+    const docId = activeDocument?.id;
+    if (!docId) return;
+    if (!isLatexDocument(activeDocument?.content || '')) {
+      if (latexToastFor.current === docId) latexToastFor.current = null;
+      return;
+    }
+    if (latexToastFor.current === docId) return;
+    latexToastFor.current = docId;
+    toast('LaTeX document detected', {
+      description: 'This is a full LaTeX document, not markdown. Compile it to a PDF in the LaTeX Lab.',
+      duration: 12000,
+      action: {
+        label: 'Open LaTeX Lab',
+        onClick: () => {
+          sessionStorage.setItem(LATEX_HANDOFF_KEY, contentRef.current);
+          navigate('/latex');
+        },
+      },
+    });
+  }, [activeDocument?.content, activeDocument?.id, navigate]);
 
   // Documents persist synchronously in useDocuments; the statusline holds
   // "saving…" briefly while typing so the state change is legible.
@@ -168,10 +199,17 @@ const Index = () => {
         case 'keyboard-shortcuts':
           setShowShortcuts(true);
           break;
+        case 'open-latex-lab':
+          // Carry the current document along when it's LaTeX itself.
+          if (isLatexDocument(content)) {
+            sessionStorage.setItem(LATEX_HANDOFF_KEY, content);
+          }
+          navigate('/latex');
+          break;
       }
       setShowCommandPalette(false);
     },
-    [activeDocument, handleCreateDocument, enterFocusMode]
+    [activeDocument, handleCreateDocument, enterFocusMode, navigate]
   );
 
   useEffect(() => {
