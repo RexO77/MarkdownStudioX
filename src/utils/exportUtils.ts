@@ -1,4 +1,10 @@
 import { convertMarkdownToHtml } from './markdownUtils';
+import { containsMath } from '@/lib/math';
+
+// Standalone HTML exports can't carry the KaTeX fonts inline, so equations
+// pull the stylesheet from a CDN. Only added when the document has math.
+const KATEX_CSS_LINK =
+  '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css">';
 
 // Helper to download a blob
 function downloadBlob(blob: Blob, filename: string) {
@@ -63,6 +69,7 @@ const GALLEY_EXPORT_CSS = `
   .footnote { margin-top: 32px; padding-top: 8px; border-top: 1px solid #d9d4c8; font-size: 13px; line-height: 20px; color: #79736a; }
   .footnote + .footnote { margin-top: 0; border-top: none; padding-top: 0; }
   .color-code { font-family: 'Courier Prime', 'Courier New', monospace; background: #f2f0e9; padding: 1px 5px; }
+  .katex { font-size: 1.06em; }
   .color-preview { display: inline-block; width: 10px; height: 10px; border: 1px solid #d9d4c8; }
 `;
 
@@ -82,7 +89,7 @@ export const exportToHtml = async (content: string, filename: string = 'document
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${filename}</title>
-  <style>${GALLEY_EXPORT_CSS}</style>
+  ${containsMath(content) ? `${KATEX_CSS_LINK}\n  ` : ''}<style>${GALLEY_EXPORT_CSS}</style>
 </head>
 <body>
 ${html}

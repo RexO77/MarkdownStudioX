@@ -1,9 +1,33 @@
 import { marked } from 'marked';
 import { markedSmartypants } from 'marked-smartypants';
+import { createMathSpanRegex, renderMathSpanToHtml } from '@/lib/math';
 
 // Smart punctuation: straight quotes become “curly”, -- becomes –, --- becomes —.
 // Code spans and listings keep their straight quotes.
 marked.use(markedSmartypants());
+
+// KaTeX math: $inline$ and $$display$$, same delimiter rules as the galley.
+marked.use({
+  extensions: [
+    {
+      name: 'math',
+      level: 'inline',
+      start(src: string) {
+        return createMathSpanRegex().exec(src)?.index;
+      },
+      tokenizer(src: string) {
+        const match = createMathSpanRegex().exec(src);
+        if (match && match.index === 0) {
+          return { type: 'math', raw: match[0] };
+        }
+        return undefined;
+      },
+      renderer(token) {
+        return renderMathSpanToHtml(token.raw);
+      },
+    },
+  ],
+});
 
 // Custom renderer for GitHub-style markdown, typeset for the galley
 const renderer = new marked.Renderer();
@@ -129,6 +153,15 @@ export const convertMarkdownToHtml = (markdown: string): string => {
 
   let processedMarkdown = markdown;
 
+  // Math spans sit out the preprocessing passes below — a formula like
+  // $x ~ y$ or $[\^2]$ must not be eaten by the strikethrough or footnote
+  // regexes. Masked here, restored verbatim just before parsing.
+  const maskedMath: string[] = [];
+  processedMarkdown = processedMarkdown.replace(createMathSpanRegex(), (span) => {
+    maskedMath.push(span);
+    return `MATH${maskedMath.length - 1}`;
+  });
+
   // Strikethrough (GitHub style with ~~ or single ~)
   processedMarkdown = processedMarkdown.replace(/~~([^~]+)~~/g, '<del>$1</del>');
   processedMarkdown = processedMarkdown.replace(/(?<!~)~([^~\n]+)~(?!~)/g, '<del>$1</del>');
@@ -162,6 +195,11 @@ export const convertMarkdownToHtml = (markdown: string): string => {
   Object.entries(emojiMap).forEach(([code, emoji]) => {
     processedMarkdown = processedMarkdown.replace(new RegExp(escapeRegex(code), 'g'), emoji);
   });
+
+  processedMarkdown = processedMarkdown.replace(
+    /MATH(\d+)/g,
+    (_, index) => maskedMath[Number(index)]
+  );
 
   return marked.parse(processedMarkdown, { async: false }) as string;
 };

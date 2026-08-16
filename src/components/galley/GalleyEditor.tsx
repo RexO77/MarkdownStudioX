@@ -30,6 +30,7 @@ import { findLossyConstructs } from '@/lib/galley-safety';
 import { createSlashCommand, filterSlashItems, type SlashMenuState } from './slash-command';
 import { CodeBlockView } from './CodeBlockView';
 import { Alert } from './alert';
+import { GalleyMathematics, MathAwareText } from './mathematics';
 
 const lowlight = createLowlight(common);
 
@@ -112,7 +113,11 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
       });
 
       return [
-        StarterKit.configure({ codeBlock: false }),
+        // Text is replaced by MathAwareText so `$...$` spans serialize
+        // without backslash-escaping; see mathematics.ts.
+        StarterKit.configure({ codeBlock: false, text: false }),
+        MathAwareText,
+        GalleyMathematics,
         CodeBlockLowlight.extend({
           addNodeView() {
             return ReactNodeViewRenderer(CodeBlockView);

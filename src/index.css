@@ -415,6 +415,31 @@
     border-radius: 0;
   }
 
+  /* Mathematics: KaTeX typesets the span; the raw TeX shows as a
+     manuscript chip while the caret sits inside it */
+  .galley .katex {
+    font-size: 1.06em;
+  }
+
+  .galley .Tiptap-mathematics-editor {
+    font-family: 'Courier Prime', ui-monospace, monospace;
+    font-size: 0.875em;
+    background-color: hsl(var(--listing) / 0.8);
+    padding: 1px 5px;
+  }
+
+  .galley .Tiptap-mathematics-render {
+    padding: 0 1px;
+  }
+
+  .galley .Tiptap-mathematics-render--editable {
+    cursor: text;
+  }
+
+  .galley .Tiptap-mathematics-render--editable:hover {
+    background-color: hsl(var(--listing) / 0.8);
+  }
+
   /* Code listings */
   .galley .listing {
     position: relative;
