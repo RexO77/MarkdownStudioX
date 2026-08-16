@@ -1,38 +1,29 @@
 
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import path from "node:path";
 
 export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     // Optimize for smaller chunks
     target: 'esnext',
-    minify: 'esbuild',
     rollupOptions: {
       output: {
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
-        // Aggressive code-splitting by vendor
-        manualChunks: {
-          // React core
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          // UI primitives (Radix)
-          'radix-ui': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-tooltip',
-            '@radix-ui/react-popover',
-            '@radix-ui/react-select',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-toast',
-            '@radix-ui/react-scroll-area',
-            '@radix-ui/react-slot',
-          ],
-          // Markdown processing
-          'markdown': ['marked'],
-          // Icons
-          'icons': ['lucide-react'],
+        // Aggressive code-splitting by vendor (function form — Rolldown
+        // dropped the object shorthand)
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return undefined;
+          if (/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id)) {
+            return 'react-vendor';
+          }
+          if (id.includes('@radix-ui')) return 'radix-ui';
+          if (/node_modules\/marked\//.test(id)) return 'markdown';
+          if (/node_modules\/katex\//.test(id)) return 'katex';
+          if (id.includes('lucide-react')) return 'icons';
+          return undefined;
         },
       },
     },
@@ -46,7 +37,7 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
   // Optimize dependencies

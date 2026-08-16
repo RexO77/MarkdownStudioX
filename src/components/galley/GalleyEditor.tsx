@@ -58,7 +58,7 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
     useImperativeHandle(ref, () => scrollRef.current as HTMLDivElement);
 
     const lastMarkdown = useRef(value);
-    const updateTimer = useRef<ReturnType<typeof setTimeout>>();
+    const updateTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const onChangeRef = useRef(onChange);
     onChangeRef.current = onChange;
     const editorInstanceRef = useRef<ReturnType<typeof useEditor>>(null);

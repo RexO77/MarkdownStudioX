@@ -53,7 +53,7 @@ const Index = () => {
 
   const { isFocusMode, enterFocusMode, exitFocusMode } = useFocusMode();
 
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const formatRef = useRef<((format: string) => void) | null>(null);
   const initialDocumentCreationPending = useRef(false);
 

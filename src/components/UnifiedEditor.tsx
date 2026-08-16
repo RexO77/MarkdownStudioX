@@ -55,7 +55,7 @@ const UnifiedEditor = ({
   const previewRef = useRef<HTMLDivElement>(null);
   const galleyApiRef = useRef<GalleyFormatApi | null>(null);
   const syncSource = useRef<'editor' | 'preview' | null>(null);
-  const syncResetTimer = useRef<ReturnType<typeof setTimeout>>();
+  const syncResetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const find = useFind(value);
 
