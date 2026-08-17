@@ -310,11 +310,16 @@ export async function syncWithDrive(token: string, documents: Document[]): Promi
         await trashRemoteFile(token, entry.fileId);
         remote.delete(entry.fileId);
         outcome.filesDeleted += 1;
+        delete state.entries[id];
+        saveState(state);
       } catch (err) {
         if (err instanceof DriveAuthRequiredError) throw err;
+        // File still in Drive — keep the mapping so import doesn't resurrect it.
       }
+    } else {
+      delete state.entries[id];
+      saveState(state);
     }
-    delete state.entries[id];
   }
 
   const takenNames = new Set<string>();
@@ -342,6 +347,7 @@ export async function syncWithDrive(token: string, documents: Document[]): Promi
         entry.filename = file.name;
         entry.remoteMtime = remoteMtime;
         entry.syncedAt = now;
+        saveState(state);
         continue;
       }
 
@@ -357,12 +363,14 @@ export async function syncWithDrive(token: string, documents: Document[]): Promi
         takenNames.add(renamed.name.toLowerCase());
         entry.remoteMtime = Date.parse(renamed.modifiedTime);
         entry.syncedAt = now;
+        saveState(state);
       }
       if (docChanged) {
         const written = await updateRemoteContent(token, entry.fileId, doc.content);
         entry.remoteMtime = Date.parse(written.modifiedTime);
         entry.syncedAt = now;
         outcome.filesWritten += 1;
+        saveState(state);
       }
       continue;
     }
@@ -378,6 +386,7 @@ export async function syncWithDrive(token: string, documents: Document[]): Promi
     };
     takenNames.add(created.name.toLowerCase());
     outcome.filesWritten += 1;
+    saveState(state);
   }
 
   // 3. Remote files nobody claims → import as new documents.
@@ -395,6 +404,7 @@ export async function syncWithDrive(token: string, documents: Document[]): Promi
     };
     outcome.imported.push(doc);
     state.entries[doc.id] = { fileId: file.id, filename: file.name, syncedAt: now, remoteMtime: mtime };
+    saveState(state);
   }
 
   saveState(state);

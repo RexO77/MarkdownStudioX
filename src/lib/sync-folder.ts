@@ -208,16 +208,23 @@ export async function syncWithFolder(
         await dir.removeEntry(entry.filename);
         files.delete(entry.filename);
         outcome.filesDeleted += 1;
+        delete state[id];
+        saveState(state);
       } catch {
-        // Locked or already gone — either way the mapping is dead.
+        // File still present — keep the mapping so the import loop
+        // does not resurrect the deleted document.
       }
+    } else {
+      delete state[id];
+      saveState(state);
     }
-    delete state[id];
   }
 
-  // Filenames owned by mapped documents, for collision-free naming.
+  // Occupied names: mapped documents *and* every .md already in the folder,
+  // so a rename cannot truncate an unclaimed file that shares the new name.
   const takenNames = new Set<string>();
   for (const entry of Object.values(state)) takenNames.add(entry.filename.toLowerCase());
+  for (const name of files.keys()) takenNames.add(name.toLowerCase());
 
   // 2. Reconcile each document with its file.
   for (const doc of documents) {
@@ -238,11 +245,15 @@ export async function syncWithFolder(
         }
         entry.fileMtime = stat.lastModified;
         entry.syncedAt = now;
+        saveState(state);
         continue;
       }
 
       // App wins (or nothing changed). Handle renames, then content.
-      const desired = uniqueFilename(sanitizeName(doc.name), new Set([...takenNames].filter((n) => n !== entry.filename.toLowerCase())));
+      const desired = uniqueFilename(
+        sanitizeName(doc.name),
+        new Set([...takenNames].filter((n) => n !== entry.filename.toLowerCase()))
+      );
       if (desired !== entry.filename) {
         try {
           entry.fileMtime = await writeFile(dir, desired, doc.content);
@@ -253,6 +264,7 @@ export async function syncWithFolder(
           takenNames.add(desired.toLowerCase());
           entry.syncedAt = now;
           outcome.filesWritten += 1;
+          saveState(state);
           continue;
         } catch {
           // Rename failed; fall through and keep the old name working.
@@ -262,6 +274,7 @@ export async function syncWithFolder(
         entry.fileMtime = await writeFile(dir, entry.filename, doc.content);
         entry.syncedAt = now;
         outcome.filesWritten += 1;
+        saveState(state);
       }
       continue;
     }
@@ -269,11 +282,12 @@ export async function syncWithFolder(
     // No file (never synced, or it vanished externally) → export it.
     const filename = entry?.filename && !files.has(entry.filename)
       ? entry.filename
-      : uniqueFilename(sanitizeName(doc.name), new Set([...takenNames, ...[...files.keys()].map((n) => n.toLowerCase())]));
+      : uniqueFilename(sanitizeName(doc.name), takenNames);
     const fileMtime = await writeFile(dir, filename, doc.content);
     state[doc.id] = { filename, syncedAt: now, fileMtime };
     takenNames.add(filename.toLowerCase());
     outcome.filesWritten += 1;
+    saveState(state);
   }
 
   // 3. Files nobody claims → import as new documents.
@@ -290,6 +304,7 @@ export async function syncWithFolder(
     };
     outcome.imported.push(doc);
     state[doc.id] = { filename, syncedAt: now, fileMtime: stat.lastModified };
+    saveState(state);
   }
 
   saveState(state);
