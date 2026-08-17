@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Sun, Moon, Monitor, ExternalLink, Trash2 } from 'lucide-react';
+import { Sun, Moon, Monitor, ExternalLink, Trash2, FolderSync, RefreshCw, Cloud } from 'lucide-react';
+import type { UseSyncFolderReturn } from '@/hooks/useSyncFolder';
+import type { UseDriveSyncReturn } from '@/hooks/useDriveSync';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +32,8 @@ import { toast } from 'sonner';
 interface SettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  sync?: UseSyncFolderReturn;
+  drive?: UseDriveSyncReturn;
 }
 
 const THEME_CHOICES = [
@@ -80,7 +84,7 @@ const FaceOption: React.FC<{
   </button>
 );
 
-export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange }) => {
+export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChange, sync, drive }) => {
   const { theme, setTheme } = useTheme();
   const [keyInput, setKeyInput] = useState('');
   const [hasKey, setHasKey] = useState(false);
@@ -187,6 +191,147 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onOpenChan
               ))}
             </div>
           </section>
+
+          {/* Sync folder */}
+          {sync && (
+            <section className="space-y-2">
+              <SectionHead>Sync folder — documents as .md files</SectionHead>
+              {sync.status === 'unsupported' ? (
+                <p className="cap-center font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                  Needs a Chromium browser (Chrome, Edge, Arc, Brave)
+                </p>
+              ) : sync.status === 'disconnected' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void sync.connect()}
+                    className="inline-flex h-8 items-center gap-1.5 bg-primary px-3 text-primary-foreground hover:opacity-90"
+                  >
+                    <FolderSync className="h-3.5 w-3.5" />
+                    <Label weight="strong">Choose folder…</Label>
+                  </button>
+                  <p className="cap-center font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                    Point it at a Drive, OneDrive, iCloud or Dropbox folder and your documents sync everywhere as plain files
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex h-8 min-w-0 flex-1 items-center border border-input px-2 text-[12px]">
+                      <span className="truncate">
+                        {sync.folderName}
+                        {sync.status === 'needs-permission' && ' — access needed'}
+                        {sync.status === 'syncing' && ' — syncing…'}
+                        {sync.status === 'error' && ' — sync failed'}
+                      </span>
+                    </span>
+                    {sync.status === 'needs-permission' ? (
+                      <button
+                        type="button"
+                        onClick={() => void sync.reconnect()}
+                        className="inline-flex h-8 items-center bg-primary px-3 text-primary-foreground hover:opacity-90"
+                      >
+                        <Label weight="strong">Reconnect</Label>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => sync.syncNow()}
+                        aria-label="Sync now"
+                        title="Sync now"
+                        className="inline-flex h-8 w-8 items-center justify-center border border-border text-muted-foreground hover:text-foreground"
+                      >
+                        <RefreshCw className={cn('h-3.5 w-3.5', sync.status === 'syncing' && 'animate-spin')} />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => void sync.disconnect()}
+                      aria-label="Disconnect sync folder"
+                      title="Disconnect"
+                      className="inline-flex h-8 w-8 items-center justify-center border border-border text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <p className="cap-center font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                    {sync.lastSyncedAt
+                      ? `Two-way sync · last synced ${new Date(sync.lastSyncedAt).toLocaleTimeString()}`
+                      : 'Two-way sync · files stay yours'}
+                  </p>
+                </>
+              )}
+            </section>
+          )}
+
+          {/* Google Drive sync */}
+          {drive && drive.status !== 'unconfigured' && (
+            <section className="space-y-2">
+              <SectionHead>Cloud sync — Google Drive</SectionHead>
+              {drive.status === 'signed-out' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void drive.connect()}
+                    className="inline-flex h-8 items-center gap-1.5 bg-primary px-3 text-primary-foreground hover:opacity-90"
+                  >
+                    <Cloud className="h-3.5 w-3.5" />
+                    <Label weight="strong">Sign in with Google</Label>
+                  </button>
+                  <p className="cap-center font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                    Documents sync as .md files to a “Markdown Studio X” folder in your Drive · only files this app creates
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex h-8 min-w-0 flex-1 items-center border border-input px-2 text-[12px]">
+                      <span className="truncate">
+                        Google Drive
+                        {drive.status === 'needs-auth' && ' — sign-in needed'}
+                        {drive.status === 'syncing' && ' — syncing…'}
+                        {drive.status === 'error' && ' — sync failed'}
+                        {drive.status === 'connected' && ' — connected'}
+                      </span>
+                    </span>
+                    {drive.status === 'needs-auth' ? (
+                      <button
+                        type="button"
+                        onClick={() => void drive.connect()}
+                        className="inline-flex h-8 items-center bg-primary px-3 text-primary-foreground hover:opacity-90"
+                      >
+                        <Label weight="strong">Sign in</Label>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => drive.syncNow()}
+                        aria-label="Sync with Google Drive now"
+                        title="Sync now"
+                        className="inline-flex h-8 w-8 items-center justify-center border border-border text-muted-foreground hover:text-foreground"
+                      >
+                        <RefreshCw className={cn('h-3.5 w-3.5', drive.status === 'syncing' && 'animate-spin')} />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => void drive.disconnect()}
+                      aria-label="Disconnect Google Drive"
+                      title="Disconnect"
+                      className="inline-flex h-8 w-8 items-center justify-center border border-border text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <p className="cap-center font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                    {drive.lastSyncedAt
+                      ? `Two-way sync · last synced ${new Date(drive.lastSyncedAt).toLocaleTimeString()}`
+                      : 'Two-way sync · your files, your Drive'}
+                  </p>
+                </>
+              )}
+            </section>
+          )}
 
           {/* AI key */}
           <section className="space-y-2">

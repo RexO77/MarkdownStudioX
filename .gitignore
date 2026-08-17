@@ -13,6 +13,7 @@ dist-ssr
 *.local
 .env
 .env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*
@@ -26,9 +27,7 @@ dist-ssr
 *.sw?
 
 # Design-review working artifacts
-.impeccable/design.json
-.impeccable/questions/
-.impeccable/review/
+.impeccable/
 .playwright-cli/
 
 

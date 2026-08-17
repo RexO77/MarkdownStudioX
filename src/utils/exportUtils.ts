@@ -79,6 +79,14 @@ export const exportToMarkdown = async (content: string, filename: string = 'docu
   downloadBlob(blob, `${filename}.md`);
 };
 
+/** Document names reach the <title> of exported files; keep them inert there. */
+const escapeAttr = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
 // Export as HTML file
 export const exportToHtml = async (content: string, filename: string = 'document') => {
   const html = convertMarkdownToHtml(content);
@@ -88,7 +96,7 @@ export const exportToHtml = async (content: string, filename: string = 'document
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${filename}</title>
+  <title>${escapeAttr(filename)}</title>
   ${containsMath(content) ? `${KATEX_CSS_LINK}\n  ` : ''}<style>${GALLEY_EXPORT_CSS}</style>
 </head>
 <body>

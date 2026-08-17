@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { exportToMarkdown, exportToHtml } from '@/utils/exportUtils';
 import { useDocuments } from '@/hooks/useDocuments';
+import { useSyncFolder } from '@/hooks/useSyncFolder';
+import { useDriveSync } from '@/hooks/useDriveSync';
 import { useFocusMode } from '@/hooks/useFocusMode';
 import { documentStats as computeDocumentStats } from '@/lib/text-stats';
 import { isLatexDocument, LATEX_HANDOFF_KEY } from '@/lib/latex';
@@ -51,7 +53,37 @@ const Index = () => {
     setActiveDocument,
     renameDocument,
     toggleFavorite,
+    applySyncChanges,
   } = useDocuments();
+
+  const sync = useSyncFolder({ documents, onSyncApply: applySyncChanges });
+  const drive = useDriveSync({ documents, onSyncApply: applySyncChanges });
+
+  // A returning Drive user whose Google session lapsed needs one click to
+  // resume — surface it without waiting for them to open Settings.
+  const driveAuthPromptShown = useRef(false);
+  useEffect(() => {
+    if (drive.status !== 'needs-auth' || driveAuthPromptShown.current) return;
+    driveAuthPromptShown.current = true;
+    toast('Google Drive needs sign-in', {
+      description: 'Sign in again to resume syncing your documents.',
+      duration: 15000,
+      action: { label: 'Sign in', onClick: () => void drive.connect() },
+    });
+  }, [drive.status, drive]);
+
+  // Folder permission doesn't always survive a browser restart; the regrant
+  // needs a user gesture, so surface a one-tap reconnect.
+  const reconnectPromptShown = useRef(false);
+  useEffect(() => {
+    if (sync.status !== 'needs-permission' || reconnectPromptShown.current) return;
+    reconnectPromptShown.current = true;
+    toast('Sync folder needs access', {
+      description: `Grant access to “${sync.folderName}” to resume syncing.`,
+      duration: 15000,
+      action: { label: 'Reconnect', onClick: () => void sync.reconnect() },
+    });
+  }, [sync.status, sync.folderName, sync]);
 
   const { isFocusMode, enterFocusMode, exitFocusMode } = useFocusMode();
 
@@ -289,7 +321,7 @@ const Index = () => {
         content={activeDocument?.content || ''}
       />
 
-      <SettingsDialog open={showSettings} onOpenChange={setShowSettings} />
+      <SettingsDialog open={showSettings} onOpenChange={setShowSettings} sync={sync} drive={drive} />
       <ShortcutsDialog open={showShortcuts} onOpenChange={setShowShortcuts} />
 
       <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>

@@ -1,6 +1,35 @@
 import { marked } from 'marked';
 import { markedSmartypants } from 'marked-smartypants';
+import DOMPurify from 'dompurify';
 import { createMathSpanRegex, renderMathSpanToHtml } from '@/lib/math';
+
+/**
+ * Documents are untrusted: they can be pasted, AI-generated, or imported from
+ * a synced folder / Drive by someone else entirely. marked passes raw HTML
+ * straight through, and the PDF export mounts the result in the live DOM —
+ * so every rendered document is sanitized at this one choke point.
+ *
+ * The allowlist keeps what the galley legitimately produces (KaTeX markup
+ * including MathML, alert-stamp SVGs, listing/heading attributes) and what
+ * README authors legitimately write (<details>, <br>, aligned images), while
+ * dropping scripts, event handlers, iframes and javascript: URLs.
+ */
+const SANITIZE_CONFIG: Parameters<typeof DOMPurify.sanitize>[1] = {
+  USE_PROFILES: { html: true, svg: true, mathMl: true },
+  ADD_ATTR: [
+    'align',
+    'width',
+    'height',
+    'id',
+    'class',
+    'style',
+    'data-language',
+    'target',
+    'rel',
+    'colspan',
+    'rowspan',
+  ],
+};
 
 // Smart punctuation: straight quotes become “curly”, -- becomes –, --- becomes —.
 // Code spans and listings keep their straight quotes.
@@ -201,7 +230,8 @@ export const convertMarkdownToHtml = (markdown: string): string => {
     (_, index) => maskedMath[Number(index)]
   );
 
-  return marked.parse(processedMarkdown, { async: false }) as string;
+  const html = marked.parse(processedMarkdown, { async: false }) as string;
+  return DOMPurify.sanitize(html, SANITIZE_CONFIG);
 };
 
 function escapeRegex(string: string): string {

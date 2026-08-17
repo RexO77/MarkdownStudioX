@@ -24,6 +24,7 @@ export interface UseDocumentsReturn {
     toggleFavorite: (id: string) => void;
     getRecentDocuments: (limit?: number) => Document[];
     searchDocuments: (query: string) => Document[];
+    applySyncChanges: (changes: { updated: Document[]; imported: Document[] }) => void;
 }
 
 const generateId = (): string => {
@@ -166,6 +167,27 @@ export const useDocuments = (): UseDocumentsReturn => {
         );
     }, []);
 
+    // Folder/Drive sync merges: apply file-side documents without bumping
+    // updatedAt (that would make a pull look like a local edit). Skip a
+    // replacement when the in-memory document is newer than the outcome —
+    // the user edited after the sync snapshot was taken.
+    const applySyncChanges = useCallback(
+        (changes: { updated: Document[]; imported: Document[] }) => {
+            setDocuments((prev) => {
+                const updatedById = new Map(changes.updated.map((doc) => [doc.id, doc]));
+                const merged = prev.map((doc) => {
+                    const incoming = updatedById.get(doc.id);
+                    if (!incoming) return doc;
+                    return doc.updatedAt > incoming.updatedAt ? doc : incoming;
+                });
+                const existingIds = new Set(prev.map((doc) => doc.id));
+                const fresh = changes.imported.filter((doc) => !existingIds.has(doc.id));
+                return fresh.length ? [...fresh, ...merged] : merged;
+            });
+        },
+        []
+    );
+
     const getRecentDocuments = useCallback((limit: number = 5): Document[] => {
         return [...documents]
             .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -193,5 +215,6 @@ export const useDocuments = (): UseDocumentsReturn => {
         toggleFavorite,
         getRecentDocuments,
         searchDocuments,
+        applySyncChanges,
     };
 };
