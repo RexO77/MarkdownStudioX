@@ -1,35 +1,14 @@
-
 {
-  "manifest_version": 3,
   "name": "Markdown Studio X",
-  "version": "1.0.0",
-  "description": "Professional AI-powered markdown editor and document management platform",
-  "permissions": [
-    "activeTab",
-    "storage",
-    "clipboardWrite"
-  ],
-  "action": {
-    "default_popup": "index.html",
-    "default_icon": {
-      "16": "assets/logo.png",
-      "48": "assets/logo.png",
-      "128": "assets/logo.png"
-    }
-  },
-  "icons": {
-    "16": "assets/logo.png",
-    "48": "assets/logo.png",
-    "128": "assets/logo.png"
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["src/content.ts"]
-    }
-  ],
-  "host_permissions": [
-    "https://api.groq.com/*",
-    "https://kfbsptlqcbfvdxqkqemk.supabase.co/*"
+  "short_name": "MSX",
+  "description": "Write markdown, watch it typeset. Free, local-first, no account.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#171512",
+  "theme_color": "#171512",
+  "icons": [
+    { "src": "/assets/logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/logo.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
