@@ -239,9 +239,20 @@ const LatexLab = () => {
 
   const clearCache = async () => {
     runnerPromise = null;
+    // Only the engine's own caches — Emscripten's EM_PRELOAD_CACHE and any
+    // busytex database. Never a blanket sweep: this origin also stores the
+    // folder-sync directory handle, and wiping it would silently disconnect
+    // the user's sync folder.
     const dbs = (await indexedDB.databases?.()) ?? [];
-    await Promise.all(dbs.map((db) => db.name && indexedDB.deleteDatabase(db.name)));
-    setStatus('Engine cache cleared. Next compile is a cold start — reload the page first.');
+    const engineDbs = dbs
+      .map((db) => db.name)
+      .filter((name): name is string => Boolean(name) && /emscripten|busytex|texlive/i.test(name));
+    await Promise.all(engineDbs.map((name) => indexedDB.deleteDatabase(name)));
+    setStatus(
+      engineDbs.length
+        ? 'Engine cache cleared. Next compile is a cold start — reload the page first.'
+        : 'No engine cache found to clear.'
+    );
   };
 
   const totalAssetBytes = metrics.assetSizes.reduce((sum, a) => sum + a.bytes, 0);

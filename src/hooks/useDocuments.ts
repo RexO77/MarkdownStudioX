@@ -24,6 +24,7 @@ export interface UseDocumentsReturn {
     toggleFavorite: (id: string) => void;
     getRecentDocuments: (limit?: number) => Document[];
     searchDocuments: (query: string) => Document[];
+    applySyncChanges: (changes: { updated: Document[]; imported: Document[] }) => void;
 }
 
 const generateId = (): string => {
@@ -166,6 +167,22 @@ export const useDocuments = (): UseDocumentsReturn => {
         );
     }, []);
 
+    // Folder sync merges: apply documents exactly as given — timestamps come
+    // from the files themselves, so no updatedAt bump (that would make every
+    // pulled change immediately look like a local edit and ping-pong back).
+    const applySyncChanges = useCallback(
+        (changes: { updated: Document[]; imported: Document[] }) => {
+            setDocuments((prev) => {
+                const updatedById = new Map(changes.updated.map((doc) => [doc.id, doc]));
+                const merged = prev.map((doc) => updatedById.get(doc.id) ?? doc);
+                const existingIds = new Set(prev.map((doc) => doc.id));
+                const fresh = changes.imported.filter((doc) => !existingIds.has(doc.id));
+                return fresh.length ? [...fresh, ...merged] : merged;
+            });
+        },
+        []
+    );
+
     const getRecentDocuments = useCallback((limit: number = 5): Document[] => {
         return [...documents]
             .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -193,5 +210,6 @@ export const useDocuments = (): UseDocumentsReturn => {
         toggleFavorite,
         getRecentDocuments,
         searchDocuments,
+        applySyncChanges,
     };
 };
