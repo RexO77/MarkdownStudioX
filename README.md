@@ -17,7 +17,7 @@ The design is borrowed from the place markdown actually comes from: the Bell Lab
 
 This is not just a markdown previewer. Because everything is local, instant, and export-ready, it works as:
 
-- **A daily journal.** Open the tab, write. The document index (⌘\) keeps every entry, searchable and starrable, persisted in your browser. Focus mode (⌘⇧F) strips the chrome down to just you and the page.
+- **A daily journal.** Open the tab, write. The document index (⌘\) keeps every entry, searchable and starrable, persisted in your browser — or synced to a real folder of `.md` files you own. Focus mode (⌘⇧F) strips the chrome down to just you and the page.
 - **A README / docs workbench.** GitHub-flavored markdown — tables, task lists, `> [!NOTE]` alerts, footnotes, syntax-highlighted code — renders exactly, so what you see is what the repo gets.
 - **A math notebook.** `$e^{i\pi} + 1 = 0$` typesets with KaTeX as you type — in the editor, in the preview, and in every export. Currency stays currency: `$5 and $10` is never mistaken for a formula.
 - **A LaTeX compiler.** Paste a full `\documentclass` document — a resume, a paper — and the built-in **LaTeX Lab** compiles it to a real PDF with a real TeX engine, entirely in your browser. No Overleaf account, no 4 GB TeX install.
@@ -61,6 +61,31 @@ A full TeX Live 2026 distribution, compiled to WebAssembly, running in a web wor
 
 Compilation is 100% client-side: your document is never uploaded anywhere.
 
+## Sync — your files, in your folder, on your cloud
+
+Connect a **sync folder** in Settings and every document becomes a real `.md` file in a directory you choose. The sync is two-way and continuous:
+
+- Edits, renames, and deletes in the app propagate to the files.
+- Files edited by anything else — another editor, another machine — flow back in when their copy is newer.
+- Drop a new `.md` file into the folder and it appears as a document.
+- A file deleted outside the app is re-exported rather than treated as a delete: losing a file never silently destroys a document.
+
+**The cloud part costs nothing:** point the sync folder at your Google Drive, OneDrive, iCloud, or Dropbox desktop folder and their sync client carries your documents to every device — the app never talks to a cloud API, needs no account, and holds no tokens. Built on the File System Access API, so it needs a Chromium browser (Chrome, Edge, Arc, Brave); elsewhere the app simply keeps using browser storage.
+
+### Google Drive sync (no desktop client needed)
+
+For true in-browser cloud sync, connect **Google Drive** in Settings. Documents mirror as `.md` files into a "Markdown Studio X" folder in your Drive — visible, editable, yours. Sign-in happens entirely in the browser via Google Identity Services with the `drive.file` scope, which means:
+
+- The app can only see files it created — never the rest of your Drive.
+- There is no backend, no client secret, and no token stored beyond the session.
+- Renames, edits, deletes, and new files sync both ways (Drive's stable file IDs even make external renames track correctly).
+
+Self-hosting? Drive sync activates when `VITE_GOOGLE_CLIENT_ID` is set. Run the interactive setup wizard — it walks you through the free, one-time Google Cloud console steps and writes the ID into `.env.local`:
+
+```bash
+./scripts/setup-google-drive.sh
+```
+
 ## AI formatting (optional, bring your own key)
 
 Paste messy text, pick a tone, content type, and length, and let a model restructure it into clean markdown. Powered by your own [Groq API key](https://console.groq.com/keys), stored only in your browser. This is the single feature that sends anything over the network, and only when you invoke it.
@@ -78,7 +103,7 @@ Paste messy text, pick a tone, content type, and length, and let a model restruc
 
 ## Privacy
 
-- Documents persist in `localStorage`. No account, no server, no telemetry on your content.
+- Documents persist in `localStorage` — and, if you connect a sync folder, as plain `.md` files on your own disk. No account, no server, no telemetry on your content.
 - The optional AI feature calls Groq's API with the text you explicitly submit, using your key.
 - The LaTeX Lab fetches engine assets and TeX packages (files, not your content) from static hosting; compilation happens locally.
 
@@ -129,12 +154,19 @@ npm run analyze    # bundle visualizer
 - **One markdown source, two editors.** The galley is Tiptap; `tiptap-markdown` serializes edits back to the source. [galley-safety.ts](src/lib/galley-safety.ts) lists the constructs that can't round-trip and flips the galley read-only when it sees them.
 - **One math grammar.** [math.ts](src/lib/math.ts) defines the single `$...$` / `$$...$$` regex used by the galley decorations, the serializer's escape guard, and the export renderer — so math behavior can't drift between surfaces.
 - **The Lab is quarantined.** [LatexLab.tsx](src/pages/LatexLab.tsx) is a lazy route; the TeX engine, its assets, and pdf.js never enter the main bundle. Handoff from the editor travels via `sessionStorage`.
+- **Sync is a mirror, not a database.** [sync-folder.ts](src/lib/sync-folder.ts) reconciles the document list against the folder each pass — mtime vs. `updatedAt`, last-writer-wins — with the directory handle persisted in IndexedDB. The React side ([useSyncFolder.ts](src/hooks/useSyncFolder.ts)) debounces write-through on edit and re-reconciles on window focus.
 - **Exports share the galley.** [markdownUtils.ts](src/utils/markdownUtils.ts) renders the same GFM + math pipeline the app shows, with the galley CSS embedded in every HTML-derived format.
 
 ## Stack
 
 React 19 · TypeScript · Vite 8 · Tailwind CSS · Tiptap 2 + tiptap-markdown · marked · KaTeX · texlyre-busytex (TeX Live 2026 WASM) · pdf.js · framer-motion · self-hosted Courier Prime & STIX Two Text (both OFL)
 
+## Security
+
+Document content is treated as **untrusted** — it can be pasted, AI-generated, or imported from a synced folder that someone else can write to. Everything rendered passes through DOMPurify at a single choke point before it can reach an export or the DOM, the rich-text galley renders through Tiptap nodes with raw HTML disabled, KaTeX runs with `trust: false`, and the LaTeX engine runs with shell-escape off. Response headers, including a Content-Security-Policy, live in [vercel.json](vercel.json).
+
+Found a vulnerability? Please report it privately — see [SECURITY.md](SECURITY.md).
+
 ## License
 
-The application is MIT. Two bundled dependencies carry their own terms worth knowing: **texlyre-busytex** (the LaTeX Lab engine) is AGPL-3.0, and the typefaces are SIL OFL. This repository is open source, which satisfies the AGPL's source-availability requirement for the Lab.
+The application is [MIT](LICENSE). Two bundled dependencies carry their own terms worth knowing: **texlyre-busytex** (the LaTeX Lab engine) is AGPL-3.0, and the typefaces are SIL OFL. Full third-party attributions and the AGPL compliance statement are in [NOTICE.md](NOTICE.md).
