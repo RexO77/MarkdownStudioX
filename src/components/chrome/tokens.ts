@@ -56,6 +56,17 @@ export const LABEL = 'cap-center font-mono text-[11px] uppercase tracking-[0.04e
 /** Bold section rules, stamps and switch cells sit a touch wider. */
 export const LABEL_STRONG = 'cap-center font-mono text-[11px] font-bold uppercase tracking-[0.06em]';
 
+/**
+ * The 11px hint — help text, captions, meta lines.
+ *
+ * Same size as a label, deliberately not the same cut: natural case, no
+ * tracking, and a real 16px line box instead of a cap-height trim. Uppercase
+ * is the grammar for a one- or two-word marker; a sentence set that way loses
+ * its word shapes and stops being readable, so anything phrase-length or
+ * longer belongs here rather than in LABEL.
+ */
+export const HINT = 'font-mono text-[11px] leading-4 text-pretty';
+
 /** 12px mono, normal case: document names, menu items, field text. */
 export const BODY = 'font-mono text-[12px]';
 
@@ -101,8 +112,54 @@ export const ICON = {
 /** Square icon button: 36px on touch, 28px on desktop. */
 export const ICON_BUTTON_SIZE = 'h-9 w-9 md:h-7 md:w-7';
 
-/** 24px — the smaller button used inside a list row. */
-export const ROW_BUTTON_SIZE = 'h-6 w-6';
+/** The smaller button inside a list row: 32px on touch, 24px on desktop. */
+export const ROW_BUTTON_SIZE = 'h-8 w-8 md:h-6 md:w-6';
+
+/* ------------------------------------------------------------------ */
+/* Altitude — every float names its layer                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The pipeline has exactly eight altitudes; a float that cannot name its
+ * layer does not ship. Depth is still ink and hairlines — these numbers
+ * only decide who paints over whom when surfaces must cross.
+ */
+export const LAYER = {
+  /** In-surface accents: split-handle hit area, focus-mode exit. */
+  raised: 'z-10',
+  /** Panels anchored inside a pane: find bar, template strip. */
+  anchored: 'z-20',
+  /** The Index / AI drawers and their scrim, below md only. */
+  drawer: 'z-30',
+  /** Anchored floats: export menu, slash menu, selection bubbles. */
+  popover: 'z-40',
+  /** Radix dialogs and their overlay. */
+  dialog: 'z-50',
+  /** The command palette — ⌘P works over anything. */
+  palette: 'z-[60]',
+  /** sonner. */
+  toast: 'z-[70]',
+  /** Radix tooltips. */
+  tooltip: 'z-[80]',
+} as const;
+
+/** The same altitudes as numbers, for JS consumers (tippy, sonner). */
+export const LAYER_Z = {
+  raised: 10,
+  anchored: 20,
+  drawer: 30,
+  popover: 40,
+  dialog: 50,
+  palette: 60,
+  toast: 70,
+  tooltip: 80,
+} as const;
+
+/**
+ * The one scrim. Lifted from the command palette — the single approved
+ * treatment for dimming the page behind a float; there is no second one.
+ */
+export const SCRIM = 'bg-foreground/25 dark:bg-black/55';
 
 /* ------------------------------------------------------------------ */
 /* Motion — one curve, exits shorter than entries                       */
