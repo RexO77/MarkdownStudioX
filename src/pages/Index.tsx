@@ -123,8 +123,15 @@ const Index = () => {
         setShowSidebar((prev) => !prev);
       }
       // Option can rewrite `key` into a dead key on a Mac layout, so accept
-      // the physical key as well as the character it produced
-      if ((e.metaKey || e.ctrlKey) && e.altKey && (e.code === 'KeyN' || e.key.toLowerCase() === 'n')) {
+      // the physical key as well as the character it produced. AltGr is
+      // reported as ctrlKey+altKey on Windows/Linux, so exclude it or
+      // AltGr+N (e.g. Polish ń) would hijack the keystroke into "new doc".
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.altKey &&
+        !e.getModifierState('AltGraph') &&
+        (e.code === 'KeyN' || e.key.toLowerCase() === 'n')
+      ) {
         e.preventDefault();
         createDocumentRef.current();
       }

@@ -262,7 +262,10 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                     style={{ width: SIDEBAR_WIDTH }}
                     className={cn(
                         'h-full shrink-0 border-r border-border bg-background',
-                        isMobile && cn('fixed inset-y-0 left-0', LAYER.drawer)
+                        // Pinned to the physical left edge as a drawer, so a
+                        // landscape notch on that side needs its own inset —
+                        // the parent's padding doesn't reach a fixed child.
+                        isMobile && cn('fixed inset-y-0 left-0 pl-[env(safe-area-inset-left)]', LAYER.drawer)
                     )}
                 >
                     <div className="flex h-full flex-col">

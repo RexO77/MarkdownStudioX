@@ -159,7 +159,7 @@ export const AIPanel: React.FC<AIPanelProps> = ({ isOpen, onClose, content, onCo
                     style={{ width: AI_PANEL_WIDTH }}
                     className={cn(
                         'h-full shrink-0 border-l border-border bg-background',
-                        isMobile && cn('fixed inset-y-0 right-0', LAYER.drawer)
+                        isMobile && cn('fixed inset-y-0 right-0 pr-[env(safe-area-inset-right)]', LAYER.drawer)
                     )}
                     role="complementary"
                     aria-label="AI formatting"

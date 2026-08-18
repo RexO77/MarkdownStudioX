@@ -31,8 +31,12 @@ export type BarTrack = keyof typeof BAR;
 /* Horizontal rhythm                                                    */
 /* ------------------------------------------------------------------ */
 
-/** 8px — the padding of every chrome bar, so stacked bars share an edge. */
-export const GUTTER = 'px-2';
+/**
+ * 8px — the padding of every chrome bar, so stacked bars share an edge.
+ * Floors at 8px but grows to clear a landscape notch, so the sidebar
+ * toggle and the export/settings cluster never sit under the cutout.
+ */
+export const GUTTER = 'pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))]';
 
 /** 12px — the padding of every text row (index rows, menu items, strips). */
 export const ROW_GUTTER = 'px-3';
