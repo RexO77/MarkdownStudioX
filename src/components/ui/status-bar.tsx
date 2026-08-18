@@ -37,6 +37,9 @@ export function StatusBar({
       className={cn(
         'flex shrink-0 items-stretch justify-between overflow-hidden',
         BAR.status,
+        // On notched phones the home indicator gets a quiet paper strip
+        // below the 26px content row; env() is 0 everywhere else.
+        'h-auto min-h-[26px] pb-[env(safe-area-inset-bottom)]',
         'border-t border-border bg-background font-mono text-muted-foreground',
         className
       )}

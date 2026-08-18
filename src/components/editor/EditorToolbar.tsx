@@ -51,7 +51,10 @@ export const EditorToolbar = ({
 
   return (
     <Bar track="toolbar">
-      <div className="flex min-w-0 items-center">
+      {/* Below md the format cluster runs past the right edge and pans —
+          nothing hides, nothing shrinks; the half-cropped last glyph is the
+          scroll affordance. The view switcher stays pinned on the right. */}
+      <div className="scrollbar-none flex h-full min-w-0 items-center overflow-x-auto md:overflow-visible">
         {FORMAT_BUTTONS.map((btn) => (
           <IconButton
             key={btn.format}
@@ -106,6 +109,7 @@ export const EditorToolbar = ({
 
         <Segmented
           label="Editor view"
+          itemNoun="view"
           items={VIEWS.filter((v) => !(isMobile && v.mobileHidden))}
           value={activeView}
           onChange={onViewChange}
