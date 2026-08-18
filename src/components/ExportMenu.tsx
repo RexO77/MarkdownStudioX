@@ -11,7 +11,7 @@ import {
 } from '@/utils/exportUtils';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { DURATION, EASE, ICON, Label, LabelButton, ROW_GUTTER } from '@/components/chrome';
+import { DURATION, EASE, ICON, Label, LabelButton, LAYER, ROW_GUTTER } from '@/components/chrome';
 
 interface ExportMenuProps {
   content: string;
@@ -107,7 +107,7 @@ const ExportMenu = ({ content, documentName }: ExportMenuProps) => {
       <AnimatePresence>
         {isOpen && (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} aria-hidden="true" />
+            <div className={cn('fixed inset-0', LAYER.popover)} onClick={() => setIsOpen(false)} aria-hidden="true" />
             <motion.div
               initial={{ opacity: 0, y: -4, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -115,7 +115,11 @@ const ExportMenu = ({ content, documentName }: ExportMenuProps) => {
               transition={{ duration: DURATION.state, ease: EASE }}
               style={{ transformOrigin: 'top right' }}
               role="menu"
-              className="absolute right-0 top-full z-50 mt-1 w-44 border border-border bg-popover shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+              className={cn(
+                'absolute right-0 top-full mt-1 w-44',
+                LAYER.popover,
+                'border border-border bg-popover shadow-[0_4px_16px_rgba(0,0,0,0.12)]'
+              )}
             >
               {EXPORT_OPTIONS.map((option) => (
                 <button

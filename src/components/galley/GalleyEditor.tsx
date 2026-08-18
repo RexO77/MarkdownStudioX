@@ -25,9 +25,10 @@ import { createLowlight, common } from 'lowlight';
 import { Markdown } from 'tiptap-markdown';
 import { Bold, Italic, Strikethrough, Code, Link2, Unlink, CornerDownLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Label, SectionRule } from '@/components/chrome';
+import { Label, LAYER, LAYER_Z, SectionRule } from '@/components/chrome';
 import { findLossyConstructs } from '@/lib/galley-safety';
 import { createSlashCommand, filterSlashItems, type SlashMenuState } from './slash-command';
+import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { CodeBlockView } from './CodeBlockView';
 import { Alert } from './alert';
 import { GalleyMathematics, MathAwareText } from './mathematics';
@@ -275,6 +276,10 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
 
     const slashItems = filterSlashItems(slash.query);
     const slashRect = slash.open ? slash.clientRect?.() : null;
+    // In a contenteditable the keyboard is up whenever the caret is — flip
+    // decisions made against innerHeight open the menu straight into it.
+    const viewport = useVisualViewport();
+    const visibleBottom = viewport.height > 0 ? viewport.offsetTop + viewport.height : window.innerHeight;
 
     const bubbleButton = (
       active: boolean,
@@ -323,7 +328,7 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
         {editor && (
           <BubbleMenu
             editor={editor}
-            tippyOptions={{ duration: 120, placement: 'top' }}
+            tippyOptions={{ duration: 120, placement: 'top', zIndex: LAYER_Z.popover }}
             shouldShow={({ editor: e, state }) =>
               e.isEditable && !state.selection.empty && !e.isActive('codeBlock') && !e.isActive('image')
             }
@@ -346,7 +351,7 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
                       }
                     }}
                     placeholder="paste or type a url…"
-                    className="w-52 bg-transparent font-mono text-[12px] placeholder:text-muted-foreground/60 focus:outline-none"
+                    className="w-52 max-w-[calc(100vw-120px)] bg-transparent font-mono text-base placeholder:text-muted-foreground/60 focus:outline-none md:text-[12px]"
                   />
                   <button
                     type="button"
@@ -407,16 +412,25 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
           </BubbleMenu>
         )}
 
-        {/* Slash menu: the block palette at the caret */}
+        {/* Slash menu: the block palette at the caret. The transparent
+            backdrop is its touch-Escape — a tap anywhere else dismisses. */}
+        {slash.open && slashRect && slashItems.length > 0 && (
+          <div
+            className={cn('fixed inset-0', LAYER.popover)}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setSlash(CLOSED_SLASH)}
+            aria-hidden="true"
+          />
+        )}
         {slash.open && slashRect && slashItems.length > 0 && (
           <div
             role="listbox"
             aria-label="Insert block"
-            className="fixed z-50 w-60 border border-border bg-popover shadow-[0_8px_32px_rgba(0,0,0,0.18)]"
+            className={cn('fixed w-60', LAYER.popover, 'border border-border bg-popover shadow-[0_8px_32px_rgba(0,0,0,0.18)]')}
             style={{
-              left: Math.min(slashRect.left, window.innerWidth - 260),
+              left: Math.max(8, Math.min(slashRect.left, window.innerWidth - 260)),
               top:
-                slashRect.bottom + 288 < window.innerHeight
+                slashRect.bottom + 288 < visibleBottom
                   ? slashRect.bottom + 4
                   : Math.max(8, slashRect.top - 4 - Math.min(288, slashItems.length * 42 + 26)),
             }}

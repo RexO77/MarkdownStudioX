@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bold, Italic, Code, Link2, Heading1 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LAYER } from '@/components/chrome';
 
 interface SmartTextSelectionProps {
   onFormat: (format: string, selection?: string) => void;
@@ -57,10 +58,12 @@ export function SmartTextSelection({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 4, scale: 0.98 }}
           transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed z-50 flex items-center border border-border bg-popover shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+          className={cn('fixed flex items-center', LAYER.popover, 'border border-border bg-popover shadow-[0_4px_16px_rgba(0,0,0,0.12)]')}
+          // 142px = 5 × 28px cells + hairlines. Centered on the selection,
+          // clamped so it never leaves the viewport on a narrow screen.
           style={{
-            left: Math.max(10, position.x - 80),
-            top: Math.max(48, position.y - 44),
+            left: Math.max(8, Math.min(position.x - 71, window.innerWidth - 150)),
+            top: Math.max(8, position.y),
           }}
           role="toolbar"
           aria-label="Format selection"
