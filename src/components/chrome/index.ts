@@ -11,6 +11,7 @@
 
 export { Bar, BarDivider } from './Bar';
 export { Label } from './Label';
+export { Hint } from './Hint';
 export { IconButton } from './IconButton';
 export { LabelButton } from './LabelButton';
 export { SectionRule } from './SectionRule';
@@ -22,8 +23,12 @@ export {
   ROW_ACTION_INSET,
   LABEL,
   LABEL_STRONG,
+  HINT,
   BODY,
   INK,
+  LAYER,
+  LAYER_Z,
+  SCRIM,
   HOVER,
   PRESS,
   SELECTED,

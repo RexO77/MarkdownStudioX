@@ -17,6 +17,10 @@ interface ShortcutsDialogProps {
 
 const GROUPS: { title: string; items: { keys: string; action: string }[] }[] = [
   {
+    title: 'Document',
+    items: [{ keys: '⌘⌥N', action: 'New document' }],
+  },
+  {
     title: 'Format',
     items: [
       { keys: '⌘B', action: 'Bold' },

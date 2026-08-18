@@ -31,7 +31,12 @@ export const Bar = React.forwardRef<HTMLDivElement, BarProps>(function Bar(
       ref={ref as React.Ref<HTMLDivElement & HTMLElement>}
       className={cn(
         'flex shrink-0 justify-between bg-background',
-        BAR[track],
+        // The header is the one bar that sits at the true top of the
+        // screen — min-height + top padding instead of a fixed height, so
+        // a landscape Dynamic Island/notch pushes its content down into
+        // view instead of running straight through it. Zero inset means
+        // zero padding, so this is a no-op everywhere else.
+        track === 'header' ? 'h-auto min-h-10 pt-[env(safe-area-inset-top)]' : BAR[track],
         stretch ? 'items-stretch' : 'items-center',
         rule === 'bottom' && 'border-b border-border',
         rule === 'top' && 'border-t border-border',

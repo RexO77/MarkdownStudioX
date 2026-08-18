@@ -21,8 +21,14 @@ interface SegmentedProps<T extends string> {
   onChange: (value: T) => void;
   /** Spoken name of the group. */
   label: string;
-  /** Drop the text labels below `sm` and keep only the icons. */
+  /** Drop the text labels below `md` and keep only the icons. */
   compactLabels?: boolean;
+  /**
+   * What one cell *is*, for tooltips and spoken labels — "view" reads as
+   * "SPLIT view". Omit when the cell label already stands alone: a theme
+   * switch announcing "Light view" is a lie the group name already covers.
+   */
+  itemNoun?: string;
   className?: string;
 }
 
@@ -38,6 +44,7 @@ export function Segmented<T extends string>({
   onChange,
   label,
   compactLabels = true,
+  itemNoun,
   className,
 }: SegmentedProps<T>) {
   return (
@@ -48,10 +55,11 @@ export function Segmented<T extends string>({
     >
       {items.map((item, index) => {
         const selected = value === item.id;
+        const cellName = itemNoun ? `${item.label} ${itemNoun}` : item.label;
         const button = (
           <button
             type="button"
-            aria-label={item.shortcut ? `${item.label} view (${item.shortcut})` : `${item.label} view`}
+            aria-label={item.shortcut ? `${cellName} (${item.shortcut})` : cellName}
             aria-pressed={selected}
             onClick={() => onChange(item.id)}
             className={cn(
@@ -61,7 +69,9 @@ export function Segmented<T extends string>({
             )}
           >
             {item.Icon && <item.Icon className={cn(ICON.sm, 'shrink-0')} strokeWidth={1.75} />}
-            <Label className={cn(compactLabels && 'hidden sm:inline')}>{item.label}</Label>
+            {/* md, not sm: mobile *mode* has one boundary, and it is the
+                same one the JS hook (use-mobile) reads. */}
+            <Label className={cn(compactLabels && 'hidden md:inline')}>{item.label}</Label>
           </button>
         );
 
@@ -71,7 +81,7 @@ export function Segmented<T extends string>({
           <Tooltip key={item.id}>
             <TooltipTrigger asChild>{button}</TooltipTrigger>
             <TooltipContent side="bottom" className="flex items-center gap-2.5 font-mono text-[11px]">
-              <span>{item.label} view</span>
+              <span>{cellName}</span>
               <Kbd keys={item.shortcut} />
             </TooltipContent>
           </Tooltip>

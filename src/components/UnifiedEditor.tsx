@@ -10,6 +10,7 @@ import { SearchBar } from './SearchBar';
 import { useFind } from '@/hooks/useFind';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useKeyboardShortcuts, insertTextAtCursor, formatLine } from '@/hooks/useKeyboardShortcuts';
+import { LAYER } from '@/components/chrome';
 
 export type EditorView = 'edit' | 'split' | 'read';
 
@@ -48,7 +49,10 @@ const UnifiedEditor = ({
   onExitFocus,
 }: UnifiedEditorProps) => {
   const isMobile = useIsMobile();
-  const [activeView, setActiveView] = useState<EditorView>('split');
+  // The hook reads matchMedia synchronously, so the first render can decide
+  // the view — mounting SPLIT on a phone and correcting after paint cost a
+  // visible flash and a thrown-away TipTap mount.
+  const [activeView, setActiveView] = useState<EditorView>(() => (isMobile ? 'edit' : 'split'));
   const [showTemplates, setShowTemplates] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const editorRef = useRef<HTMLTextAreaElement>(null);
@@ -173,7 +177,8 @@ const UnifiedEditor = ({
     [onChange]
   );
 
-  // Mobile cannot split; fall back to the manuscript
+  // Mobile cannot split; fall back to the manuscript. The initializer above
+  // handles first render — this only catches a live resize across md.
   useEffect(() => {
     if (isMobile && activeView === 'split') {
       setActiveView('edit');
@@ -310,13 +315,6 @@ const UnifiedEditor = ({
         />
       )}
 
-      <SearchBar
-        isOpen={showSearch}
-        onClose={handleCloseSearch}
-        find={find}
-        onReplace={handleSearchReplace}
-      />
-
       <TemplatePanel
           visible={showTemplates}
           onInsertTemplate={(template) => {
@@ -339,14 +337,22 @@ const UnifiedEditor = ({
           onClose={() => setShowTemplates(false)}
         />
 
-      <div className="flex-1 overflow-hidden">
+      {/* The find bar anchors inside the writing pane, so it clears the
+          toolbar and the template strip at every height they add up to. */}
+      <div className="relative flex-1 overflow-hidden">
+        <SearchBar
+          isOpen={showSearch}
+          onClose={handleCloseSearch}
+          find={find}
+          onReplace={handleSearchReplace}
+        />
         {isSplit ? (
           <PanelGroup direction="horizontal" autoSaveId="msx-split">
             <Panel defaultSize={50} minSize={25}>
               <div className="h-full bg-panel">{manuscript}</div>
             </Panel>
             <PanelResizeHandle className="group relative w-px bg-border data-[resize-handle-active]:bg-primary">
-              <div className="absolute inset-y-0 -left-1 -right-1 z-10" />
+              <div className={cn('absolute inset-y-0 -left-1 -right-1', LAYER.raised)} />
               <div className="absolute left-1/2 top-1/2 h-8 w-[3px] -translate-x-1/2 -translate-y-1/2 bg-border opacity-0 transition-opacity group-hover:opacity-100 group-data-[resize-handle-active]:bg-primary group-data-[resize-handle-active]:opacity-100" />
             </PanelResizeHandle>
             <Panel defaultSize={50} minSize={25}>

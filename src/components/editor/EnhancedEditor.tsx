@@ -47,13 +47,15 @@ function getCaretPosition(textarea: HTMLTextAreaElement): { x: number; y: number
 
   document.body.removeChild(div);
 
+  // x is the selection's midpoint; y is where the bubble's top edge goes.
+  // The flip decision lives here because only this function knows the
+  // textarea's own top — the bubble clamps against the viewport, nothing else.
   const x = rect.left + (spanRect.left - divRect.left) + span.offsetWidth / 2;
-  const y = rect.top + (spanRect.top - divRect.top) - textarea.scrollTop - 10;
+  const lineTop = rect.top + (spanRect.top - divRect.top) - textarea.scrollTop;
+  const BUBBLE_CLEARANCE = 38; // ≈ bubble height + gap
+  const y = lineTop - BUBBLE_CLEARANCE >= rect.top ? lineTop - BUBBLE_CLEARANCE : lineTop + 29;
 
-  return {
-    x: Math.max(100, Math.min(window.innerWidth - 200, x)),
-    y: Math.max(60, y),
-  };
+  return { x, y };
 }
 
 // Line patterns that continue on Enter: bullets, numbered items, task items, quotes
@@ -257,7 +259,9 @@ export const EnhancedEditor = forwardRef<HTMLTextAreaElement, EnhancedEditorProp
           className={cn(
             'flex-1 w-full resize-none border-0 bg-transparent px-6 py-8',
             measured && 'mx-auto max-w-[41rem]',
-            'manuscript text-[14px] leading-[24px]',
+            // 16px below md: anything smaller makes iOS Safari zoom the whole
+            // layout on focus. The 14px manuscript stands on desktop.
+            'manuscript text-base leading-[24px] md:text-[14px]',
             'placeholder:text-muted-foreground/70',
             'focus:outline-none focus:ring-0'
           )}

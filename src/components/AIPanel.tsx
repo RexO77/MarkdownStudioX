@@ -4,7 +4,8 @@ import { X, Sparkles, Undo2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { getStoredApiKey } from '@/components/ui/api-key-dialog';
-import { DURATION, EASE, ICON, IconButton, Label, ROW_GUTTER, SELECTED } from '@/components/chrome';
+import { DURATION, EASE, ICON, IconButton, Label, LAYER, ROW_GUTTER, SCRIM, SELECTED } from '@/components/chrome';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AIPanelProps {
     isOpen: boolean;
@@ -70,6 +71,7 @@ const OptionButton: React.FC<{
 );
 
 export const AIPanel: React.FC<AIPanelProps> = ({ isOpen, onClose, content, onContentChange }) => {
+    const isMobile = useIsMobile();
     const [tone, setTone] = useState<Tone>('professional');
     const [contentType, setContentType] = useState<ContentType>('article');
     const [lengthAction, setLengthAction] = useState<LengthAction | null>(null);
@@ -133,14 +135,32 @@ export const AIPanel: React.FC<AIPanelProps> = ({ isOpen, onClose, content, onCo
 
     return (
         <AnimatePresence>
+            {/* Below md the panel floats over the page — the drawer mirror of
+                the index, sliding on the opposite margin. */}
+            {isOpen && isMobile && (
+                <motion.div
+                    key="ai-scrim"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, transition: { duration: DURATION.floatOut, ease: EASE } }}
+                    transition={{ duration: 0.12, ease: EASE }}
+                    className={cn('fixed inset-0', LAYER.drawer, SCRIM)}
+                    onClick={onClose}
+                    aria-hidden="true"
+                />
+            )}
             {isOpen && (
                 <motion.div
+                    key="ai-panel"
                     initial={{ marginRight: -AI_PANEL_WIDTH }}
                     animate={{ marginRight: 0 }}
                     exit={{ marginRight: -AI_PANEL_WIDTH, transition: { duration: DURATION.exit, ease: EASE } }}
                     transition={{ duration: DURATION.enter, ease: EASE }}
                     style={{ width: AI_PANEL_WIDTH }}
-                    className="h-full shrink-0 border-l border-border bg-background"
+                    className={cn(
+                        'h-full shrink-0 border-l border-border bg-background',
+                        isMobile && cn('fixed inset-y-0 right-0 pr-[env(safe-area-inset-right)]', LAYER.drawer)
+                    )}
                     role="complementary"
                     aria-label="AI formatting"
                 >

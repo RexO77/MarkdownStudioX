@@ -72,8 +72,8 @@ const DocumentTitle = ({
           }}
           aria-label="Document name"
           className={cn(
-            'pointer-events-auto h-7 w-56 border border-input bg-background px-2 text-center',
-            'font-mono text-[12px] font-bold focus:outline-none focus:ring-1 focus:ring-ring'
+            'pointer-events-auto h-7 w-40 border border-input bg-background px-2 text-center md:w-56',
+            'font-mono text-base font-bold focus:outline-none focus:ring-1 focus:ring-ring md:text-[12px]'
           )}
         />
       ) : (
@@ -139,6 +139,9 @@ const ModernHeader = ({
 
         <IconButton
           label="Source on GitHub"
+          // The one header affordance that yields at 320px — the wordmark
+          // should not be the first casualty of a narrow proof sheet.
+          className="hidden sm:inline-flex"
           onClick={() => window.open('https://github.com/RexO77/MarkdownStudioX', '_blank', 'noopener')}
         >
           <Github className={ICON.md} />

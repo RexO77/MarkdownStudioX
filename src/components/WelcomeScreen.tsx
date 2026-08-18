@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { Kbd } from '@/components/ui/kbd';
 import { useTheme } from '@/components/ui/theme-provider';
 import { setStoredApiKey } from '@/components/ui/api-key-dialog';
-import { Label, Segmented } from '@/components/chrome';
+import { Label, LAYER, Segmented } from '@/components/chrome';
 import { toast } from 'sonner';
 
 interface WelcomeScreenProps {
@@ -30,13 +30,15 @@ export const setOnboardingComplete = () => {
     }
 };
 
+/** Natural case in the data; the label cut does the uppercasing. */
 const THEME_CHOICES = [
-    { id: 'light' as const, label: 'LIGHT', Icon: Sun },
-    { id: 'dark' as const, label: 'DARK', Icon: Moon },
-    { id: 'system' as const, label: 'SYSTEM', Icon: Monitor },
+    { id: 'light' as const, label: 'Light', Icon: Sun },
+    { id: 'dark' as const, label: 'Dark', Icon: Moon },
+    { id: 'system' as const, label: 'System', Icon: Monitor },
 ];
 
 const SHORTCUTS = [
+    { keys: '⌘⌥N', action: 'new document' },
     { keys: '⌘B', action: 'bold' },
     { keys: '⌘I', action: 'italic' },
     { keys: '⌘K', action: 'link' },
@@ -82,7 +84,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
+        <div className={cn('fixed inset-0 overflow-y-auto bg-background', LAYER.dialog)}>
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -181,7 +183,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
                     initial="hidden"
                     animate="visible"
                     variants={sectionVariants}
-                    className="flex items-center justify-between border-t border-border pt-4"
+                    className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-border pt-4"
                 >
                     <Label weight="strong" className="font-normal text-muted-foreground">
                         Free · local-first · open source

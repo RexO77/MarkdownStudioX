@@ -3,7 +3,7 @@ import { X, ChevronUp, ChevronDown, Replace, CaseSensitive, WholeWord, Regex } f
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { UseFindReturn } from '@/hooks/useFind';
-import { DURATION, EASE, ICON, IconButton, Label, LabelButton } from '@/components/chrome';
+import { DURATION, EASE, ICON, IconButton, Label, LabelButton, LAYER } from '@/components/chrome';
 
 interface SearchBarProps {
     isOpen: boolean;
@@ -64,7 +64,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, find, onR
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
                     transition={{ duration: DURATION.state, ease: EASE }}
-                    className="absolute right-2 top-11 z-40 w-[380px] max-w-[calc(100vw-16px)] border border-border bg-popover shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+                    className={cn(
+                        'absolute right-2 top-2 w-[380px] max-w-[calc(100%-16px)]',
+                        LAYER.anchored,
+                        'border border-border bg-popover shadow-[0_4px_16px_rgba(0,0,0,0.12)]'
+                    )}
                     role="search"
                 >
                     {/* Find row */}
@@ -76,7 +80,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, find, onR
                             value={find.query}
                             onChange={(e) => find.setQuery(e.target.value)}
                             placeholder="find"
-                            className="h-6 min-w-0 flex-1 bg-transparent px-1 font-mono text-[12px] placeholder:text-muted-foreground/70 focus:outline-none"
+                            className="h-6 min-w-0 flex-1 bg-transparent px-1 font-mono text-base placeholder:text-muted-foreground/70 focus:outline-none md:text-[12px]"
                         />
                         <Label className="shrink-0 px-1 text-muted-foreground">
                             {find.query ? (find.totalMatches > 0 ? `${find.currentIndex + 1}/${find.totalMatches}` : '0/0') : ''}
@@ -119,7 +123,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ isOpen, onClose, find, onR
                                             }
                                         }}
                                         placeholder="replace with"
-                                        className="h-6 min-w-0 flex-1 bg-transparent px-1 font-mono text-[12px] placeholder:text-muted-foreground/70 focus:outline-none"
+                                        className="h-6 min-w-0 flex-1 bg-transparent px-1 font-mono text-base placeholder:text-muted-foreground/70 focus:outline-none md:text-[12px]"
                                     />
                                     <LabelButton
                                         size="row"

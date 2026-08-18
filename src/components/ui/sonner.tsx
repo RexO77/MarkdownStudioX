@@ -9,6 +9,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
+      position="bottom-right"
+      // Below 600px sonner goes full-width bottom; lift it clear of the 26px
+      // statusline — a 15s sync toast must never bury the COMMANDS button,
+      // the only touch route to the palette.
+      mobileOffset={{ bottom: "calc(26px + env(safe-area-inset-bottom) + 8px)" }}
       className="toaster group"
       toastOptions={{
         classNames: {

@@ -37,7 +37,9 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(f
       aria-label={shortcut ? `${label} (${shortcut})` : label}
       aria-pressed={active}
       className={cn(
-        'inline-flex items-center justify-center',
+        // shrink-0 is load-bearing: inside a crowded bar a squeezed flex
+        // child compresses to a sliver and the icons pile onto each other.
+        'inline-flex shrink-0 items-center justify-center',
         size === 'bar' ? ICON_BUTTON_SIZE : ROW_BUTTON_SIZE,
         INK.rest,
         HOVER,

@@ -22,18 +22,22 @@ import { useDocuments } from '@/hooks/useDocuments';
 import { useSyncFolder } from '@/hooks/useSyncFolder';
 import { useDriveSync } from '@/hooks/useDriveSync';
 import { useFocusMode } from '@/hooks/useFocusMode';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { documentStats as computeDocumentStats } from '@/lib/text-stats';
 import { isLatexDocument, LATEX_HANDOFF_KEY } from '@/lib/latex';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const Index = () => {
+  const isMobile = useIsMobile();
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [view, setView] = useState<EditorView>('split');
+  // Mirrors UnifiedEditor's initializer so the statusline mode segment is
+  // right on the first frame too.
+  const [view, setView] = useState<EditorView>(() => (isMobile ? 'edit' : 'split'));
   const [cursor, setCursor] = useState({ line: 1, column: 1 });
   const [savingStatus, setSavingStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
@@ -90,6 +94,8 @@ const Index = () => {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const formatRef = useRef<((format: string) => void) | null>(null);
   const initialDocumentCreationPending = useRef(false);
+  /** The global key handler binds once; reach the live handler through a ref. */
+  const createDocumentRef = useRef<() => void>(() => {});
 
   // Create initial document if none exist
   useEffect(() => {
@@ -101,7 +107,11 @@ const Index = () => {
     }
   }, [documents.length, createDocument]);
 
-  // Global shortcuts: ⌘P command palette, ⌘\ sidebar
+  // Global shortcuts: ⌘P command palette, ⌘\ sidebar, ⌘⌥N new document.
+  //
+  // New document is ⌘⌥N rather than the ⌘N every desktop app uses: the browser
+  // keeps ⌘N for a new window and will not surrender it to preventDefault.
+  // Option is the escape hatch — the letter still reads as "new".
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
@@ -111,6 +121,19 @@ const Index = () => {
       if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
         e.preventDefault();
         setShowSidebar((prev) => !prev);
+      }
+      // Option can rewrite `key` into a dead key on a Mac layout, so accept
+      // the physical key as well as the character it produced. AltGr is
+      // reported as ctrlKey+altKey on Windows/Linux, so exclude it or
+      // AltGr+N (e.g. Polish ń) would hijack the keystroke into "new doc".
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.altKey &&
+        !e.getModifierState('AltGraph') &&
+        (e.code === 'KeyN' || e.key.toLowerCase() === 'n')
+      ) {
+        e.preventDefault();
+        createDocumentRef.current();
       }
     };
 
@@ -178,8 +201,11 @@ const Index = () => {
 
   const handleCreateDocument = useCallback(() => {
     createDocument();
+    // A new document is a request to write it; the drawer would cover it.
+    if (isMobile) setShowSidebar(false);
     toast.success('New document created');
-  }, [createDocument]);
+  }, [createDocument, isMobile]);
+  createDocumentRef.current = handleCreateDocument;
 
   const requestDeleteDocument = useCallback((id: string) => {
     setPendingDelete(id);
@@ -270,9 +296,15 @@ const Index = () => {
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <DocumentSidebar
           isOpen={showSidebar && !isFocusMode}
+          onClose={() => setShowSidebar(false)}
           documents={documents}
           activeDocument={activeDocument}
-          onSelectDocument={setActiveDocument}
+          onSelectDocument={(id) => {
+            setActiveDocument(id);
+            // The drawer covers the page; picking a document is also the
+            // request to see it.
+            if (isMobile) setShowSidebar(false);
+          }}
           onCreateDocument={handleCreateDocument}
           onDeleteDocument={requestDeleteDocument}
           onRenameDocument={renameDocument}

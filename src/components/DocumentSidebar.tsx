@@ -12,13 +12,18 @@ import {
     IconButton,
     Label,
     LabelButton,
+    LAYER,
     ROW_ACTION_INSET,
     ROW_GUTTER,
+    SCRIM,
     SectionRule,
 } from '@/components/chrome';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DocumentSidebarProps {
     isOpen: boolean;
+    /** Dismiss request from the drawer's scrim or Escape (mobile only). */
+    onClose?: () => void;
     documents: Document[];
     activeDocument: Document | null;
     onSelectDocument: (id: string) => void;
@@ -30,8 +35,8 @@ interface DocumentSidebarProps {
 
 const SIDEBAR_WIDTH = 264;
 
-/** 3 × 24px row buttons + the 6px inset they sit at. */
-const ROW_ACTIONS_RESERVE = 'pr-[78px]';
+/** 3 row buttons + the 6px inset — 32px buttons on touch, 24px on desktop. */
+const ROW_ACTIONS_RESERVE = 'pr-[102px] md:pr-[78px]';
 
 function formatDate(timestamp: number) {
     const date = new Date(timestamp);
@@ -50,6 +55,7 @@ function formatDate(timestamp: number) {
 
 export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
     isOpen,
+    onClose,
     documents,
     activeDocument,
     onSelectDocument,
@@ -58,6 +64,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
     onRenameDocument,
     onToggleFavorite,
 }) => {
+    const isMobile = useIsMobile();
     const [searchQuery, setSearchQuery] = useState('');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingName, setEditingName] = useState('');
@@ -69,6 +76,17 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
             editInputRef.current.select();
         }
     }, [editingId]);
+
+    // As a drawer the index dismisses like every other float: Escape. In-flow
+    // on desktop it is furniture, and furniture does not close on Escape.
+    useEffect(() => {
+        if (!isMobile || !isOpen || !onClose) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isMobile, isOpen, onClose]);
 
     const filtered = useMemo(() => {
         const sorted = [...documents].sort((a, b) => b.updatedAt - a.updatedAt);
@@ -124,7 +142,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                             onBlur={saveEditing}
                             aria-label="Document name"
                             className={cn(
-                                'w-full border border-input bg-background px-1 py-0.5 font-mono text-[12px] font-bold text-foreground',
+                                'w-full border border-input bg-background px-1 py-0.5 font-mono text-base font-bold text-foreground md:text-[12px]',
                                 'focus:outline-none focus:ring-1 focus:ring-ring'
                             )}
                         />
@@ -216,17 +234,39 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
 
     return (
         <AnimatePresence initial={false}>
+            {/* Below md the index floats over the page instead of sharing it —
+                264px of a 375px screen leaves no room for the manuscript. */}
+            {isOpen && isMobile && (
+                <motion.div
+                    key="index-scrim"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, transition: { duration: DURATION.floatOut, ease: EASE } }}
+                    transition={{ duration: 0.12, ease: EASE }}
+                    className={cn('fixed inset-0', LAYER.drawer, SCRIM)}
+                    onClick={onClose}
+                    aria-hidden="true"
+                />
+            )}
             {/* Slid in by margin, not squeezed by width: an interrupted or
                 throttled width animation leaves the index clipped at an
-                arbitrary size, and every frame of it reflows the rows. */}
+                arbitrary size, and every frame of it reflows the rows. The
+                same margin slide works fixed, where it reflows nothing. */}
             {isOpen && (
                 <motion.aside
+                    key="index-panel"
                     initial={{ marginLeft: -SIDEBAR_WIDTH }}
                     animate={{ marginLeft: 0 }}
                     exit={{ marginLeft: -SIDEBAR_WIDTH, transition: { duration: DURATION.exit, ease: EASE } }}
                     transition={{ duration: DURATION.enter, ease: EASE }}
                     style={{ width: SIDEBAR_WIDTH }}
-                    className="h-full shrink-0 border-r border-border bg-background"
+                    className={cn(
+                        'h-full shrink-0 border-r border-border bg-background',
+                        // Pinned to the physical left edge as a drawer, so a
+                        // landscape notch on that side needs its own inset —
+                        // the parent's padding doesn't reach a fixed child.
+                        isMobile && cn('fixed inset-y-0 left-0 pl-[env(safe-area-inset-left)]', LAYER.drawer)
+                    )}
                 >
                     <div className="flex h-full flex-col">
                         {/* Index head — the same 36px track as the editor toolbar beside it */}
@@ -238,6 +278,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                                 fill
                                 tone="accent"
                                 onClick={onCreateDocument}
+                                title="New document (⌘⌥N)"
                                 className="border-l border-border"
                             >
                                 New
@@ -252,7 +293,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                                 placeholder="grep documents…"
                                 aria-label="Search documents"
                                 className={cn(
-                                    'h-full w-full bg-transparent font-mono text-[12px]',
+                                    'h-full w-full bg-transparent font-mono text-base md:text-[12px]',
                                     ROW_GUTTER,
                                     'placeholder:text-muted-foreground/70 focus:outline-none'
                                 )}

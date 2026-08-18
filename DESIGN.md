@@ -193,17 +193,31 @@ Galley headings are set as multiples of the 24px ruling:
 - **Headline / h2** (700, 22px / 24px, -0.005em): section head carrying a hairline underscore (7px padding, 1px border-bottom); margin 44px / 20px.
 - **Title / h3** (700, 18px / 24px): subsection, margin 40px / 8px. **h4** is 16px italic 700; **h5/h6** are 14px 700 (h6 in faded ink).
 - **Body** (400, 16px / 24px STIX in the galley; 400, 14px Courier Prime in chrome and editor): galley paragraphs end with one full 24px ruling of margin. Measure is capped at 38rem.
-- **Label** (700, 11px / 16px Courier Prime, uppercase, 0.04–0.06em tracking): statusline segments, section rules, running heads, listing heads, view switcher, key caps, alert stamps.
+- **Label** (700, 11px / 16px Courier Prime, uppercase, 0.04–0.06em tracking): statusline segments, section rules, running heads, listing heads, view switcher, key caps, alert stamps. One or two words only — see the Marker / Sentence Rule.
+- **Hint** (400, 11px / 16px Courier Prime, natural case, no tracking): the explanatory line under a control, captions, meta lines, empty states, key legends. Everything a Label is too loud to say.
 
 ### Named Rules
 **The 24px Ruling Rule.** The galley shares one 24px baseline: body line-height,
 heading line-heights (24 or 36px), paragraph/list/table/listing margins are all
 multiples of 24px. Code listings render at 13px type but keep the 24px line.
 
-**The 11px Label Floor Rule.** No text renders below 11px. Anything at 11px is
+**The 11px Label Floor Rule.** No text renders below 11px. An 11px *label* is
 Courier Prime, uppercase, and letter-spaced 0.04–0.06em (0.04em for running
-labels, 0.06em for bold section rules and stamps). Lowercase 11px exists only
-for statusline status verbs ("saved", "saving…") and listing-copy verbs.
+labels, 0.06em for bold section rules and stamps).
+
+**The Marker / Sentence Rule.** Uppercase is the grammar for a **marker** — a
+noun of one or two words that names a thing: a statusline segment, a section
+rule, a rail row, a field head, a button stamp. It is never the grammar for a
+**sentence**. Set a phrase in caps and the reader loses the word shapes that
+make it skimmable, which is exactly what help text is for; at 11px with
+tracking it turns into a wall. So explanatory copy — hints under a control,
+captions, meta lines, empty states, key-legends — is natural case, no tracking,
+on a real 16px line box: the `HINT` token and the `<Hint>` primitive. Two
+consequences: a head that wants to explain itself is really a short head plus a
+`Hint`, and copy is stored in natural case in the source (`label: 'Light'`, not
+`'LIGHT'`) so the cut, not the string, decides the casing. Lowercase 11px
+markers exist only for statusline status verbs ("saved", "saving…") and
+listing-copy verbs.
 
 **The Cap-Centering Rule.** A label set beside an icon is centered on its cap
 height, not its line box. `leading-none` alone leaves the font's descender
@@ -242,9 +256,19 @@ strip. Gaps are 4–6px. A trailing cluster of 24px row buttons sits at
 optical gutter as the row's text. There is no spacing scale beyond that; the
 24px ruling governs the galley, and the bar heights govern chrome.
 
-Responsive behavior: touch targets grow (icon buttons 36px on mobile, 28px on
-desktop); the SPLIT view is hidden on mobile; statusline segments drop
-progressively (`sm`/`md`/`lg`); header running title hides below md.
+Responsive behavior: mobile *mode* is decided at one boundary — 768px, `md`,
+in CSS and in the `useIsMobile` hook alike. Below it the two side panels
+(Index, AI) become **drawers**: the same margin-slide, but `fixed` over the
+page at the `drawer` altitude behind the one `SCRIM`, dismissed by scrim tap,
+Escape, or choosing a document. The toolbar's format cluster runs past the
+right edge and **pans** (`scrollbar-none`); nothing hides, nothing shrinks,
+and the half-cropped last glyph is the scroll affordance. Touch targets grow
+(bar buttons 36px, row buttons 32px); the SPLIT view is hidden; statusline
+segments drop progressively (`sm`/`md`/`lg`); the header title hides below md
+(the statusline carries the name). The keyboard is part of the viewport: the
+frame is `100dvh`, the statusline pads `env(safe-area-inset-bottom)`, floats
+that must stay reachable while typing budget against `useVisualViewport`, and
+every text input is ≥16px below md so iOS never zooms on focus.
 
 ## Elevation & Depth
 
@@ -260,6 +284,14 @@ never by shadows or blur. Two narrow exceptions exist in the build:
 **The Flat Ink Rule.** No new shadows. If a surface needs hierarchy, invert
 its ink or draw a hairline. The palette's float and the key-cap ridge are the
 complete shadow vocabulary.
+
+**The Altitude Rule.** The pipeline has exactly eight altitudes, named once as
+`LAYER`/`LAYER_Z` in the chrome kit: `raised` (10, in-surface accents) →
+`anchored` (20, pane-anchored panels) → `drawer` (30) → `popover` (40) →
+`dialog` (50) → `palette` (60) → `toast` (70) → `tooltip` (80). A float that
+cannot name its layer does not ship, and no surface writes a z-index literal.
+Dimming behind a float is always the one `SCRIM` token — the palette's own —
+never a second treatment.
 
 ## Shapes
 
@@ -292,7 +324,7 @@ do not hand-roll these shapes.
 | `LabelButton` | The same grammar with a word instead of a glyph (EXPORT, NEW, ONE/ALL). `tone="accent"`, `fill`, `size="row"`. |
 | `Segmented` | The bordered N-cell switch: view switcher, theme picker. Selected cell is inverse video, flipped instantly. |
 | `SectionRule` | The raised-ground 24px strip that names a group (STARRED, RECENT, INSERT BLOCK). |
-| tokens | `BAR`, `GUTTER`, `ROW_GUTTER`, `ROW_ACTION_INSET`, `LABEL`, `INK`, `HOVER`, `PRESS`, `SELECTED`, `TOGGLED`, `STRIP`, `ICON`, `EASE`, `DURATION`. |
+| tokens | `BAR`, `GUTTER`, `ROW_GUTTER`, `ROW_ACTION_INSET`, `LABEL`, `HINT`, `INK`, `HOVER`, `PRESS`, `SELECTED`, `TOGGLED`, `STRIP`, `ICON`, `LAYER`, `LAYER_Z`, `SCRIM`, `EASE`, `DURATION`. |
 
 The kit is chrome only. The galley is the other material and stays out of it.
 
@@ -408,6 +440,7 @@ box-shadow/border-color over 140ms. Selection highlight is Bell blue at 25%.
 - **Do** put every new surface in one of the two materials: Courier Prime chrome or STIX galley. Decide which side of the pipeline it belongs to first.
 - **Do** mark selection and pressed states with instant inverse video (`bg-foreground text-background`, or Bell blue for the statusline mode block).
 - **Do** set all labels at the 11px floor: Courier Prime, uppercase, 0.04–0.06em tracking, usually bold.
+- **Do** route explanatory copy through `Hint`, and keep the uppercase cut for markers of one or two words. A settings pane, a palette footer or an empty state that shouts its sentences is the failure this rule exists to prevent.
 - **Do** keep new galley elements on the 24px ruling — margins and line-heights in multiples of 24px.
 - **Do** animate size/position with `cubic-bezier(0.16, 1, 0.3, 1)` only: 140ms for CSS state transitions, 0.12–0.24s for framer panels, with exits shorter than entries (e.g. sidebar 0.24s in / 0.18s out, palette 0.16s in / 0.08s out). Take both from `EASE` and `DURATION` in the chrome kit rather than writing the literals again. Wrap motion in `MotionConfig reducedMotion="user"`.
 - **Do** build chrome out of the kit — `Bar`, `Label`, `IconButton`, `LabelButton`, `Segmented`, `SectionRule`. A new surface that re-types these classes is how the bars drifted apart in the first place.
@@ -421,4 +454,5 @@ box-shadow/border-color over 140ms. Selection highlight is Bell blue at 25%.
 - **Don't** introduce a fifth chrome ink. Bell blue is the accent; red is errors only; the galley's stamp inks stay inside alerts.
 - **Don't** use vertical rules in tables, backgrounds on table rows, or rounded/tinted "cards" in the galley — it is a printed page, not a dashboard.
 - **Don't** animate keyboard-driven dismissals slowly; Escape paths exit at ≤0.08–0.15s or instantly.
+- **Don't** set a sentence in uppercase, and don't letter-space one. If a line needs a verb and an object to make sense, it is a `Hint`, not a `Label`.
 - **Don't** put a label on screen that looks interactive and isn't, and don't say the same fact twice at the same breakpoint (the document's name, its word count). If a decorative label is worth keeping, give it a job in the footer.
