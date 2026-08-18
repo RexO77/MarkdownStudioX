@@ -259,11 +259,11 @@ const LatexLab = () => {
   const busy = phase === 'initializing' || phase === 'compiling';
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-6 font-mono text-sm">
-      <header className="mb-4 flex items-baseline gap-3">
+    <div className="min-h-dvh bg-background text-foreground p-4 font-mono text-sm sm:p-6">
+      <header className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-2">
         <h1 className="text-base font-bold uppercase tracking-wide">LaTeX Lab</h1>
         <span className="text-muted-foreground">compile full LaTeX documents to PDF, entirely in your browser</span>
-        <Link to="/" className="ml-auto border border-border px-3 py-1 uppercase tracking-wide">
+        <Link to="/" className="ml-auto shrink-0 border border-border px-3 py-1 uppercase tracking-wide">
           Back to editor
         </Link>
       </header>
@@ -275,9 +275,9 @@ const LatexLab = () => {
             onChange={(e) => setSource(e.target.value)}
             spellCheck={false}
             aria-label="LaTeX source"
-            className="h-[420px] w-full resize-y border border-border bg-transparent p-3 outline-none"
+            className="h-[50dvh] w-full resize-y border border-border bg-transparent p-3 text-base outline-none md:text-sm lg:h-[420px]"
           />
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={compile}
               disabled={busy}
@@ -329,7 +329,7 @@ const LatexLab = () => {
         </section>
 
         <section className="flex flex-col gap-3">
-          <div className="relative h-[620px] overflow-auto border border-border p-3">
+          <div className="relative h-[60dvh] overflow-auto border border-border p-3 lg:h-[620px]">
             <div ref={pagesRef} />
             {!pdfUrl && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center border border-dashed border-border text-muted-foreground">
