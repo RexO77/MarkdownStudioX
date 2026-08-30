@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { Kbd } from '@/components/ui/kbd';
 import { useTheme } from '@/components/ui/theme-provider';
 import { setStoredApiKey } from '@/components/ui/api-key-dialog';
-import { Label, LAYER, Segmented } from '@/components/chrome';
+import { Hint, Label, LAYER, Segmented } from '@/components/chrome';
 import { toast } from 'sonner';
 
 interface WelcomeScreenProps {
@@ -159,9 +159,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
                                     get a free key ↗
                                 </a>
                             </div>
-                            <Label weight="strong" className="block font-normal text-muted-foreground">
+                            <Hint>
                                 Both live in Settings afterwards. Keys are stored only in this browser.
-                            </Label>
+                            </Hint>
                         </div>
                     </motion.section>
 

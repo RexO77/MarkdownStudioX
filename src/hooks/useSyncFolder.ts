@@ -31,13 +31,14 @@ export interface UseSyncFolderReturn {
 
 interface UseSyncFolderOptions {
   documents: Document[];
+  deletedDocumentIds: ReadonlySet<string>;
   /** Merge file-side changes into the document store without bumping updatedAt. */
   onSyncApply: (changes: { updated: Document[]; imported: Document[] }) => void;
 }
 
 const CHANGE_DEBOUNCE_MS = 1500;
 
-export const useSyncFolder = ({ documents, onSyncApply }: UseSyncFolderOptions): UseSyncFolderReturn => {
+export const useSyncFolder = ({ documents, deletedDocumentIds, onSyncApply }: UseSyncFolderOptions): UseSyncFolderReturn => {
   const supported = isFolderSyncSupported();
   const [status, setStatus] = useState<SyncFolderStatus>(supported ? 'disconnected' : 'unsupported');
   const [folderName, setFolderName] = useState<string | null>(null);
@@ -46,6 +47,8 @@ export const useSyncFolder = ({ documents, onSyncApply }: UseSyncFolderOptions):
   const handleRef = useRef<FileSystemDirectoryHandle | null>(null);
   const documentsRef = useRef(documents);
   documentsRef.current = documents;
+  const deletedDocumentIdsRef = useRef(deletedDocumentIds);
+  deletedDocumentIdsRef.current = deletedDocumentIds;
   const onSyncApplyRef = useRef(onSyncApply);
   onSyncApplyRef.current = onSyncApply;
   const syncInFlight = useRef(false);
@@ -59,7 +62,11 @@ export const useSyncFolder = ({ documents, onSyncApply }: UseSyncFolderOptions):
     syncInFlight.current = true;
     setStatus('syncing');
     try {
-      const outcome: SyncOutcome = await syncWithFolder(handle, documentsRef.current);
+      const outcome: SyncOutcome = await syncWithFolder(
+        handle,
+        documentsRef.current,
+        deletedDocumentIdsRef.current
+      );
       if (outcome.updated.length || outcome.imported.length) {
         onSyncApplyRef.current({ updated: outcome.updated, imported: outcome.imported });
       }

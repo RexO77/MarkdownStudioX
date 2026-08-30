@@ -1,22 +1,11 @@
 import { convertMarkdownToHtml } from './markdownUtils';
 import { containsMath } from '@/lib/math';
+import { downloadBlob } from '@/lib/download';
 
 // Standalone HTML exports can't carry the KaTeX fonts inline, so equations
 // pull the stylesheet from a CDN. Only added when the document has math.
 const KATEX_CSS_LINK =
   '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css">';
-
-// Helper to download a blob
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
 
 // The galley, carried into every export: STIX/Times body on a 24px ruling,
 // Courier listings, print-ruled tables. Matches the in-app typeset preview.

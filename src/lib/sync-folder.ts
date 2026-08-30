@@ -192,7 +192,8 @@ async function listMarkdownFiles(
  */
 export async function syncWithFolder(
   dir: FileSystemDirectoryHandle,
-  documents: Document[]
+  documents: Document[],
+  deletedDocumentIds: ReadonlySet<string> = new Set()
 ): Promise<SyncOutcome> {
   const state = loadState();
   const files = await listMarkdownFiles(dir);
@@ -203,6 +204,9 @@ export async function syncWithFolder(
   const docIds = new Set(documents.map((d) => d.id));
   for (const [id, entry] of Object.entries(state)) {
     if (docIds.has(id)) continue;
+    // Absence is ambiguous during startup/recovery. Only an explicit,
+    // persisted app deletion may remove a file owned by sync.
+    if (!deletedDocumentIds.has(id)) continue;
     if (files.has(entry.filename)) {
       try {
         await dir.removeEntry(entry.filename);

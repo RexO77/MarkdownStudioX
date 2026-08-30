@@ -28,18 +28,21 @@ export interface UseDriveSyncReturn {
 
 interface UseDriveSyncOptions {
   documents: Document[];
+  deletedDocumentIds: ReadonlySet<string>;
   onSyncApply: (changes: { updated: Document[]; imported: Document[] }) => void;
 }
 
 const CHANGE_DEBOUNCE_MS = 2500;
 
-export const useDriveSync = ({ documents, onSyncApply }: UseDriveSyncOptions): UseDriveSyncReturn => {
+export const useDriveSync = ({ documents, deletedDocumentIds, onSyncApply }: UseDriveSyncOptions): UseDriveSyncReturn => {
   const configured = isDriveSyncConfigured();
   const [status, setStatus] = useState<DriveSyncStatus>(configured ? 'signed-out' : 'unconfigured');
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
 
   const documentsRef = useRef(documents);
   documentsRef.current = documents;
+  const deletedDocumentIdsRef = useRef(deletedDocumentIds);
+  deletedDocumentIdsRef.current = deletedDocumentIds;
   const onSyncApplyRef = useRef(onSyncApply);
   onSyncApplyRef.current = onSyncApply;
   const syncInFlight = useRef(false);
@@ -53,7 +56,7 @@ export const useDriveSync = ({ documents, onSyncApply }: UseDriveSyncOptions): U
     setStatus('syncing');
     try {
       const token = await getAccessToken(interactive);
-      const outcome = await syncWithDrive(token, documentsRef.current);
+      const outcome = await syncWithDrive(token, documentsRef.current, deletedDocumentIdsRef.current);
       if (outcome.updated.length || outcome.imported.length) {
         onSyncApplyRef.current({ updated: outcome.updated, imported: outcome.imported });
       }

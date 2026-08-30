@@ -27,6 +27,9 @@ import { documentStats as computeDocumentStats } from '@/lib/text-stats';
 import { isLatexDocument, LATEX_HANDOFF_KEY } from '@/lib/latex';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { AlertTriangle, Download, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { downloadText, recoveryBackupFilename } from '@/lib/download';
 
 const Index = () => {
   const isMobile = useIsMobile();
@@ -51,6 +54,9 @@ const Index = () => {
     documents,
     activeDocument,
     saveFailed,
+    storageRecovery,
+    deletedDocumentIds,
+    startNewLibrary,
     createDocument,
     updateDocument,
     deleteDocument,
@@ -60,8 +66,8 @@ const Index = () => {
     applySyncChanges,
   } = useDocuments();
 
-  const sync = useSyncFolder({ documents, onSyncApply: applySyncChanges });
-  const drive = useDriveSync({ documents, onSyncApply: applySyncChanges });
+  const sync = useSyncFolder({ documents, deletedDocumentIds, onSyncApply: applySyncChanges });
+  const drive = useDriveSync({ documents, deletedDocumentIds, onSyncApply: applySyncChanges });
 
   // A returning Drive user whose Google session lapsed needs one click to
   // resume — surface it without waiting for them to open Settings.
@@ -99,13 +105,14 @@ const Index = () => {
 
   // Create initial document if none exist
   useEffect(() => {
+    if (storageRecovery) return;
     if (documents.length > 0) {
       initialDocumentCreationPending.current = false;
     } else if (!initialDocumentCreationPending.current) {
       initialDocumentCreationPending.current = true;
       createDocument('Welcome');
     }
-  }, [documents.length, createDocument]);
+  }, [documents.length, createDocument, storageRecovery]);
 
   // Global shortcuts: ⌘P command palette, ⌘\ sidebar, ⌘⌥N new document.
   //
@@ -280,6 +287,51 @@ const Index = () => {
 
   const pendingDeleteDoc = documents.find((d) => d.id === pendingDelete);
 
+  if (storageRecovery) {
+    const downloadRawBackup = () => {
+      if (storageRecovery.rawPayload === null) return;
+      downloadText(storageRecovery.rawPayload, recoveryBackupFilename(), 'application/json');
+    };
+
+    return (
+      <main className="flex min-h-full items-center justify-center bg-background p-6">
+        <section className="w-full max-w-lg space-y-6 border border-border bg-card p-6 font-mono shadow-sm">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-destructive" aria-hidden="true" />
+            <h1 className="text-sm font-bold uppercase tracking-[0.06em]">Document recovery</h1>
+          </div>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>Your saved library could not be opened safely.</p>
+            <p>{storageRecovery.reason}</p>
+            <p>Nothing has been overwritten, and connected sync targets will not delete files.</p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {storageRecovery.rawPayload !== null && (
+              <Button variant="outline" onClick={downloadRawBackup} className="gap-2">
+                <Download className="h-4 w-4" aria-hidden="true" />
+                Download raw backup
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => window.location.reload()} className="gap-2">
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+              Retry
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (window.confirm('Replace the unreadable browser library with a new empty library?')) {
+                  startNewLibrary();
+                }
+              }}
+            >
+              Start new library
+            </Button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <div className="flex h-full flex-col bg-background">
       {!isFocusMode && (
@@ -330,6 +382,7 @@ const Index = () => {
         <AIPanel
           isOpen={showAIPanel && !isFocusMode}
           onClose={() => setShowAIPanel(false)}
+          documentId={activeDocument?.id ?? null}
           content={activeDocument?.content || ''}
           onContentChange={handleContentChange}
         />

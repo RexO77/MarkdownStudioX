@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Download, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { downloadText, recoveryBackupFilename } from '@/lib/download';
 
 interface Props {
     children: ReactNode;
@@ -30,12 +31,13 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     private handleReload = () => {
-        // Save current content before reloading
-        const savedDocs = localStorage.getItem('markdown-studio-documents');
-        if (savedDocs) {
-            sessionStorage.setItem('markdown-backup', savedDocs);
-        }
         window.location.reload();
+    };
+
+    private handleDownloadBackup = () => {
+        const savedDocs = localStorage.getItem('markdown-studio-documents');
+        if (savedDocs === null) return;
+        downloadText(savedDocs, recoveryBackupFilename(), 'application/json');
     };
 
     private handleReset = () => {
@@ -77,6 +79,10 @@ export class ErrorBoundary extends Component<Props, State> {
                         <div className="flex flex-col sm:flex-row gap-3 justify-center">
                             <Button onClick={this.handleReset} variant="outline">
                                 Try Again
+                            </Button>
+                            <Button onClick={this.handleDownloadBackup} variant="outline" className="gap-2">
+                                <Download className="h-4 w-4" />
+                                Download backup
                             </Button>
                             <Button onClick={this.handleReload} className="gap-2">
                                 <RefreshCw className="h-4 w-4" />

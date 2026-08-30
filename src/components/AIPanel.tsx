@@ -10,6 +10,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface AIPanelProps {
     isOpen: boolean;
     onClose: () => void;
+    documentId: string | null;
     content: string;
     onContentChange: (content: string) => void;
 }
@@ -19,6 +20,7 @@ type ContentType = 'article' | 'blog' | 'documentation' | 'academic' | 'social';
 type LengthAction = 'expand' | 'condense' | 'rephrase';
 
 interface AIHistoryEntry {
+    documentId: string;
     content: string;
     timestamp: number;
 }
@@ -70,13 +72,17 @@ const OptionButton: React.FC<{
     </button>
 );
 
-export const AIPanel: React.FC<AIPanelProps> = ({ isOpen, onClose, content, onContentChange }) => {
+export const AIPanel: React.FC<AIPanelProps> = ({ isOpen, onClose, documentId, content, onContentChange }) => {
     const isMobile = useIsMobile();
     const [tone, setTone] = useState<Tone>('professional');
     const [contentType, setContentType] = useState<ContentType>('article');
     const [lengthAction, setLengthAction] = useState<LengthAction | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [history, setHistory] = useState<AIHistoryEntry[]>([]);
+    const documentIdRef = React.useRef(documentId);
+    const contentRef = React.useRef(content);
+    documentIdRef.current = documentId;
+    contentRef.current = content;
 
     // Escape closes the panel, like every other overlay
     useEffect(() => {
@@ -89,17 +95,23 @@ export const AIPanel: React.FC<AIPanelProps> = ({ isOpen, onClose, content, onCo
     }, [isOpen, onClose]);
 
     const addToHistory = useCallback((newContent: string) => {
-        setHistory((prev) => [...prev.slice(-2), { content: newContent, timestamp: Date.now() }]);
-    }, []);
+        if (!documentId) return;
+        setHistory((prev) => [...prev.slice(-9), { documentId, content: newContent, timestamp: Date.now() }]);
+    }, [documentId]);
+
+    const currentDocumentHistory = history.filter((entry) => entry.documentId === documentId);
 
     const handleUndo = useCallback(() => {
-        if (history.length > 0) {
-            const lastEntry = history[history.length - 1];
+        if (currentDocumentHistory.length > 0) {
+            const lastEntry = currentDocumentHistory[currentDocumentHistory.length - 1];
             onContentChange(lastEntry.content);
-            setHistory((prev) => prev.slice(0, -1));
+            setHistory((prev) => {
+                const index = prev.lastIndexOf(lastEntry);
+                return index < 0 ? prev : prev.filter((_, entryIndex) => entryIndex !== index);
+            });
             toast.success('Reverted to previous version');
         }
-    }, [history, onContentChange]);
+    }, [currentDocumentHistory, onContentChange]);
 
     const handleFormat = async () => {
         if (!content.trim()) {
@@ -117,10 +129,21 @@ export const AIPanel: React.FC<AIPanelProps> = ({ isOpen, onClose, content, onCo
 
         setIsProcessing(true);
         addToHistory(content);
+        const startingDocumentId = documentId;
+        const startingContent = content;
 
         try {
             const customPrompt = buildPrompt(tone, contentType, lengthAction);
             const formatted = await formatWithCustomPrompt(content, customPrompt, apiKey);
+            if (
+                documentIdRef.current !== startingDocumentId ||
+                contentRef.current !== startingContent
+            ) {
+                toast.error('AI result was not applied', {
+                    description: 'The document changed while formatting. Run it again on the current revision.',
+                });
+                return;
+            }
             onContentChange(formatted);
             toast.success('Manuscript reformatted');
         } catch (error) {
@@ -254,7 +277,7 @@ export const AIPanel: React.FC<AIPanelProps> = ({ isOpen, onClose, content, onCo
                         <button
                             type="button"
                             onClick={handleUndo}
-                            disabled={history.length === 0}
+                            disabled={currentDocumentHistory.length === 0}
                             className={cn(
                                 'flex h-8 w-full items-center justify-center gap-2 border border-border',
                                 'font-mono text-[11px] uppercase tracking-[0.04em] text-foreground',
@@ -263,7 +286,7 @@ export const AIPanel: React.FC<AIPanelProps> = ({ isOpen, onClose, content, onCo
                         >
                             <Undo2 className={ICON.md} />
                             <span className="cap-center">
-                                Undo{history.length > 0 ? ` (${history.length})` : ''}
+                                Undo{currentDocumentHistory.length > 0 ? ` (${currentDocumentHistory.length})` : ''}
                             </span>
                         </button>
                     </div>

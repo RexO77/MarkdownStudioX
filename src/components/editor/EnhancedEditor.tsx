@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { cn } from '@/lib/utils';
 import { useSmartEditor } from '@/hooks/useSmartEditor';
-import { useSmartPaste } from './SmartPasteHandler';
 import { SmartTextSelection } from './SmartTextSelection';
 
 interface EnhancedEditorProps {
@@ -66,6 +65,7 @@ export const EnhancedEditor = forwardRef<HTMLTextAreaElement, EnhancedEditorProp
     const [selection, setSelection] = useState({ text: '', position: { x: 0, y: 0 }, visible: false });
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const valueRef = useRef(value);
+    const escapeArmedRef = useRef(false);
 
     useImperativeHandle(ref, () => textareaRef.current as HTMLTextAreaElement);
 
@@ -75,14 +75,6 @@ export const EnhancedEditor = forwardRef<HTMLTextAreaElement, EnhancedEditorProp
       onContentChange: onChange,
       currentContent: value,
     });
-
-    const { handleSmartPaste } = useSmartPaste({
-      onContentChange: onChange,
-      currentContent: value,
-    });
-
-    const handleSmartPasteRef = useRef(handleSmartPaste);
-    handleSmartPasteRef.current = handleSmartPaste;
 
     const handleCloseSelection = useCallback(() => {
       setSelection((prev) => ({ ...prev, visible: false }));
@@ -100,8 +92,6 @@ export const EnhancedEditor = forwardRef<HTMLTextAreaElement, EnhancedEditorProp
       const textarea = textareaRef.current;
       if (!textarea) return;
 
-      const handlePaste = (e: ClipboardEvent) => handleSmartPasteRef.current(e);
-
       const handleSelection = () => {
         const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
 
@@ -113,12 +103,10 @@ export const EnhancedEditor = forwardRef<HTMLTextAreaElement, EnhancedEditorProp
         }
       };
 
-      textarea.addEventListener('paste', handlePaste);
       textarea.addEventListener('mouseup', handleSelection);
       textarea.addEventListener('keyup', handleSelection);
 
       return () => {
-        textarea.removeEventListener('paste', handlePaste);
         textarea.removeEventListener('mouseup', handleSelection);
         textarea.removeEventListener('keyup', handleSelection);
       };
@@ -169,7 +157,16 @@ export const EnhancedEditor = forwardRef<HTMLTextAreaElement, EnhancedEditorProp
       (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         const textarea = e.currentTarget;
 
+        if (e.key === 'Escape') {
+          escapeArmedRef.current = true;
+          return;
+        }
+
         if (e.key === 'Tab' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+          if (escapeArmedRef.current) {
+            escapeArmedRef.current = false;
+            return;
+          }
           e.preventDefault();
           const start = textarea.selectionStart;
           const end = textarea.selectionEnd;
@@ -191,6 +188,13 @@ export const EnhancedEditor = forwardRef<HTMLTextAreaElement, EnhancedEditorProp
             });
           }
           return;
+        }
+
+        // A modifier is part of the escape chord — Escape then ⇧⇥ leaves
+        // backwards — so pressing one must not disarm it. Any other key means
+        // the writer carried on typing, and the trap re-arms.
+        if (e.key !== 'Shift' && e.key !== 'Control' && e.key !== 'Alt' && e.key !== 'Meta') {
+          escapeArmedRef.current = false;
         }
 
         if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {

@@ -294,7 +294,11 @@ export interface DriveSyncOutcome {
   filesDeleted: number;
 }
 
-export async function syncWithDrive(token: string, documents: Document[]): Promise<DriveSyncOutcome> {
+export async function syncWithDrive(
+  token: string,
+  documents: Document[],
+  deletedDocumentIds: ReadonlySet<string> = new Set()
+): Promise<DriveSyncOutcome> {
   const folderId = await ensureFolder(token);
   const state = loadState();
   const remote = new Map((await listRemoteFiles(token, folderId)).map((f) => [f.id, f]));
@@ -305,6 +309,7 @@ export async function syncWithDrive(token: string, documents: Document[]): Promi
   const docIds = new Set(documents.map((d) => d.id));
   for (const [id, entry] of Object.entries(state.entries)) {
     if (docIds.has(id)) continue;
+    if (!deletedDocumentIds.has(id)) continue;
     if (remote.has(entry.fileId)) {
       try {
         await trashRemoteFile(token, entry.fileId);

@@ -69,6 +69,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingName, setEditingName] = useState('');
     const editInputRef = useRef<HTMLInputElement>(null);
+    const panelRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
         if (editingId && editInputRef.current) {
@@ -77,15 +78,40 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
         }
     }, [editingId]);
 
-    // As a drawer the index dismisses like every other float: Escape. In-flow
-    // on desktop it is furniture, and furniture does not close on Escape.
+    // As a drawer the index owns focus until it closes. In-flow on desktop it
+    // remains ordinary page furniture.
     useEffect(() => {
         if (!isMobile || !isOpen || !onClose) return;
+        const previouslyFocused = document.activeElement as HTMLElement | null;
+        const focusFrame = requestAnimationFrame(() => {
+            panelRef.current?.querySelector<HTMLElement>('input, button, [tabindex]:not([tabindex="-1"])')?.focus();
+        });
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
+            if (e.key === 'Escape') {
+                onClose();
+                return;
+            }
+            if (e.key !== 'Tab' || !panelRef.current) return;
+            const focusable = [...panelRef.current.querySelectorAll<HTMLElement>(
+                'input, button, [href], [tabindex]:not([tabindex="-1"])'
+            )].filter((element) => !element.hasAttribute('disabled'));
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (!first || !last) return;
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+            }
         };
         document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
+        return () => {
+            cancelAnimationFrame(focusFrame);
+            document.removeEventListener('keydown', handleKeyDown);
+            previouslyFocused?.focus();
+        };
     }, [isMobile, isOpen, onClose]);
 
     const filtered = useMemo(() => {
@@ -254,6 +280,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                 same margin slide works fixed, where it reflows nothing. */}
             {isOpen && (
                 <motion.aside
+                    ref={panelRef}
                     key="index-panel"
                     initial={{ marginLeft: -SIDEBAR_WIDTH }}
                     animate={{ marginLeft: 0 }}

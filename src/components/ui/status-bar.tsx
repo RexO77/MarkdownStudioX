@@ -69,7 +69,7 @@ export function StatusBar({
               :
             </span>
             <span className="cap-center">Commands</span>
-            <span className="cap-center hidden text-muted-foreground/70 sm:inline">⌘P</span>
+            <span className="cap-center hidden text-muted-foreground sm:inline">⌘P</span>
           </button>
         )}
       </div>

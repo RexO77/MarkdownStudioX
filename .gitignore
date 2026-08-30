@@ -29,6 +29,9 @@ dist-ssr
 # Design-review working artifacts
 .impeccable/
 .playwright-cli/
+coverage/
+playwright-report/
+test-results/
 
 
 # BusyTeX WASM assets (downloaded via npx texlyre-busytex download-assets, ~100MB+)

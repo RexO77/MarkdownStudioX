@@ -9,6 +9,10 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
     "preview": "vite preview",
     "analyze": "npx vite-bundle-visualizer"
   },
@@ -70,8 +74,13 @@
     "tiptap-markdown": "^0.8.10"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.9.0",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/typography": "^0.5.15",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.5",
     "@types/google.accounts": "^0.0.18",
     "@types/markdown-it": "^14.1.2",
     "@types/node": "^26.2.0",
@@ -79,15 +88,19 @@
     "@types/react-dom": "^19.2.4",
     "@types/wicg-file-system-access": "^2023.10.7",
     "@vitejs/plugin-react-swc": "^4.2.2",
+    "@vitest/coverage-v8": "^4.1.11",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.9.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.5.4",
+    "fake-indexeddb": "^6.2.5",
     "globals": "^17.11.0",
+    "jsdom": "^30.0.1",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^8.2.1"
+    "vite": "^8.2.1",
+    "vitest": "^4.1.11"
   }
 }
