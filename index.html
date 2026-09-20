@@ -3,12 +3,68 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Markdown Studio X — Write markdown, watch it typeset</title>
-    <meta name="description" content="A free, local-first markdown editor: manuscript on the left, a beautifully typeset page on the right. No account — your documents never leave your browser." />
-    <meta name="author" content="Markdown Studio X" />
-    <meta property="og:title" content="Markdown Studio X" />
-    <meta property="og:description" content="Write markdown, watch it typeset. Free, local-first, no account." />
-    <meta property="og:image" content="/assets/logo.png" />
+    <title>Markdown Studio X — Local-First Markdown & LaTeX Editor</title>
+    <meta name="description" content="A free, local-first Markdown and LaTeX editor with live typesetting and PDF, Word, HTML, and TeX export. No account; your documents stay in your browser." />
+    <meta name="author" content="Nischal Skanda" />
+    <meta name="creator" content="Nischal Skanda" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://mdx.nischal.fyi/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Markdown Studio X" />
+    <meta property="og:title" content="Markdown Studio X — Local-First Markdown & LaTeX Editor" />
+    <meta property="og:description" content="Write Markdown, typeset math and LaTeX, and export polished documents without sending your work to a server." />
+    <meta property="og:url" content="https://mdx.nischal.fyi/" />
+    <meta property="og:image" content="https://mdx.nischal.fyi/og/markdown-studio-x-2026-09.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:alt" content="Markdown Studio X showing a Markdown manuscript beside its typeset page preview." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@nischalskanda" />
+    <meta name="twitter:title" content="Markdown Studio X — Local-First Markdown & LaTeX Editor" />
+    <meta name="twitter:description" content="Write Markdown, typeset math and LaTeX, and export polished documents without sending your work to a server." />
+    <meta name="twitter:image" content="https://mdx.nischal.fyi/og/markdown-studio-x-2026-09.jpg" />
+    <meta name="twitter:image:alt" content="Markdown Studio X showing a Markdown manuscript beside its typeset page preview." />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://mdx.nischal.fyi/#website",
+            "url": "https://mdx.nischal.fyi/",
+            "name": "Markdown Studio X",
+            "description": "A local-first Markdown and LaTeX writing studio with live typesetting and document export.",
+            "creator": { "@id": "https://www.nischal.fyi/#person" }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://mdx.nischal.fyi/#app",
+            "name": "Markdown Studio X",
+            "url": "https://mdx.nischal.fyi/",
+            "applicationCategory": "ProductivityApplication",
+            "operatingSystem": "Any modern web browser",
+            "description": "A free, local-first Markdown and LaTeX editor with live typesetting and PDF, Word, HTML, Markdown, and TeX export.",
+            "featureList": [
+              "Local-first document storage",
+              "Live typeset Markdown preview",
+              "Math and LaTeX typesetting",
+              "PDF, Word, HTML, Markdown, and TeX export"
+            ],
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "creator": { "@id": "https://www.nischal.fyi/#person" }
+          },
+          {
+            "@type": "Person",
+            "@id": "https://www.nischal.fyi/#person",
+            "name": "Nischal Skanda",
+            "url": "https://www.nischal.fyi/",
+            "jobTitle": "Product Designer and Design Engineer",
+            "sameAs": ["https://github.com/RexO77", "https://www.linkedin.com/in/nischalskanda"]
+          }
+        ]
+      }
+    </script>
     <link rel="icon" href="/assets/logo.png" type="image/png" />
     <link rel="apple-touch-icon" href="/assets/logo.png" />
     <link rel="preload" href="/fonts/courier-prime-400.woff2" as="font" type="font/woff2" crossorigin />
@@ -17,6 +73,12 @@
 
   <body>
     <div id="root"></div>
+    <noscript>
+      <main>
+        <h1>Markdown Studio X</h1>
+        <p>A free, local-first Markdown and LaTeX editor created by Nischal Skanda. Write beside a live typeset preview and export to PDF, Word, HTML, Markdown, or TeX. Your documents stay in your browser.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
