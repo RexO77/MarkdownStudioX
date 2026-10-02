@@ -16,7 +16,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
  * to the feature: asset downloads, init time, compile time, cache behavior.
  *
  * Engine: busytex (TeX Live 2026 WASM). Assets served from /core/busytex
- * (gitignored; fetch via `npx texlyre-busytex download-assets ./public/core`).
+ * (gitignored; fetch via `npm run fetch:latex-engine`, which the Vercel build runs).
  * Packages beyond texlive-basic stream on demand from the TeXlyre endpoint.
  */
 

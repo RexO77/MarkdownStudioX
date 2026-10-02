@@ -61,6 +61,8 @@ A full TeX Live 2026 distribution, compiled to WebAssembly, running in a web wor
 
 Compilation is 100% client-side: your document is never uploaded anywhere.
 
+**Self-hosting the Lab:** the engine files are not in the repository. `npm run fetch:latex-engine` downloads the pinned BusyTeX release and keeps only what the Lab serves — the engine, the TeX core (`texlive-basic`), and biber for biblatex documents, about 160 MB in `public/core/busytex`, each file checked against a pinned SHA-256. The Vercel build runs it automatically (`buildCommand` in `vercel.json`); on any other host, run it before `npm run build`. Packages beyond the core stream from `texlive2026.texlyre.org` at compile time, so the 500 MB of extra TeX Live data never needs to be deployed.
+
 ## Sync — your files, in your folder, on your cloud
 
 Connect a **sync folder** in Settings and every document becomes a real `.md` file in a directory you choose. The sync is two-way and continuous:
