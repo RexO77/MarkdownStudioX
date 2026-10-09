@@ -24,7 +24,7 @@ source-availability obligation applies to it. Accordingly:
 
 The engine's WebAssembly and TeX Live data files are **not** committed to this
 repository (see `public/core/` in [`.gitignore`](.gitignore)); they are fetched
-with `npx texlyre-busytex download-assets ./public/core`.
+from the texlyre-busytex release with `npm run fetch:latex-engine`.
 
 The MIT license of Markdown Studio X applies to this project's own source. It
 does not, and cannot, relicense the AGPL-3.0 engine.
