@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BusyTexRunner, PdfLatex } from 'texlyre-busytex';
-import { LATEX_HANDOFF_KEY } from '@/lib/latex';
+import { getLatexDiagnostic, isMissingLatexPackage, LATEX_HANDOFF_KEY } from '@/lib/latex';
 import * as pdfjs from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
@@ -78,7 +78,7 @@ const KNOWN_ASSETS = [
   'texlive-basic.data',
 ];
 
-type Phase = 'idle' | 'initializing' | 'compiling' | 'done' | 'error';
+type Phase = 'idle' | 'initializing' | 'compiling' | 'previewing' | 'done' | 'error';
 
 interface Metrics {
   assetSizes: { name: string; bytes: number }[];
@@ -106,9 +106,12 @@ function getRunner(onProgress: (line: string) => void): Promise<BusyTexRunner> {
       onDownloadProgress: (p) =>
         onProgress(`downloading engine assets… ${p.percent.toFixed(0)}% (${fmtMB(p.loaded)} of ${fmtMB(p.total)})`),
     });
-    runnerPromise = runner.initialize(true).then(() => runner);
-    runnerPromise.catch(() => {
-      runnerPromise = null;
+    // A failed initialization must not leave an orphaned worker behind.
+    const pending = runner.initialize(true).then(() => runner);
+    runnerPromise = pending;
+    pending.catch(() => {
+      runner.terminate();
+      if (runnerPromise === pending) runnerPromise = null;
     });
   }
   return runnerPromise;
@@ -136,30 +139,39 @@ const LatexLab = () => {
   const [phase, setPhase] = useState<Phase>('idle');
   const [status, setStatus] = useState('Engine not loaded. Nothing downloads until you compile.');
   const [metrics, setMetrics] = useState<Metrics>({ assetSizes: [] });
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdf, setPdf] = useState<{ url: string; source: string } | null>(null);
   const [log, setLog] = useState('');
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  const sourceRef = useRef<HTMLTextAreaElement>(null);
   const pdfUrlRef = useRef<string | null>(null);
+  const mountedRef = useRef(false);
   const pagesRef = useRef<HTMLDivElement>(null);
 
   const renderPdfPages = async (data: Uint8Array) => {
-    const doc = await pdfjs.getDocument({ data }).promise;
-    const container = pagesRef.current;
-    if (!container) return;
-    container.replaceChildren();
-    const dpr = window.devicePixelRatio || 1;
-    for (let i = 1; i <= doc.numPages; i += 1) {
-      const page = await doc.getPage(i);
-      const baseWidth = page.getViewport({ scale: 1 }).width;
-      const scale = (container.clientWidth / baseWidth) * dpr;
-      const viewport = page.getViewport({ scale });
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      canvas.style.width = '100%';
-      canvas.style.display = 'block';
-      canvas.className = 'mb-3 border border-border bg-white';
-      container.appendChild(canvas);
-      await page.render({ canvas, viewport }).promise;
+    const task = pdfjs.getDocument({ data });
+    try {
+      const doc = await task.promise;
+      const container = pagesRef.current;
+      if (!container) return;
+      const dpr = window.devicePixelRatio || 1;
+      const canvases: HTMLCanvasElement[] = [];
+      for (let i = 1; i <= doc.numPages; i += 1) {
+        const page = await doc.getPage(i);
+        const baseWidth = page.getViewport({ scale: 1 }).width;
+        const scale = (container.clientWidth / baseWidth) * dpr;
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.style.width = '100%';
+        canvas.style.display = 'block';
+        canvas.className = 'mb-3 border border-border bg-white';
+        await page.render({ canvas, viewport }).promise;
+        canvases.push(canvas);
+      }
+      if (pagesRef.current === container) container.replaceChildren(...canvases);
+    } finally {
+      await task.destroy();
     }
   };
 
@@ -170,7 +182,8 @@ const LatexLab = () => {
       KNOWN_ASSETS.map(async (name) => {
         try {
           const res = await fetch(`${ASSET_BASE}/${name}`, { method: 'HEAD' });
-          return { name, bytes: Number(res.headers.get('content-length') ?? 0) };
+          const available = res.ok && !res.headers.get('content-type')?.includes('text/html');
+          return { name, bytes: available ? Number(res.headers.get('content-length') ?? 0) : 0 };
         } catch {
           return { name, bytes: 0 };
         }
@@ -183,62 +196,98 @@ const LatexLab = () => {
     };
   }, []);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
       if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
-    },
-    []
-  );
+    };
+  }, []);
 
   const compile = async () => {
     setPhase('initializing');
     setLog('');
+    setFailedSource(null);
+    if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
+    pdfUrlRef.current = null;
+    setPdf(null);
+    pagesRef.current?.replaceChildren();
+    setMetrics(({ assetSizes }) => ({ assetSizes }));
     const storageBeforeMB = await storageUsageMB();
+    if (!mountedRef.current) return;
+    let activeRunner: BusyTexRunner | undefined;
 
     try {
       setStatus('Initializing engine (downloads on first run, cached after)…');
       const initStart = performance.now();
       const runner = await getRunner(setStatus);
+      activeRunner = runner;
+      if (!mountedRef.current) return;
       const initMs = performance.now() - initStart;
 
       setPhase('compiling');
-      setStatus('Compiling with pdfLaTeX… (missing packages stream from TeX Live on demand)');
+      setStatus('Compiling with pdfLaTeX…');
       const compileStart = performance.now();
       const pdflatex = new PdfLatex(runner);
-      const result = await pdflatex.compile({
-        input: source,
-        driver: 'pdftex_bibtex8',
-        rerun: true,
-        remoteEndpoint: REMOTE_TEXLIVE,
-      });
+      const options = { input: source, driver: 'pdftex_bibtex8', rerun: true } as const;
+      // Most documents only need the bundled TeX files. Avoid network lookups
+      // for them, and never retry an ordinary source error against the server.
+      let result = await pdflatex.compile(options);
+      if (!result.success && isMissingLatexPackage(result.log ?? '')) {
+        if (mountedRef.current) setStatus('Fetching missing TeX packages and recompiling…');
+        try {
+          result = await pdflatex.compile({ ...options, remoteEndpoint: REMOTE_TEXLIVE });
+        } finally {
+          // BusyTeX keeps its remote endpoint in the worker environment.
+          // Reboot from cached assets next time so unrelated documents stay local.
+          runner.terminate();
+          runnerPromise = null;
+          activeRunner = undefined;
+        }
+      }
       const compileMs = performance.now() - compileStart;
       const storageAfterMB = await storageUsageMB();
+      if (!mountedRef.current) return;
 
       setMetrics((m) => ({ ...m, initMs, compileMs, storageBeforeMB, storageAfterMB, pdfBytes: result.pdf?.length }));
       setLog(result.log ?? '');
 
       if (result.success && result.pdf) {
-        if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
         const buffer = new Uint8Array(result.pdf);
         // Blob copies the bytes, so pdf.js is free to consume `buffer` after.
         const url = URL.createObjectURL(new Blob([buffer], { type: 'application/pdf' }));
         pdfUrlRef.current = url;
-        setPdfUrl(url);
-        await renderPdfPages(buffer);
+        setPdf({ url, source });
+        setPhase('previewing');
+        setStatus('PDF compiled. Rendering the preview…');
+        try {
+          await renderPdfPages(buffer);
+          setStatus(`Compiled in ${fmtS(compileMs)} (engine init ${fmtS(initMs)}).`);
+        } catch {
+          setStatus('PDF compiled, but this browser could not show the preview. You can still download the PDF.');
+        }
         setPhase('done');
-        setStatus(`Compiled in ${fmtS(compileMs)} (engine init ${fmtS(initMs)}).`);
       } else {
         setPhase('error');
+        setFailedSource(source);
         setStatus(`Compile failed (exit code ${result.exitCode}). See log below.`);
       }
     } catch (err) {
-      setPhase('error');
-      setStatus(`Engine error: ${err instanceof Error ? err.message : String(err)}`);
+      if (activeRunner) {
+        activeRunner.terminate();
+        runnerPromise = null;
+      }
+      if (mountedRef.current) {
+        setPhase('error');
+        setStatus(`Engine error: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
   };
 
   const clearCache = async () => {
+    const pending = runnerPromise;
     runnerPromise = null;
+    pending?.then((runner) => runner.terminate()).catch(() => {});
     // Only the engine's own caches — Emscripten's EM_PRELOAD_CACHE and any
     // busytex database. Never a blanket sweep: this origin also stores the
     // folder-sync directory handle, and wiping it would silently disconnect
@@ -256,7 +305,19 @@ const LatexLab = () => {
   };
 
   const totalAssetBytes = metrics.assetSizes.reduce((sum, a) => sum + a.bytes, 0);
-  const busy = phase === 'initializing' || phase === 'compiling';
+  const busy = phase === 'initializing' || phase === 'compiling' || phase === 'previewing';
+  const stale = pdf !== null && pdf.source !== source;
+  const diagnostic = failedSource === null ? null : getLatexDiagnostic(log);
+  const errorLine = diagnostic?.line;
+  const jumpToError = (line: number) => {
+    const editor = sourceRef.current;
+    if (!editor || failedSource !== source) return;
+    const lines = source.split('\n');
+    if (line < 1 || line > lines.length) return;
+    const start = lines.slice(0, line - 1).reduce((sum, text) => sum + text.length + 1, 0);
+    editor.focus();
+    editor.setSelectionRange(start, start + lines[line - 1].length);
+  };
 
   return (
     <div className="min-h-dvh bg-background text-foreground p-4 font-mono text-sm sm:p-6">
@@ -271,6 +332,7 @@ const LatexLab = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section className="flex flex-col gap-3">
           <textarea
+            ref={sourceRef}
             value={source}
             onChange={(e) => setSource(e.target.value)}
             spellCheck={false}
@@ -293,6 +355,16 @@ const LatexLab = () => {
             </button>
           </div>
           <p aria-live="polite" className="text-muted-foreground">{status}</p>
+          {diagnostic && failedSource === source && (
+            <div className="border border-border p-3 text-sm">
+              <p>{diagnostic.message}</p>
+              {errorLine && (
+                <button className="mt-2 underline underline-offset-2" onClick={() => jumpToError(errorLine)}>
+                  Go to line {errorLine}
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="border border-border p-3">
             <h2 className="font-bold mb-2">First-visit download (served locally, cached by the browser)</h2>
@@ -331,15 +403,16 @@ const LatexLab = () => {
         <section className="flex flex-col gap-3">
           <div className="relative h-[60dvh] overflow-auto border border-border p-3 lg:h-[620px]">
             <div ref={pagesRef} />
-            {!pdfUrl && (
+            {!pdf && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center border border-dashed border-border text-muted-foreground">
-                PDF output appears here
+                {phase === 'error' ? 'No PDF produced' : 'PDF output appears here'}
               </div>
             )}
           </div>
-          {pdfUrl && (
-            <a href={pdfUrl} download="document.pdf" className="self-start border border-border px-4 py-1.5 font-bold uppercase tracking-wide">
-              Download PDF
+          {stale && <p role="status" className="text-muted-foreground">Source changed. Compile again to update the PDF.</p>}
+          {pdf && (
+            <a href={pdf.url} download="document.pdf" className="self-start border border-border px-4 py-1.5 font-bold uppercase tracking-wide">
+              {stale ? 'Download previous PDF' : 'Download PDF'}
             </a>
           )}
           {log && (

@@ -12,6 +12,7 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.{ts,tsx}'],
     environment: 'jsdom',
+    css: { include: [/katex\.min\.css/] },
     environmentOptions: {
       jsdom: {
         url: 'http://localhost/',

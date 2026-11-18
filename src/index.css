@@ -467,6 +467,18 @@
     background-color: hsl(var(--listing) / 0.8);
   }
 
+  /* Display math ($$...$$) stands as its own block. A half ruling either
+     side; alone in its paragraph the margins collapse into the paragraph's
+     own, so it sits one full 24px ruling from the text above and below. */
+  .galley .katex-display {
+    margin: 12px 0;
+  }
+
+  .galley .Tiptap-mathematics-render--display {
+    display: block;
+    padding: 0;
+  }
+
   /* Code listings */
   .galley .listing {
     position: relative;

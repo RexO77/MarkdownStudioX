@@ -1,4 +1,5 @@
 import { isLatexDocument } from './latex';
+import { createMathSpanRegex } from './math';
 
 /**
  * Markdown constructs the galley editor cannot round-trip without corrupting them.
@@ -21,6 +22,16 @@ export function findLossyConstructs(markdown: string): string[] {
     .replace(/`[^`\n]*`/g, '');
 
   const found: string[] = [];
+  // Paragraph parsing folds line breaks into spaces and splits on blank
+  // lines. For TeX this changes `%` comment scope as well as the saved source.
+  // Keep multiline formulas source-editable and use the HTML preview instead.
+  if (
+    [...stripped.matchAll(createMathSpanRegex())].some((match) => /[\r\n]/.test(match[0])) ||
+    /^ {0,3}(?:\$\$|\\\[)[ \t]*\r?\n/m.test(stripped)
+  ) {
+    found.push('multiline LaTeX');
+  }
+
   if (FRONT_MATTER.test(markdown)) found.push('front matter');
   if (HTML_TAG.test(stripped) || HTML_COMMENT.test(stripped)) found.push('raw HTML');
   if (FOOTNOTE.test(stripped)) found.push('footnotes');

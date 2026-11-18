@@ -21,7 +21,8 @@ export default defineConfig(({ mode }) => ({
           }
           if (id.includes('@radix-ui')) return 'radix-ui';
           if (/node_modules\/marked\//.test(id)) return 'markdown';
-          if (/node_modules\/katex\//.test(id)) return 'katex';
+          // Inline font data belongs in the lazy standalone export chunk.
+          if (/node_modules\/katex\//.test(id) && !/[?&](?:inline|raw)\b/.test(id)) return 'katex';
           if (id.includes('lucide-react')) return 'icons';
           return undefined;
         },

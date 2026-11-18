@@ -27,6 +27,7 @@ import { Bold, Italic, Strikethrough, Code, Link2, Unlink, CornerDownLeft } from
 import { cn } from '@/lib/utils';
 import { Label, LAYER, LAYER_Z, SectionRule } from '@/components/chrome';
 import { findLossyConstructs } from '@/lib/galley-safety';
+import { convertMarkdownToHtml } from '@/utils/markdownUtils';
 import { createSlashCommand, filterSlashItems, type SlashMenuState } from './slash-command';
 import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { CodeBlockView } from './CodeBlockView';
@@ -70,6 +71,10 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
     // read-only mid-edit, and so we don't re-run on every debounce echo.
     const [lossyConstructs, setLossyConstructs] = useState(() => findLossyConstructs(value));
     const isReadOnly = lossyConstructs.length > 0;
+    const sourceMathPreview = useMemo(
+      () => lossyConstructs.includes('multiline LaTeX') ? convertMarkdownToHtml(value) : null,
+      [lossyConstructs, value]
+    );
     const isReadOnlyRef = useRef(isReadOnly);
     isReadOnlyRef.current = isReadOnly;
 
@@ -182,9 +187,11 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
     // External source changes (source pane typing, find & replace, AI format)
     // parse back into the galley — but never while the galley itself is focused.
     useEffect(() => {
-      if (!editor || value === lastMarkdown.current) return;
-      if (editor.isFocused) return;
+      if (!editor || editor.isFocused) return;
+      // Re-evaluate the guard even when a quick source undo returns to the
+      // last parsed Markdown before the debounced parse has run.
       setLossyConstructs(findLossyConstructs(value));
+      if (value === lastMarkdown.current) return;
       const t = setTimeout(() => {
         lastMarkdown.current = value;
         editor.commands.setContent(value, false);
@@ -320,7 +327,15 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
             )}
             {/* No running head: the header already names the document, and the
                 writing surface should open on the writing. */}
-            <EditorContent editor={editor} className="galley galley-editable pb-24" />
+            {sourceMathPreview !== null ? (
+              <div
+                className="galley pb-24"
+                aria-label="Typeset galley preview"
+                dangerouslySetInnerHTML={{ __html: sourceMathPreview }}
+              />
+            ) : (
+              <EditorContent editor={editor} className="galley galley-editable pb-24" />
+            )}
           </div>
         </div>
 
