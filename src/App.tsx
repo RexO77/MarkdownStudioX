@@ -35,23 +35,24 @@ const App = () => {
         <ThemeProvider defaultTheme="system">
           <Sonner />
           <Analytics />
-          {showOnboarding ? (
-            <WelcomeScreen onComplete={() => setShowOnboarding(false)} />
-          ) : (
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route
-                  path="/latex"
-                  element={
-                    <Suspense fallback={null}>
-                      <LatexLab />
-                    </Suspense>
-                  }
-                />
-              </Routes>
-            </BrowserRouter>
-          )}
+          <BrowserRouter>
+            <Routes>
+              <Route
+                path="/"
+                element={showOnboarding
+                  ? <WelcomeScreen onComplete={() => setShowOnboarding(false)} />
+                  : <Index />}
+              />
+              <Route
+                path="/latex"
+                element={
+                  <Suspense fallback={null}>
+                    <LatexLab />
+                  </Suspense>
+                }
+              />
+            </Routes>
+          </BrowserRouter>
         </ThemeProvider>
       </TooltipProvider>
       </MotionConfig>
