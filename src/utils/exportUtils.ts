@@ -1,11 +1,13 @@
+import { createLatexDocument } from './latexExport';
 import { convertMarkdownToHtml } from './markdownUtils';
-import { containsMath } from '@/lib/math';
 import { downloadBlob } from '@/lib/download';
 
-// Standalone HTML exports can't carry the KaTeX fonts inline, so equations
-// pull the stylesheet from a CDN. Only added when the document has math.
-const KATEX_CSS_LINK =
-  '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css">';
+// Only load the self-contained fonts for documents with rendered equations.
+async function mathStyleTag(html: string): Promise<string> {
+  if (!/class="katex(?:-display)?"/.test(html)) return '';
+  const { katexExportStyles, katexExportNotice } = await import('./katexExportStyles');
+  return `<!-- ${katexExportNotice} --><style>${katexExportStyles}</style>`;
+}
 
 // The galley, carried into every export: STIX/Times body on a 24px ruling,
 // Courier listings, print-ruled tables. Matches the in-app typeset preview.
@@ -59,6 +61,7 @@ const GALLEY_EXPORT_CSS = `
   .footnote + .footnote { margin-top: 0; border-top: none; padding-top: 0; }
   .color-code { font-family: 'Courier Prime', 'Courier New', monospace; background: #f2f0e9; padding: 1px 5px; }
   .katex { font-size: 1.06em; }
+  .katex-display { margin: 12px 0; }
   .color-preview { display: inline-block; width: 10px; height: 10px; border: 1px solid #d9d4c8; }
 `;
 
@@ -86,7 +89,7 @@ export const exportToHtml = async (content: string, filename: string = 'document
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeAttr(filename)}</title>
-  ${containsMath(content) ? `${KATEX_CSS_LINK}\n  ` : ''}<style>${GALLEY_EXPORT_CSS}</style>
+  ${await mathStyleTag(html)}<style>${GALLEY_EXPORT_CSS}</style>
 </head>
 <body>
 ${html}
@@ -132,8 +135,13 @@ export const exportToPdf = async (content: string, filename: string = 'document'
     jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
   };
 
-  await html2pdf().set(options).from(container).save();
-  document.body.removeChild(container);
+  try {
+    // Let the typesetting fonts resolve before html2canvas captures the page.
+    await document.fonts?.ready;
+    await html2pdf().set(options).from(container).save();
+  } finally {
+    container.remove();
+  }
 };
 
 // Simple HTML-based Word export (no docx library needed!)
@@ -148,6 +156,7 @@ export const exportToWord = async (content: string, filename: string = 'document
     <head>
       <meta charset="utf-8">
       <title>Document</title>
+      ${await mathStyleTag(html)}
       <style>
         body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.4; color: #201c18; }
         h1 { font-size: 22pt; }
@@ -205,59 +214,7 @@ export const exportToText = async (content: string, filename: string = 'document
 };
 
 export const exportToLatex = async (content: string, title: string) => {
-  // Convert markdown to LaTeX format
-  const latexContent = content
-    // Headers
-    .replace(/^# (.+)$/gm, '\\section{$1}')
-    .replace(/^## (.+)$/gm, '\\subsection{$1}')
-    .replace(/^### (.+)$/gm, '\\subsubsection{$1}')
-    .replace(/^#### (.+)$/gm, '\\paragraph{$1}')
-    .replace(/^##### (.+)$/gm, '\\subparagraph{$1}')
-
-    // Bold and italic
-    .replace(/\*\*([^*]+)\*\*/g, '\\textbf{$1}')
-    .replace(/\*([^*]+)\*/g, '\\textit{$1}')
-    .replace(/__([^_]+)__/g, '\\textbf{$1}')
-    .replace(/_([^_]+)_/g, '\\textit{$1}')
-
-    // Code
-    .replace(/`([^`]+)`/g, '\\texttt{$1}')
-    .replace(/```[\s\S]*?```/g, (match) => {
-      const code = match.replace(/```(\w*\n)?|```$/g, '');
-      return `\\begin{verbatim}\n${code}\n\\end{verbatim}`;
-    })
-
-    // Lists
-    .replace(/^[-*+] (.+)$/gm, '\\item $1')
-    .replace(/^\d+\. (.+)$/gm, '\\item $1')
-
-    // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '\\href{$2}{$1}')
-
-    // Blockquotes
-    .replace(/^> (.+)$/gm, '\\begin{quotation}\n$1\n\\end{quotation}');
-
-  // Create complete LaTeX document
-  const fullLatexContent = `\\documentclass{article}
-\\usepackage[utf8]{inputenc}
-\\usepackage[T1]{fontenc}
-\\usepackage{hyperref}
-\\usepackage{graphicx}
-\\usepackage{amsmath}
-\\usepackage{amsfonts}
-\\usepackage{amssymb}
-
-\\title{${title.replace(/([&%$#_{}])/g, '\\$1')}}
-\\author{Markdown Studio X}
-\\date{\\today}
-
-\\begin{document}
-
-\\maketitle
-
-${latexContent}
-
-\\end{document}`;
+  const fullLatexContent = createLatexDocument(content, title);
 
   const blob = new Blob([fullLatexContent], { type: 'text/plain;charset=utf-8' });
   downloadBlob(blob, `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.tex`);

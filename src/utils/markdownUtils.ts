@@ -39,6 +39,33 @@ marked.use(markedSmartypants());
 marked.use({
   extensions: [
     {
+      // A standalone display is a block, not a paragraph. An inline-only
+      // tokenizer loses equations as soon as their source has a blank line.
+      name: 'mathBlock',
+      level: 'block',
+      start(src: string) {
+        return /^ {0,3}(?:\$\$|\\\[)[ \t]*\r?$/m.exec(src)?.index;
+      },
+      tokenizer(src: string) {
+        const opening = /^ {0,3}(?:\$\$|\\\[)[ \t]*\r?\n/.exec(src);
+        if (!opening) return undefined;
+        const indent = /^ */.exec(src)![0].length;
+        const match = createMathSpanRegex().exec(src.slice(indent));
+        if (!match || match.index !== 0) return undefined;
+        const remainder = src.slice(indent + match[0].length);
+        const lineEnd = /^[ \t]*(?:\r?\n|$)/.exec(remainder);
+        if (!lineEnd) return undefined;
+        return {
+          type: 'mathBlock',
+          raw: src.slice(0, indent + match[0].length + lineEnd[0].length),
+          math: match[0],
+        };
+      },
+      renderer(token) {
+        return `${renderMathSpanToHtml(token.math)}\n`;
+      },
+    },
+    {
       name: 'math',
       level: 'inline',
       start(src: string) {

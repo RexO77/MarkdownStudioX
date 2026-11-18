@@ -19,7 +19,7 @@ This is not just a markdown previewer. Because everything is local, instant, and
 
 - **A daily journal.** Open the tab, write. The document index (⌘\) keeps every entry, searchable and starrable, persisted in your browser — or synced to a real folder of `.md` files you own. Focus mode (⌘⇧F) strips the chrome down to just you and the page.
 - **A README / docs workbench.** GitHub-flavored markdown — tables, task lists, `> [!NOTE]` alerts, footnotes, syntax-highlighted code — renders exactly, so what you see is what the repo gets.
-- **A math notebook.** `$e^{i\pi} + 1 = 0$` typesets with KaTeX as you type — in the editor, in the preview, and in every export. Currency stays currency: `$5 and $10` is never mistaken for a formula.
+- **A math notebook.** `$e^{i\pi} + 1 = 0$` typesets with KaTeX as you type — in the galley, the preview, and the HTML and PDF exports. Currency stays currency: `$5 and $10` is never mistaken for a formula.
 - **A LaTeX compiler.** Paste a full `\documentclass` document — a resume, a paper — and the built-in **LaTeX Lab** compiles it to a real PDF with a real TeX engine, entirely in your browser. No Overleaf account, no 4 GB TeX install.
 - **A conversion utility.** Paste markdown in, export a typeset PDF, a Word file, or a `.tex` document out. The typography carries through.
 
@@ -40,16 +40,18 @@ The galley sets STIX Two Text on a 24px baseline grid — the ruling of a photot
 
 ## Math, everywhere
 
-Inline `$...$` and display `$$...$$` spans render with KaTeX across every surface — the live galley, the preview, and HTML/PDF/Word exports — driven by one shared delimiter grammar so a formula that renders in one place renders in all of them:
+Inline `$...$` / `\(...\)` and display `$$...$$` / `\[...\]` spans use the same KaTeX renderer in the galley, preview, and HTML/PDF exports:
 
 - Pandoc-style guards keep prose dollars as prose: `costs $5 and $10` never typesets.
 - Math inside `` `inline code` `` and code fences is left alone.
 - LaTeX backslashes survive round-trips through the rich-text editor untouched — `$\frac{a}{b}$` stays `$\frac{a}{b}$` in your source.
-- The `.tex` export passes math through natively.
+- Multiline formulas are editable in MARKDOWN view and render in the galley preview. This keeps comments and line breaks intact.
+- Standalone HTML exports embed KaTeX styles and fonts.
+- The `.tex` export preserves formulas and passes full LaTeX documents through unchanged.
 
 ## LaTeX Lab
 
-A full TeX Live 2026 distribution, compiled to WebAssembly, running in a web worker. Paste any complete LaTeX document and get a real PDF — `geometry`, `titlesec`, `enumitem`, `hyperref`, custom unicode mappings, all of it — with pixel-fidelity to a native `pdflatex` run.
+The Lab uses pdfLaTeX from TeX Live 2026, compiled to WebAssembly and running in a web worker. It tries the bundled packages first and fetches missing packages on demand when needed. It currently accepts a single source document, not a multi-file TeX project.
 
 **Three ways in:**
 
@@ -59,7 +61,7 @@ A full TeX Live 2026 distribution, compiled to WebAssembly, running in a web wor
 
 **What it costs, honestly:** the engine and TeX core download on your first compile — about 122 MB (a one-time, cached cost; nothing downloads until you press Compile). Packages beyond the core stream in on demand. After that first run the engine boots from browser storage and a one-page document compiles in about a second, offline included. The markdown editor never loads any of this — the Lab is a separate, lazily-loaded route.
 
-Compilation is 100% client-side: your document is never uploaded anywhere.
+Compilation runs in the browser. The engine downloads support files when needed, not your document. If a compile fails, the Lab clears the PDF from the preview and shows the first TeX error, with a link to its source line when available.
 
 **Self-hosting the Lab:** the engine files are not in the repository. `npm run fetch:latex-engine` downloads the pinned BusyTeX release and keeps only what the Lab serves — the engine, the TeX core (`texlive-basic`), and biber for biblatex documents, about 160 MB in `public/core/busytex`, each file checked against a pinned SHA-256. The Vercel build runs it automatically (`buildCommand` in `vercel.json`); on any other host, run it before `npm run build`. Packages beyond the core stream from `texlive2026.texlyre.org` at compile time, so the 500 MB of extra TeX Live data never needs to be deployed.
 
