@@ -33,8 +33,9 @@ export function getLatexDiagnostic(log: string): { message: string; line?: numbe
   return null;
 }
 
-/** Retry only when the log points to a a missing TeX support file. */
+/** Retry only when the log points to a missing TeX support file. */
 export function isMissingLatexPackage(log: string): boolean {
   return /(?:LaTeX Error:\s*)?File\s+[`'"][^\r\n]+\.(?:sty|cls|clo|def|fd)['"`]\s+not found\b/i.test(log)
-    || /pdfTeX error:[^\r\n]*\(file [^)]+\.(?:enc|map|pfb|tfm)\):\s*cannot open/i.test(log);
+    || /pdfTeX error:[^\r\n]*\(file [^)]+\.(?:enc|map|pfb|tfm)\):\s*cannot open/i.test(log)
+    || /^(?:!\s*|[^\r\n]*?main\.tex:\d+:\s*)Font\s+[^\r\n]*?\s+not loadable:\s+Metric\s+\(TFM\)\s+file\s+not found\b/im.test(log);
 }
