@@ -27,4 +27,12 @@ describe('LaTeX Lab package fallback', () => {
     expect(isMissingLatexPackage('! Undefined control sequence.')).toBe(false);
     expect(isMissingLatexPackage("! LaTeX Error: File `figure.png' not found.")).toBe(false);
   });
+
+  test('recognizes missing font metrics in standard and file/line pdfLaTeX logs', () => {
+    const missing = String.raw`Font \testfont=cmbr10 not loadable: Metric (TFM) file not found.`;
+    expect(isMissingLatexPackage(`! ${missing}\r\nl.3`)).toBe(true);
+    expect(isMissingLatexPackage(`./main.tex:3: ${missing}`)).toBe(true);
+    expect(isMissingLatexPackage('! Font foo not loadable: Bad metric (TFM) file.')).toBe(false);
+    expect(isMissingLatexPackage('Package warning: Metric (TFM) file not found.')).toBe(false);
+  });
 });
