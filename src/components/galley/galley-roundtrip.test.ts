@@ -1,12 +1,8 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
-import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
-import Table from '@tiptap/extension-table';
-import TableRow from '@tiptap/extension-table-row';
-import TableCell from '@tiptap/extension-table-cell';
-import TableHeader from '@tiptap/extension-table-header';
+import { TaskList, TaskItem } from '@tiptap/extension-list';
+import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table';
 import { Markdown } from 'tiptap-markdown';
 import { GalleyMathematics, MathAwareText } from './mathematics';
 
@@ -20,7 +16,7 @@ function galley(content: string, editable = true) {
     editable,
     content,
     extensions: [
-      StarterKit.configure({ text: false }),
+      StarterKit.configure({ text: false, underline: false, listKeymap: false }),
       MathAwareText,
       GalleyMathematics,
       TaskList,

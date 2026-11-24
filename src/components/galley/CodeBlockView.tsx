@@ -79,7 +79,7 @@ export const CodeBlockView: React.FC<NodeViewProps> = ({ node, updateAttributes,
         </button>
       </div>
       <pre spellCheck={false}>
-        <NodeViewContent as="code" />
+        <NodeViewContent<'code'> as="code" />
       </pre>
     </NodeViewWrapper>
   );

@@ -87,6 +87,39 @@ test('inline math is typeset in the rich galley', async ({ page }, testInfo) => 
   await expect(galley.locator('.katex')).toBeVisible();
 });
 
+test('rich selection formatting preserves math and syncs to source', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'chromium-mobile', 'Mobile starts in source-only mode.');
+  await startWithDocument(page);
+
+  const source = page.getByRole('textbox', { name: 'Start writing. The galley typesets as you go.' });
+  const galley = page.getByRole('textbox', { name: 'Typeset galley editor' });
+  const content = 'Selection $x^2$.';
+  await source.fill(content);
+  const paragraph = galley.locator('p');
+  await expect(paragraph).toContainText('Selection');
+  await expect(galley.locator('.katex')).toBeVisible();
+  await paragraph.click();
+  await galley.evaluate((editor) => {
+    const text = editor.querySelector('p')?.firstChild;
+    if (!text) throw new Error('Selectable text is missing');
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.setStart(text, 0);
+    range.setEnd(text, 'Selection'.length);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  });
+
+  const bold = page.locator('button[aria-label="Bold (⌘B)"][aria-pressed]');
+  await expect(bold).toBeVisible();
+  await bold.click();
+  await expect(galley.locator('strong')).toHaveText('Selection');
+  await expect(source).toHaveValue('**Selection** $x^2$.');
+  await galley.locator('strong').dblclick();
+  await expect(bold).toHaveAttribute('aria-pressed', 'true');
+  await expect(galley.locator('.katex')).toBeVisible();
+});
+
 test('source paste replaces the selection without rewriting Markdown-like text', async ({ page }) => {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await startWithDocument(page);
