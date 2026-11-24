@@ -87,6 +87,60 @@ test('inline math is typeset in the rich galley', async ({ page }, testInfo) => 
   await expect(galley.locator('.katex')).toBeVisible();
 });
 
+test('rich selection formatting preserves math and syncs to source', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'chromium-mobile', 'Mobile starts in source-only mode.');
+  await startWithDocument(page);
+
+  const source = page.getByRole('textbox', { name: 'Start writing. The galley typesets as you go.' });
+  const galley = page.getByRole('textbox', { name: 'Typeset galley editor' });
+  const content = 'Selection $x^2$.';
+  await source.fill(content);
+  const paragraph = galley.locator('p');
+  await expect(paragraph).toContainText('Selection');
+  await expect(galley.locator('.katex')).toBeVisible();
+  await paragraph.click();
+  await galley.evaluate((editor) => {
+    const text = editor.querySelector('p')?.firstChild;
+    if (!text) throw new Error('Selectable text is missing');
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.setStart(text, 0);
+    range.setEnd(text, 'Selection'.length);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  });
+
+  const bold = page.locator('button[aria-label="Bold (⌘B)"][aria-pressed]');
+  await expect(bold).toBeVisible();
+  await bold.click();
+  await expect(galley.locator('strong')).toHaveText('Selection');
+  await expect(source).toHaveValue('**Selection** $x^2$.');
+  await galley.locator('strong').dblclick();
+  await expect(bold).toHaveAttribute('aria-pressed', 'true');
+  await expect(galley.locator('.katex')).toBeVisible();
+});
+
+test('checking a rich task persists to Markdown with a trailing code block', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'chromium-mobile', 'Mobile starts in source-only mode.');
+  await page.addInitScript((document) => {
+    localStorage.clear();
+    localStorage.setItem('markdown-studio-onboarded', 'true');
+    localStorage.setItem('markdown-studio-documents', JSON.stringify([document]));
+    localStorage.setItem('markdown-studio-active-doc', document.id);
+  }, { ...seededDocument, content: '- [ ] Open\n\n```js\nconst ready = true;\n```' });
+  await page.goto('/');
+
+  const galley = page.getByRole('textbox', { name: 'Typeset galley editor' });
+  const checkbox = galley.getByRole('checkbox', { name: 'Task item checkbox for Open' });
+  const source = page.getByRole('textbox', { name: 'Start writing. The galley typesets as you go.' });
+  await expect(checkbox).not.toBeChecked();
+  await checkbox.click();
+  await expect(checkbox).toBeChecked();
+  await expect(source).toHaveValue('- [x] Open\n\n```js\nconst ready = true;\n```');
+  await checkbox.click();
+  await expect(source).toHaveValue('- [ ] Open\n\n```js\nconst ready = true;\n```');
+});
+
 test('source paste replaces the selection without rewriting Markdown-like text', async ({ page }) => {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await startWithDocument(page);

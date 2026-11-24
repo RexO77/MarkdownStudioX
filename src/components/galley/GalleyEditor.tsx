@@ -7,20 +7,16 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from 'react';
-import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
+import { useEditor, useEditorState, EditorContent, ReactNodeViewRenderer } from '@tiptap/react';
+import { BubbleMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
-import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
-import Placeholder from '@tiptap/extension-placeholder';
+import { TaskList, TaskItem } from '@tiptap/extension-list';
+import { Placeholder } from '@tiptap/extensions';
 import Typography from '@tiptap/extension-typography';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import Table from '@tiptap/extension-table';
-import TableRow from '@tiptap/extension-table-row';
-import TableCell from '@tiptap/extension-table-cell';
-import TableHeader from '@tiptap/extension-table-header';
-import { ReactNodeViewRenderer } from '@tiptap/react';
+import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table';
 import { createLowlight, common } from 'lowlight';
 import { Markdown } from 'tiptap-markdown';
 import { Bold, Italic, Strikethrough, Code, Link2, Unlink, CornerDownLeft } from 'lucide-react';
@@ -121,7 +117,10 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
       return [
         // Text is replaced by MathAwareText so `$...$` spans serialize
         // without backslash-escaping; see mathematics.ts.
-        StarterKit.configure({ codeBlock: false, text: false }),
+        // The v3 trailing-node plugin can append a paragraph on first focus.
+        // Keep the v2 schema behavior so that focus within a task update does
+        // not change the document before its checkbox transaction is applied.
+        StarterKit.configure({ codeBlock: false, text: false, link: false, underline: false, listKeymap: false, trailingNode: false }),
         MathAwareText,
         GalleyMathematics,
         CodeBlockLowlight.extend({
@@ -182,6 +181,19 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
       },
     });
 
+    // Tiptap 3 does not rerender React on every transaction. Subscribe only to
+    // marks shown by the selection bubble so its active buttons stay current.
+    const activeMarks = useEditorState({
+      editor,
+      selector: ({ editor }) => ({
+        bold: editor?.isActive('bold') ?? false,
+        italic: editor?.isActive('italic') ?? false,
+        strike: editor?.isActive('strike') ?? false,
+        code: editor?.isActive('code') ?? false,
+        link: editor?.isActive('link') ?? false,
+      }),
+    });
+
     editorInstanceRef.current = editor;
 
     // External source changes (source pane typing, find & replace, AI format)
@@ -194,7 +206,7 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
       if (value === lastMarkdown.current) return;
       const t = setTimeout(() => {
         lastMarkdown.current = value;
-        editor.commands.setContent(value, false);
+        editor.commands.setContent(value, { emitUpdate: false });
       }, 150);
       return () => clearTimeout(t);
     }, [value, editor]);
@@ -343,7 +355,8 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
         {editor && (
           <BubbleMenu
             editor={editor}
-            tippyOptions={{ duration: 120, placement: 'top', zIndex: LAYER_Z.popover }}
+            options={{ placement: 'top', offset: 8 }}
+            style={{ zIndex: LAYER_Z.popover }}
             shouldShow={({ editor: e, state }) =>
               e.isEditable && !state.selection.empty && !e.isActive('codeBlock') && !e.isActive('image')
             }
@@ -381,31 +394,31 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
               ) : (
                 <>
                   {bubbleButton(
-                    editor.isActive('bold'),
+                    activeMarks?.bold ?? false,
                     () => editor.chain().focus().toggleBold().run(),
                     'Bold (⌘B)',
                     <Bold className="h-3.5 w-3.5" />,
                     false
                   )}
                   {bubbleButton(
-                    editor.isActive('italic'),
+                    activeMarks?.italic ?? false,
                     () => editor.chain().focus().toggleItalic().run(),
                     'Italic (⌘I)',
                     <Italic className="h-3.5 w-3.5" />
                   )}
                   {bubbleButton(
-                    editor.isActive('strike'),
+                    activeMarks?.strike ?? false,
                     () => editor.chain().focus().toggleStrike().run(),
                     'Strikethrough',
                     <Strikethrough className="h-3.5 w-3.5" />
                   )}
                   {bubbleButton(
-                    editor.isActive('code'),
+                    activeMarks?.code ?? false,
                     () => editor.chain().focus().toggleCode().run(),
                     'Inline code (⌘E)',
                     <Code className="h-3.5 w-3.5" />
                   )}
-                  {editor.isActive('link')
+                  {activeMarks?.link
                     ? bubbleButton(
                         true,
                         () => editor.chain().focus().extendMarkRange('link').unsetLink().run(),
