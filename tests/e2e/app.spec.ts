@@ -120,6 +120,27 @@ test('rich selection formatting preserves math and syncs to source', async ({ pa
   await expect(galley.locator('.katex')).toBeVisible();
 });
 
+test('checking a rich task persists to Markdown with a trailing code block', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'chromium-mobile', 'Mobile starts in source-only mode.');
+  await page.addInitScript((document) => {
+    localStorage.clear();
+    localStorage.setItem('markdown-studio-onboarded', 'true');
+    localStorage.setItem('markdown-studio-documents', JSON.stringify([document]));
+    localStorage.setItem('markdown-studio-active-doc', document.id);
+  }, { ...seededDocument, content: '- [ ] Open\n\n```js\nconst ready = true;\n```' });
+  await page.goto('/');
+
+  const galley = page.getByRole('textbox', { name: 'Typeset galley editor' });
+  const checkbox = galley.getByRole('checkbox', { name: 'Task item checkbox for Open' });
+  const source = page.getByRole('textbox', { name: 'Start writing. The galley typesets as you go.' });
+  await expect(checkbox).not.toBeChecked();
+  await checkbox.click();
+  await expect(checkbox).toBeChecked();
+  await expect(source).toHaveValue('- [x] Open\n\n```js\nconst ready = true;\n```');
+  await checkbox.click();
+  await expect(source).toHaveValue('- [ ] Open\n\n```js\nconst ready = true;\n```');
+});
+
 test('source paste replaces the selection without rewriting Markdown-like text', async ({ page }) => {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await startWithDocument(page);

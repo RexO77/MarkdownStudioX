@@ -117,7 +117,10 @@ export const GalleyEditor = forwardRef<HTMLDivElement, GalleyEditorProps>(
       return [
         // Text is replaced by MathAwareText so `$...$` spans serialize
         // without backslash-escaping; see mathematics.ts.
-        StarterKit.configure({ codeBlock: false, text: false, link: false, underline: false, listKeymap: false }),
+        // The v3 trailing-node plugin can append a paragraph on first focus.
+        // Keep the v2 schema behavior so that focus within a task update does
+        // not change the document before its checkbox transaction is applied.
+        StarterKit.configure({ codeBlock: false, text: false, link: false, underline: false, listKeymap: false, trailingNode: false }),
         MathAwareText,
         GalleyMathematics,
         CodeBlockLowlight.extend({

@@ -16,7 +16,7 @@ function galley(content: string, editable = true) {
     editable,
     content,
     extensions: [
-      StarterKit.configure({ text: false, underline: false, listKeymap: false }),
+      StarterKit.configure({ text: false, underline: false, listKeymap: false, trailingNode: false }),
       MathAwareText,
       GalleyMathematics,
       TaskList,
